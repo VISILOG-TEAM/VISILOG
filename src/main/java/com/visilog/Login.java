@@ -1,8 +1,6 @@
 package com.visilog;
 
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -12,7 +10,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-
+                                             
 public class Login extends JFrame {
 
     private JTextField usernameField;
@@ -57,27 +55,24 @@ public class Login extends JFrame {
 
         add(panel);
 
-        loginButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String username = usernameField.getText();
-                String password = String.valueOf(passwordField.getPassword());
+        loginButton.addActionListener(e ->{
+            String username = usernameField.getText();
+            String password = String.valueOf(passwordField.getPassword());
 
-                if (userService.login(username, password)) {
-                    JOptionPane.showMessageDialog(null, "Login Successful!");
+            if (userService.login(username, password)) {
+                JOptionPane.showMessageDialog(null, "Login Successful!");
 
-                    String email = userService.getEmail(username);
-                    if (email != null) {
-                        // sendEmailAsync so the UI doesn't freeze while it talks to Gmail
-                        emailService.sendEmailAsync(
-                                email,
-                                "Login Alert",
-                                "You have successfully logged into VISILOG."
-                        );
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(null, "Invalid Username or Password!");
+                String email = userService.getEmail(username);
+                if (email != null) {
+                    // sendEmailAsync so the UI doesn't freeze while it talks to Gmail
+                    emailService.sendEmailAsync(
+                            email,
+                            "Login Alert",
+                            "You have successfully logged into VISILOG."
+                    );
                 }
+            } else {
+                JOptionPane.showMessageDialog(null, "Invalid Username or Password!");
             }
         });
 
