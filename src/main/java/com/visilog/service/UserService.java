@@ -1,17 +1,36 @@
-package com.visilog;
+package com.visilog.service;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
 
+/**
+ * Handles user registration and login.
+ *
+ * NOTE: still in-memory (HashMap), same as the original Swing version.
+ * This means all registered users are lost every time the app restarts.
+ * That's fine for now while you build out the REST layer - once the
+ * database is wired up, this class swaps its HashMaps for a
+ * UserRepository (JPA) without the controller layer needing to change.
+ *
+ * Because this class is annotated @Service, Spring creates exactly ONE
+ * instance of it and hands that same instance to anything that needs it
+ * (like AuthController) via constructor injection. That's what replaces
+ * the "pass the same UserService/EmailService instance between Swing
+ * screens" pattern you had before.
+ */
+@Service
 public class UserService {
+
     // username -> hashed password
     private final Map<String, String> users = new HashMap<>();
     // username -> email
     private final Map<String, String> emails = new HashMap<>();
- 
+
     /**
      * Registers a new user.
      *
@@ -26,7 +45,7 @@ public class UserService {
         emails.put(username, email);
         return true;
     }
- 
+
     /**
      * Attempts to log a user in.
      *
@@ -39,15 +58,15 @@ public class UserService {
         String hashed = hashPassword(password);
         return users.get(username).equals(hashed);
     }
- 
+
     public boolean userExists(String username) {
         return users.containsKey(username);
     }
- 
+
     public String getEmail(String username) {
         return emails.get(username);
     }
- 
+
     /**
      * Hashes a password using SHA-256.
      * Note: for production use, a salted hash (e.g. BCrypt) is stronger than
@@ -56,19 +75,18 @@ public class UserService {
     private String hashPassword(String password) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(password.getBytes("UTF-8"));
- 
+            byte[] hashBytes = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
                 sb.append(String.format("%02x", b));
             }
             return sb.toString();
- 
-        } catch (NoSuchAlgorithmException | java.io.UnsupportedEncodingException e) {
-            // SHA-256 and UTF-8 are both guaranteed to exist on any standard JVM,
-            // so this should never actually happen.
+
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is guaranteed to exist on any standard JVM, so this
+            // should never actually happen.
             throw new RuntimeException("Failed to hash password", e);
         }
     }
 }
-
