@@ -16,12 +16,14 @@ public class Login extends JFrame {
     private JTextField usernameField;
     private JPasswordField passwordField;
 
-    // Shared services. SignUpForm gets a reference to the SAME UserService/EmailService
+    // Shared services. SignUpForm gets a reference to the SAME UserService/EmailService .,
     // instances (passed in below) so both screens are working with the same data.
     private final UserService userService;
     private final EmailService emailService;
 
-    public Login() {
+         public Login() {
+        System.out.println("EMAIL_USER = " + System.getenv("EMAIL_USER"));
+        System.out.println("EMAIL_PASS = " + System.getenv("EMAIL_PASS"));
         this.userService = new UserService();
         this.emailService = new EmailService();
 

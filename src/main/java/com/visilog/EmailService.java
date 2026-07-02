@@ -25,8 +25,8 @@ import jakarta.mail.internet.MimeMessage;
  */
 public class EmailService {
 
-    private static final String EMAIL = System.getenv("GMAIL_EMAIL");
-    private static final String APP_PASSWORD = System.getenv("GMAIL_APP_PASSWORD");
+    private static final String EMAIL = System.getenv("EMAIL_USER");
+    private static final String APP_PASSWORD = System.getenv("EMAIL_PASS");
 
     /**
      * Sends an email synchronously (this blocks until the send completes or fails).
@@ -67,7 +67,8 @@ public class EmailService {
             return true;
 
         } catch (MessagingException e) {
-            System.err.println("Failed to send email to " + recipient + ": " + e.getMessage());
+           System.err.println("Failed to send email to " + recipient + ": " + e.getMessage());
+          e.printStackTrace();
             return false;
         }
     }
