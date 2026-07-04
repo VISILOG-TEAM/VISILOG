@@ -1,0 +1,106 @@
+import React from 'react';
+import { View, StyleSheet, FlatList } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile,
+} from '../components';
+import { colors } from '../theme/colors';
+import { spacing, radius } from '../theme/spacing';
+import { useData } from '../context/DataContext';
+import { employeeById } from '../data/mockData';
+import { fmtTime, fmtRelative } from '../data/format';
+
+// AttendanceScreen — NFC attendance taps.
+// Each row represents one card tap at a reader, building up the
+// punctuality picture for the day.
+export default function AttendanceScreen({ navigation }) {
+  const { attendance, employees } = useData();
+
+  const sorted = [...attendance].sort(
+    (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+  );
+
+  // Stat: how many distinct employees are currently signed in (based on
+  // their last tap of the day being 'in').
+  const onsiteCount = (() => {
+    const last = {};
+    sorted.forEach((t) => {
+      if (!last[t.employeeId]) last[t.employeeId] = t.tapType;
+    });
+    return Object.values(last).filter((t) => t === 'in').length;
+  })();
+
+  const lateCount = sorted.filter((t) => {
+    if (t.tapType !== 'in') return false;
+    const d = new Date(t.timestamp);
+    return d.getHours() > 8 || (d.getHours() === 8 && d.getMinutes() > 30);
+  }).length;
+
+  return (
+    <Screen scroll={false} padded={false}>
+      <View style={styles.head}>
+        <Header
+          title="Attendance"
+          subtitle="NFC tap log & punctuality"
+          rightIcon="close"
+          onRightPress={() => navigation.goBack()}
+        />
+        <View style={{ flexDirection: 'row' }}>
+          <StatTile icon="people" tint="primary"
+            label="Employees on-site" value={onsiteCount} />
+          <View style={{ width: spacing.sm }} />
+          <StatTile icon="alarm" tint="pending"
+            label="Late arrivals" value={lateCount} />
+        </View>
+      </View>
+
+      <FlatList
+        data={sorted}
+        keyExtractor={(t) => t.id}
+        contentContainerStyle={styles.list}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.xs }} />}
+        ListEmptyComponent={
+          <EmptyState
+            icon="card-outline"
+            title="No taps today"
+            message="Attendance taps from NFC readers will appear here as they arrive."
+          />
+        }
+        renderItem={({ item }) => (
+          <TapRow tap={item} employee={employeeById(item.employeeId)} />
+        )}
+      />
+    </Screen>
+  );
+}
+
+function TapRow({ tap, employee }) {
+  const isIn = tap.tapType === 'in';
+  return (
+    <Card padded={false} style={{ marginHorizontal: spacing.md }}>
+      <View style={styles.row}>
+        <Avatar name={employee?.name || 'Unknown'} size={40} />
+        <View style={{ flex: 1, marginLeft: spacing.sm }}>
+          <Text variant="bodySemibold" numberOfLines={1}>
+            {employee?.name || 'Unknown employee'}
+          </Text>
+          <Text variant="caption" color={colors.textSecondary}>
+            {employee?.department || ''}
+          </Text>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Badge label={isIn ? 'Tap in' : 'Tap out'} status={isIn ? 'success' : 'neutral'} size="sm" />
+          <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
+            {fmtTime(tap.timestamp)} - {fmtRelative(tap.timestamp)}
+          </Text>
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  head: { padding: spacing.md, paddingBottom: 0 },
+  list: { padding: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.huge },
+  row: { flexDirection: 'row', alignItems: 'center', padding: spacing.sm },
+});
