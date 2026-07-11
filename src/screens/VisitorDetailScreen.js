@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Pressable } from 'react-native';
+import { View, StyleSheet, Alert, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Button, Input, Avatar,
@@ -84,9 +84,12 @@ export default function VisitorDetailScreen({ route, navigation }) {
 
       {/* Quick contact actions */}
       <View style={styles.actionsRow}>
-        <ActionPill icon="call" label="Call" />
-        <ActionPill icon="chatbubble-ellipses" label="Message" />
-        <ActionPill icon="mail" label="Email" />
+        <ActionPill icon="call" label="Call"
+          onPress={() => Linking.openURL(`tel:${visitor.phone}`)} />
+        <ActionPill icon="chatbubble-ellipses" label="Message"
+          onPress={() => Linking.openURL(`sms:${visitor.phone}`)} />
+        <ActionPill icon="mail" label="Email"
+          onPress={() => Alert.alert('No email on file', 'This visitor record has no email address.')} />
       </View>
 
       {/* Visit details */}
@@ -169,9 +172,9 @@ function Divider() {
   return <View style={styles.divider} />;
 }
 
-function ActionPill({ icon, label }) {
+function ActionPill({ icon, label, onPress }) {
   return (
-    <Pressable style={({ pressed }) => [styles.pill, pressed && { opacity: 0.85 }]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.85 }]}>
       <Ionicons name={icon} size={18} color={colors.primary} />
       <Text variant="bodyMd" color={colors.brand} style={{ marginLeft: 6 }}>
         {label}

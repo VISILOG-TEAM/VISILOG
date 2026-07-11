@@ -18,7 +18,8 @@ export function DataProvider({ children }) {
   const [attendance] = useState(initialAttendance);
   const [roomBookings] = useState(initialRoomBookings);
   const [employees, setEmployees] = useState(initialEmployees);
-const [visitorAccounts, setVisitorAccounts] = useState([]);
+  const [visitorAccounts, setVisitorAccounts] = useState([]);
+
   // ---- visitor operations ----
 
   // Adds a new visitor and immediately checks them in. Returns the new record.
@@ -55,50 +56,52 @@ const [visitorAccounts, setVisitorAccounts] = useState([]);
   };
 
   // ---- appointment operations ----
-// Visitor self-registration (from the Signup screen).
-const registerVisitorAccount = (input) => {
-  const account = {
-    id: `va-${Date.now()}`,
-    fullName: input.fullName,
-    email: input.email.toLowerCase().trim(),
-    password: input.password,
-    phone: input.phone || '',
-    company: input.company || '',
+
+  // Visitor self-registration (from the Signup screen).
+  const registerVisitorAccount = (input) => {
+    const account = {
+      id: `va-${Date.now()}`,
+      fullName: input.fullName,
+      email: input.email.toLowerCase().trim(),
+      password: input.password,
+      phone: input.phone || '',
+      company: input.company || '',
+    };
+    setVisitorAccounts((a) => [...a, account]);
+    return account;
   };
-  setVisitorAccounts((a) => [...a, account]);
-  return account;
-};
 
-// Make a unique NFC code for a visitor booking.
-// Format: VC-XXXX-XXXX (digits only, easy to read out loud).
-const generateVisitorCode = () => {
-  const rand = () => Math.floor(1000 + Math.random() * 9000);
-  return `VC-${rand()}-${rand()}`;
-};
-
-// Visitor books a visit — creates a pending appointment with an NFC code.
-const bookVisit = (input) => {
-  const appointment = {
-    id: `a-${Date.now()}`,
-    visitorName: input.visitorName,
-    visitorPhone: input.visitorPhone,
-    visitorCompany: input.visitorCompany || '',
-    purpose: input.purpose,
-    hostId: input.hostId,
-    scheduledAt: input.scheduledAt || new Date().toISOString(),
-    status: 'pending',
-    nfcCode: generateVisitorCode(),
-    bookedByEmail: input.bookedByEmail || '',
+  // Make a unique NFC code for a visitor booking.
+  // Format: VC-XXXX-XXXX (digits only, easy to read out loud).
+  const generateVisitorCode = () => {
+    const rand = () => Math.floor(1000 + Math.random() * 9000);
+    return `VC-${rand()}-${rand()}`;
   };
-  setAppointments((as) => [appointment, ...as]);
-  return appointment;
-};
 
-// Receptionist's NFC lookup — find a booking by its code.
-const findAppointmentByCode = (code) => {
-  const clean = (code || '').trim().toUpperCase();
-  return appointments.find((a) => a.nfcCode === clean);
-};
+  // Visitor books a visit — creates a pending appointment with an NFC code.
+  const bookVisit = (input) => {
+    const appointment = {
+      id: `a-${Date.now()}`,
+      visitorName: input.visitorName,
+      visitorPhone: input.visitorPhone,
+      visitorCompany: input.visitorCompany || '',
+      purpose: input.purpose,
+      hostId: input.hostId,
+      scheduledAt: input.scheduledAt || new Date().toISOString(),
+      status: 'pending',
+      nfcCode: generateVisitorCode(),
+      bookedByEmail: input.bookedByEmail || '',
+    };
+    setAppointments((as) => [appointment, ...as]);
+    return appointment;
+  };
+
+  // Receptionist's NFC lookup — find a booking by its code.
+  const findAppointmentByCode = (code) => {
+    const clean = (code || '').trim().toUpperCase();
+    return appointments.find((a) => a.nfcCode === clean);
+  };
+
   const updateAppointmentStatus = (id, status) => {
     setAppointments((as) => as.map((a) => (a.id === id ? { ...a, status } : a)));
   };
@@ -191,16 +194,10 @@ const findAppointmentByCode = (code) => {
         registerAndCheckIn, checkOutVisitor,
         updateAppointmentStatus, admitAppointment,
         logCall, addEmployee, removeEmployee,
+        // visitor self-service (Signup / VisitorBooking / NFCLookup screens)
+        visitorAccounts, registerVisitorAccount, bookVisit, findAppointmentByCode,
         // derived
         stats,
-        
-  // ...existing things you already have...
-  visitorAccounts,
-  registerVisitorAccount,
-  bookVisit,
-  findAppointmentByCode,
-  // ...stats, etc.
-
       }}
     >
       {children}

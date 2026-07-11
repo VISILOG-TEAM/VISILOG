@@ -17,7 +17,7 @@ import { visitPurposes } from '../data/mockData';
 // Submitting creates a new appointment in 'pending' status, mirroring
 // the real visitor-side flow.
 export default function VisitorBookingScreen({ navigation }) {
-  const { employees, updateAppointmentStatus } = useData();
+  const { employees, bookVisit } = useData();
 
   const [visitorName, setVisitorName] = useState('');
   const [visitorPhone, setVisitorPhone] = useState('');
@@ -32,6 +32,14 @@ export default function VisitorBookingScreen({ navigation }) {
       Alert.alert('Almost there', 'Name, phone and host are required.');
       return;
     }
+    bookVisit({
+      visitorName: visitorName.trim(),
+      visitorPhone: visitorPhone.trim(),
+      visitorCompany: visitorCompany.trim(),
+      purpose,
+      hostId,
+      scheduledAt: `${date}T${time}`,
+    });
     Alert.alert(
       'Appointment requested',
       `${visitorName} is now in the pending queue. The host will be notified to approve the visit.`,

@@ -21,15 +21,8 @@ export default function ListItem({
   chevron = false,
   onPress,
 }) {
-  const Wrap = onPress ? Pressable : View;
-  return (
-    <Wrap
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        pressed && { backgroundColor: colors.surfaceAlt },
-      ]}
-    >
+  const content = (
+    <>
       {left ? (
         left
       ) : avatarName ? (
@@ -67,8 +60,26 @@ export default function ListItem({
           />
         ) : null}
       </View>
-    </Wrap>
+    </>
   );
+
+  // Pressable supports the (pressed) => style render-prop form; a plain View
+  // does not, so non-interactive rows (no onPress) get a static style instead.
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.row,
+          pressed && { backgroundColor: colors.surfaceAlt },
+        ]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return <View style={styles.row}>{content}</View>;
 }
 
 const styles = StyleSheet.create({

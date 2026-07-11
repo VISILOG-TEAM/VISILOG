@@ -46,38 +46,38 @@ export default function RootNavigator() {
       ) : (
         // ---------- Signed-in stack ----------
         <Stack.Group>
-  {user.role === 'receptionist' && (
-    <Stack.Screen name="Tabs" component={TabNavigator} />
-  )}
-  {user.role === 'visitor' && (
-    <Stack.Screen name="VisitorHome" component={VisitorHomeScreen} />
-  )}
-  {user.role === 'employee' && (
-    <Stack.Screen name="EmployeeHome" component={EmployeeHomeScreen} />
-  )}
-  {user.role === 'manager' && (
-    <Stack.Screen name="ManagerHome" component={ManagerHomeScreen} />
-  )}
+          {user.role === 'receptionist' && (
+            <Stack.Screen name="Tabs" component={TabNavigator} />
+          )}
+          {user.role === 'visitor' && (
+            <Stack.Screen name="VisitorHome" component={VisitorHomeScreen} />
+          )}
+          {user.role === 'employee' && (
+            <Stack.Screen name="EmployeeHome" component={EmployeeHomeScreen} />
+          )}
+          {user.role === 'manager' && (
+            <Stack.Screen name="ManagerHome" component={ManagerHomeScreen} />
+          )}
 
-  {/* Modal-style screens (forms) */}
-  <Stack.Group screenOptions={{ presentation: 'modal' }}>
-    <Stack.Screen name="RegisterVisitor" component={RegisterVisitorScreen} />
-    <Stack.Screen name="AddEmployee" component={AddEmployeeScreen} />
-    <Stack.Screen name="LogCall" component={LogCallScreen} />
-    <Stack.Screen name="VisitorBooking" component={VisitorBookingScreen} />
-  </Stack.Group>
+          {/* Modal-style screens (forms) */}
+          <Stack.Group screenOptions={{ presentation: 'modal' }}>
+            <Stack.Screen name="RegisterVisitor" component={RegisterVisitorScreen} />
+            <Stack.Screen name="AddEmployee" component={AddEmployeeScreen} />
+            <Stack.Screen name="LogCall" component={LogCallScreen} />
+            <Stack.Screen name="VisitorBooking" component={VisitorBookingScreen} />
+          </Stack.Group>
 
-  {/* Pushed detail / sub-module screens */}
-  <Stack.Screen name="VisitorDetail" component={VisitorDetailScreen} />
-  <Stack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} />
-  <Stack.Screen name="CallLog" component={CallLogScreen} />
-  <Stack.Screen name="Reports" component={ReportsScreen} />
-  <Stack.Screen name="Settings" component={SettingsScreen} />
-  <Stack.Screen name="NFCCards" component={NFCCardsScreen} />
-  <Stack.Screen name="NFCLookup" component={NFCLookupScreen} />
-  <Stack.Screen name="Attendance" component={AttendanceScreen} />
-  <Stack.Screen name="RoomBookings" component={RoomBookingsScreen} />
-</Stack.Group>
+          {/* Pushed detail / sub-module screens */}
+          <Stack.Screen name="VisitorDetail" component={VisitorDetailScreen} />
+          <Stack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} />
+          <Stack.Screen name="CallLog" component={CallLogScreen} />
+          <Stack.Screen name="Reports" component={ReportsScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="NFCCards" component={NFCCardsScreen} />
+          <Stack.Screen name="NFCLookup" component={NFCLookupScreen} />
+          <Stack.Screen name="Attendance" component={AttendanceScreen} />
+          <Stack.Screen name="RoomBookings" component={RoomBookingsScreen} />
+        </Stack.Group>
       )}
     </Stack.Navigator>
   );

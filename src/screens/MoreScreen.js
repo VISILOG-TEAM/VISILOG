@@ -44,9 +44,9 @@ export default function MoreScreen({ navigation }) {
       </Text>
       <Card padded={false}>
         <Link icon="scan-outline" title="NFC lookup"
-  sub="Enter a visitor's code to view their booking"
-  onPress={() => navigation.navigate('NFCLookup')} />
-<Divider />
+          sub="Enter a visitor's code to view their booking"
+          onPress={() => navigation.navigate('NFCLookup')} />
+        <Divider />
         <Link icon="call-outline" title="Call log"
           sub="Incoming, outgoing & missed"
           onPress={() => navigation.navigate('CallLog')} />

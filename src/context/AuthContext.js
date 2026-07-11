@@ -22,28 +22,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // null = signed out
 
   const login = (email, password) => {
-  if (!email || !password) {
-    return { ok: false, error: 'Enter both an email and a password.' };
-  }
-  const role = detectRole(email);
+    if (!email || !password) {
+      return { ok: false, error: 'Enter both an email and a password.' };
+    }
+    const role = detectRole(email);
 
-  // Default name shown in the header for each role
-  const defaultNames = {
-    visitor: 'Visitor',
-    employee: 'Employee',
-    receptionist: 'Receptionist',
-    manager: 'Manager',
+    // Default name shown in the header for each role
+    const defaultNames = {
+      visitor: 'Visitor',
+      employee: 'Employee',
+      receptionist: 'Receptionist',
+      manager: 'Manager',
+    };
+
+    setUser({
+      id: `${role}-${Date.now()}`,
+      email: email.trim(),
+      name: defaultNames[role],
+      role,
+      avatarTint: 'teal',
+    });
+    return { ok: true };
   };
-
-  setUser({
-    id: `${role}-${Date.now()}`,
-    email: email.trim(),
-    name: defaultNames[role],
-    role,
-    avatarTint: 'teal',
-  });
-  return { ok: true };
-};
 
   const logout = () => setUser(null);
 

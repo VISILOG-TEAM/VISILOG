@@ -25,18 +25,18 @@ export default function SignupScreen({ navigation }) {
   const { registerVisitorAccount } = useData();
 
   const onSubmit = () => {
-  if (!fullName.trim() || !email.trim() || !password) {
-    Alert.alert('Almost there', 'Please fill in every field above.');
-    return;
-  }
-  if (password !== confirm) {
-    Alert.alert('Passwords don\u2019t match', 'Please re-enter the same password twice.');
-    return;
-  }
-  // Create the visitor account and immediately log them in.
-  registerVisitorAccount({ fullName, email, password });
-  login(email, password);
-};
+    if (!fullName.trim() || !email.trim() || !password) {
+      Alert.alert('Almost there', 'Please fill in every field above.');
+      return;
+    }
+    if (password !== confirm) {
+      Alert.alert('Passwords don\u2019t match', 'Please re-enter the same password twice.');
+      return;
+    }
+    // Create the visitor account and immediately log them in.
+    registerVisitorAccount({ fullName, email, password });
+    login(email, password);
+  };
   return (
     <ImageBackground
       source={require('../../assets/login-bg.jpg')}
