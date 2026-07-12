@@ -131,35 +131,37 @@ export default function SettingsScreen({ navigation }) {
         />
       </Card>
 
-      {/* Organisation */}
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Organisation
-      </Text>
-      <Card padded={false}>
-        {user?.role === 'manager' ? (
-          <>
+      {/* Organisation — administration for the whole tenant, so only the
+          Manager/Administrator who owns that org sees it. Everyone else's
+          settings are about their own account, not the company's. */}
+      {user?.role === 'manager' ? (
+        <>
+          <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+            Organisation
+          </Text>
+          <Card padded={false}>
             <LinkRow icon="card-outline" title="Billing & subscription"
               sub={`${user.organizationName} · manage plan & invoices`}
               onPress={() => navigation.navigate('Billing')} />
             <Divider />
-          </>
-        ) : null}
-        <LinkRow icon="business-outline" title="Company branding"
-          sub="Logo, primary colour, badge layout" />
-        <Divider />
-        <LinkRow icon="card-outline" title="Badge template"
-          sub="Customise badge ID format & print layout" />
-        <Divider />
-        <LinkRow icon="globe-outline" title="Languages"
-          sub="English (default)" />
-      </Card>
+            <LinkRow icon="business-outline" title="Company branding"
+              sub="Logo, primary colour, badge layout" />
+            <Divider />
+            <LinkRow icon="card-outline" title="Badge template"
+              sub="Customise badge ID format & print layout" />
+            <Divider />
+            <LinkRow icon="globe-outline" title="Languages"
+              sub="English (default)" />
+          </Card>
+        </>
+      ) : null}
 
       {/* About */}
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
         About
       </Text>
       <Card padded={false}>
-        <LinkRow icon="information-circle-outline" title="VisiLog 2.0"
+        <LinkRow icon="information-circle-outline" title="VisiLog"
           sub="Build 1.0.0 - Reception + NFC" />
         <Divider />
         <LinkRow icon="help-circle-outline" title="Help & support"

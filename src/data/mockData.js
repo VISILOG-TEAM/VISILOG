@@ -43,6 +43,10 @@ export const nextBadgeId = (existing = []) => {
 // A company code is entered at login to resolve which org — and which
 // theme — a user belongs to (see LoginScreen.js / ThemeContext.js).
 // These two extra orgs are placeholder demo data, not real clients.
+// `officeLocation` backs the clock-in geofence check (see
+// src/data/locationCheck.js) — a best-effort "are you actually at the
+// office" control, same spirit as the WiFi check. Real coordinates for
+// each city, radiusMeters is deliberately generous for a demo.
 export const organizations = [
   {
     id: 'org-vra', code: 'VRA2026', name: 'VRA',
@@ -51,6 +55,7 @@ export const organizations = [
       primary: '#C9A227', primaryPressed: '#D4AF37',
       primarySurface: '#FBF3DE', primarySurfaceStrong: '#F5E6BC',
     },
+    officeLocation: { latitude: 5.6037, longitude: -0.1870, radiusMeters: 500 }, // Accra
   },
   {
     id: 'org-atlas', code: 'ATLAS01', name: 'Atlas Konsult',
@@ -59,6 +64,7 @@ export const organizations = [
       primary: '#4F8EF7', primaryPressed: '#3B76DD',
       primarySurface: '#EAF1FE', primarySurfaceStrong: '#D3E3FD',
     },
+    officeLocation: { latitude: 6.6885, longitude: -1.6244, radiusMeters: 500 }, // Kumasi
   },
   {
     id: 'org-safari', code: 'SAFARI9', name: 'Safari Grove Hotels',
@@ -67,6 +73,7 @@ export const organizations = [
       primary: '#E0A62B', primaryPressed: '#C48F20',
       primarySurface: '#FDF3DF', primarySurfaceStrong: '#F8E4B8',
     },
+    officeLocation: { latitude: 5.1053, longitude: -1.2466, radiusMeters: 500 }, // Cape Coast
   },
 ];
 
@@ -74,6 +81,8 @@ export const organizationByCode = (code) => {
   const clean = (code || '').trim().toUpperCase();
   return organizations.find((o) => o.code === clean);
 };
+
+export const organizationById = (id) => organizations.find((o) => o.id === id);
 
 // ---------- subscription plans ----------
 // Flat pricing tiers every organization subscribes to. This is what

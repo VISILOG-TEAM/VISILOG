@@ -8,28 +8,46 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
 import { isOnWifi } from '../data/wifiCheck';
+import { isAtOffice } from '../data/locationCheck';
+import { organizationById } from '../data/mockData';
 
-// ClockCard — the personal "on the clock" card shared by the
-// Receptionist and Employee home screens. Backed by DataContext's
-// shared clock ledger (not local state) so the Manager's Clock-ins
-// screen sees the same records. Clocking IN requires a best-effort
-// WiFi check (see src/data/wifiCheck.js) — clocking OUT never blocks.
+// ClockCard — the personal "on the clock" card shared by every role's
+// home screen. Backed by DataContext's shared clock ledger (not local
+// state) so the Manager's Clock-ins screen sees the same records.
+//
+// Clocking IN requires: (1) a best-effort WiFi check, (2) a best-effort
+// GPS geofence check against the signed-in org's office location — see
+// src/data/wifiCheck.js and src/data/locationCheck.js — and (3) not
+// having already clocked in once today (one in/out cycle per day).
+// Clocking OUT never blocks.
 export default function ClockCard() {
   const { user } = useAuth();
-  const { clockRecords, clockIn, clockOut, isClockedIn } = useData();
+  const { clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday } = useData();
   const [checking, setChecking] = useState(false);
 
   const employeeId = user?.employeeId || user?.id;
   const clockedIn = isClockedIn(employeeId);
   const lastRecord = clockRecords.find((c) => c.employeeId === employeeId);
+  const doneForToday = !clockedIn && hasClockedInToday(employeeId);
 
   const toggle = async () => {
     if (!clockedIn) {
+      if (hasClockedInToday(employeeId)) {
+        Alert.alert('Already clocked in today', 'You can only clock in once per day — see you tomorrow.');
+        return;
+      }
       setChecking(true);
       const onWifi = await isOnWifi();
-      setChecking(false);
       if (!onWifi) {
+        setChecking(false);
         Alert.alert('Company network required', 'Connect to the company WiFi to clock in.');
+        return;
+      }
+      const org = organizationById(user?.organizationId);
+      const locationResult = await isAtOffice(org?.officeLocation);
+      setChecking(false);
+      if (!locationResult.ok) {
+        Alert.alert('Location check failed', locationResult.error);
         return;
       }
       const r = clockIn(employeeId, user.name);
@@ -50,14 +68,18 @@ export default function ClockCard() {
             <Text variant="caption" color={colors.textMuted}>
               Since {fmtTime(lastRecord.timestamp)}
             </Text>
+          ) : doneForToday ? (
+            <Text variant="caption" color={colors.textMuted}>
+              Done for today — see you tomorrow.
+            </Text>
           ) : null}
         </View>
         <Button
-          label={checking ? 'Checking…' : clockedIn ? 'Check out' : 'Check in'}
+          label={checking ? 'Checking…' : clockedIn ? 'Check out' : doneForToday ? 'Done for today' : 'Check in'}
           icon={clockedIn ? 'log-out-outline' : 'log-in-outline'}
           variant={clockedIn ? 'danger' : 'primary'}
           onPress={toggle}
-          disabled={checking}
+          disabled={checking || doneForToday}
         />
       </View>
     </Card>

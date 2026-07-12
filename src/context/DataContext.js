@@ -202,6 +202,18 @@ export function DataProvider({ children }) {
     return !!mine && mine.type === 'in';
   };
 
+  // One clock-in per calendar day per employee — once they've clocked
+  // in today (whether or not they've since clocked out), no more
+  // clock-ins are allowed until tomorrow.
+  const hasClockedInToday = (employeeId) => {
+    const todayKey = new Date().toDateString();
+    return clockRecords.some((c) => (
+      c.employeeId === employeeId
+      && c.type === 'in'
+      && new Date(c.timestamp).toDateString() === todayKey
+    ));
+  };
+
   // ---- self-service meeting booking (Employee/Manager "Book" tab,
   // and the Receptionist's "Internal meeting" pane — booking a room OR
   // an outside location, with any attendees from the directory) ----
@@ -288,7 +300,7 @@ export function DataProvider({ children }) {
         // visitor self-service (Signup / VisitorBooking / NFCLookup screens)
         visitorAccounts, registerVisitorAccount, bookVisit, findAppointmentByCode,
         // work attendance (clock in/out) + appointment rescheduling
-        clockRecords, clockIn, clockOut, isClockedIn, rescheduleAppointment,
+        clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, rescheduleAppointment,
         // self-service room booking
         bookRoom,
         // billing / subscriptions

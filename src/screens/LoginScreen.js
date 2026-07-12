@@ -234,6 +234,7 @@ const styles = StyleSheet.create({
   wordmark: {
     fontFamily: fonts.displayExtra,
     fontSize: 32,
+    lineHeight: 40,
     color: '#FFFFFF',
     letterSpacing: -0.5,
     textAlign: 'center',

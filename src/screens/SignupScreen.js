@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)',
   },
 
-  wordmark: { fontFamily: fonts.displayExtra, fontSize: 28, color: '#FFFFFF', textAlign: 'center', marginBottom: spacing.md },
+  wordmark: { fontFamily: fonts.displayExtra, fontSize: 28, lineHeight: 36, color: '#FFFFFF', textAlign: 'center', marginBottom: spacing.md },
   heading: { fontFamily: fonts.displayBold, fontSize: 24, color: '#FFFFFF' },
   subheading: { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.lg },
 
