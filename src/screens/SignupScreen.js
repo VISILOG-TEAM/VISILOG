@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 import {
-  View, StyleSheet, Pressable, TextInput,
+  View, ImageBackground, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { AuthBackground, Text, Segmented } from '../components';
+import { Text, Segmented } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 
-// Signup uses the exact same AuthBackground as Login, so the two pages
-// feel like one continuous flow. The sign-in/register pill at the top
-// mirrors Login's — tapping "Sign in" here just goes back.
+// Signup uses the exact same background photo as Login, so the two
+// pages feel like one continuous flow. The sign-in/register pill at
+// the top mirrors Login's — tapping "Sign in" here just goes back.
 export default function SignupScreen({ navigation }) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -38,7 +39,13 @@ export default function SignupScreen({ navigation }) {
     login(email, password);
   };
   return (
-    <AuthBackground>
+    <ImageBackground
+      source={require('../../assets/login-bg.jpg')}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      <StatusBar style="light" />
+      <View style={styles.wash} />
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -105,7 +112,7 @@ export default function SignupScreen({ navigation }) {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </AuthBackground>
+    </ImageBackground>
   );
 }
 
@@ -125,6 +132,8 @@ function Field({ icon, ...inputProps }) {
 }
 
 const styles = StyleSheet.create({
+  bg: { flex: 1, backgroundColor: '#0E4E55' },
+  wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
   safe: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.xxl },
 
