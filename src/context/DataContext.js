@@ -202,13 +202,15 @@ export function DataProvider({ children }) {
     return !!mine && mine.type === 'in';
   };
 
-  // ---- self-service room booking (Employee/Manager "Book" tab —
-  // booking a meeting/interview slot for themselves, e.g. a room) ----
+  // ---- self-service meeting booking (Employee/Manager "Book" tab,
+  // and the Receptionist's "Internal meeting" pane — booking a room OR
+  // an outside location, with any attendees from the directory) ----
 
   const bookRoom = (input) => {
     const booking = {
       id: `rb-${Date.now()}`,
-      roomId: input.roomId,
+      roomId: input.roomId || null,
+      location: input.location || '', // set when roomId is null — an outside meeting
       organiserId: input.organiserId,
       title: input.title || 'Meeting',
       startTime: input.startTime,

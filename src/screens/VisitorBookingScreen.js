@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Button, Input, Select,
+  Screen, Header, Text, Card, Button, Input, Select, Segmented, BookMeetingForm,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -10,16 +10,18 @@ import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { visitPurposes } from '../data/mockData';
 
-// VisitorBookingScreen — the online visitor pre-registration form.
-// In the spec this is exposed on the visitor-facing side. Here we
-// render it inside the receptionist app so reception staff can also
-// book on behalf of a visitor (e.g. when contacted by phone).
+// VisitorBookingScreen — the receptionist's "Book" tab. Defaults to
+// the online visitor pre-registration form (booking on behalf of a
+// visitor who called or walked up), with a toggle to switch over to
+// booking an internal meeting — reception needs to reserve rooms too,
+// not just register outside visitors.
 //
-// Submitting creates a new appointment in 'pending' status, mirroring
-// the real visitor-side flow.
+// Submitting the visitor form creates a new appointment in 'pending'
+// status, mirroring the real visitor-side flow.
 export default function VisitorBookingScreen({ navigation }) {
   const { colors: themeColors } = useTheme();
   const { employees, bookVisit } = useData();
+  const [mode, setMode] = useState('visitor'); // 'visitor' | 'internal'
 
   const [visitorName, setVisitorName] = useState('');
   const [visitorPhone, setVisitorPhone] = useState('');
@@ -52,11 +54,27 @@ export default function VisitorBookingScreen({ navigation }) {
   return (
     <Screen>
       <Header
-        eyebrow="Pre-registration"
-        title="Book a visit"
-        subtitle="Face-to-face bookings taken over the phone or in person"
+        eyebrow={mode === 'visitor' ? 'Pre-registration' : 'Self-service'}
+        title={mode === 'visitor' ? 'Book a visit' : 'Book a meeting'}
+        subtitle={mode === 'visitor'
+          ? 'Face-to-face bookings taken over the phone or in person'
+          : 'Reserve a room (or an outside spot) for an internal meeting'}
       />
 
+      <Segmented
+        value={mode}
+        onChange={setMode}
+        options={[
+          { label: 'Visitor booking', value: 'visitor' },
+          { label: 'Internal meeting', value: 'internal' },
+        ]}
+        style={{ marginBottom: spacing.md }}
+      />
+
+      {mode === 'internal' ? (
+        <BookMeetingForm onDone={() => navigation.navigate('Home')} />
+      ) : (
+      <>
       <Card>
         <View style={[styles.notice, { backgroundColor: themeColors.primarySurface }]}>
           <Ionicons name="information-circle" size={18} color={themeColors.primary} />
@@ -140,6 +158,8 @@ export default function VisitorBookingScreen({ navigation }) {
         onPress={onSubmit}
         style={{ marginTop: spacing.md }}
       />
+      </>
+      )}
     </Screen>
   );
 }

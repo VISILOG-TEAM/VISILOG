@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import {
-  Screen, Header, Text, Card, Badge, StatTile, Avatar,
+  Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -11,7 +11,9 @@ import { useData } from '../context/DataContext';
 import { employeeById } from '../data/mockData';
 import { fmtTime } from '../data/format';
 
-// View-only manager dashboard. No buttons, no actions — pure visibility.
+// Manager dashboard: organisation-wide insight, plus the same
+// clock-in/out card every other role gets — an Administrator is staff
+// too, and shows up on their own Clock-ins screen like everyone else.
 export default function ManagerHomeScreen() {
   const { setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -33,12 +35,14 @@ export default function ManagerHomeScreen() {
       <Header
         eyebrow="Manager view"
         title="Overview"
-        subtitle="Read-only insight across the organisation"
+        subtitle="Insight & attendance across the organisation"
         rightIcon="log-out-outline"
         onRightPress={onLogout}
       />
 
-      <View style={{ flexDirection: 'row' }}>
+      <ClockCard />
+
+      <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
         <StatTile icon="people" tint="primary" label="Visitors today" value={stats.visitorsToday} />
         <View style={{ width: spacing.sm }} />
         <StatTile icon="checkmark-circle" tint="success" label="On-site" value={stats.onsite} />

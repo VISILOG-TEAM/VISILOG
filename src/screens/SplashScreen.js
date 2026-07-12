@@ -1,15 +1,11 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
-import { AuthBackground, Text } from '../components';
-import { fonts } from '../theme/typography';
+import { AuthBackground } from '../components';
 
 // SplashScreen — shown for a fixed window on cold start (see App.js,
-// which owns the 7s timer). Purely presentational: the logo + wordmark
-// on the shared onboarding background.
-//
-// assets/logo.png is currently a generated placeholder (a plain green
-// circle-on-green square) — replace that file with the real VisiLog
-// logo image and this screen picks it up automatically, same path.
+// which owns the 7s timer). Purely presentational: assets/logo.png
+// already bakes in the icon, "VisiLog" wordmark, and tagline as one
+// image, so there's no separate text here duplicating any of it.
 export default function SplashScreen() {
   return (
     <AuthBackground>
@@ -19,8 +15,6 @@ export default function SplashScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.wordmark}>VisiLog</Text>
-        <Text style={styles.tagline}>Visitor Management & Reception Operations</Text>
       </View>
     </AuthBackground>
   );
@@ -29,20 +23,8 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   logo: {
-    width: 140,
-    height: 140,
-    marginBottom: 12,
-  },
-  wordmark: {
-    fontFamily: fonts.displayExtra,
-    fontSize: 36,
-    color: '#FFFFFF',
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
+    width: '100%',
+    height: '75%',
+    maxWidth: 560,
   },
 });
