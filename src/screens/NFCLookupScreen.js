@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Button, Input, Badge, Avatar,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
@@ -87,9 +88,10 @@ export default function NFCLookupScreen({ navigation }) {
 }
 
 function Row({ icon, label, value }) {
+  const { colors: themeColors } = useTheme();
   return (
     <View style={styles.row}>
-      <Ionicons name={icon} size={16} color={colors.brand} style={{ width: 24 }} />
+      <Ionicons name={icon} size={16} color={themeColors.brand} style={{ width: 24 }} />
       <Text variant="caption" color={colors.textSecondary} style={{ width: 80 }}>
         {label}
       </Text>

@@ -8,7 +8,7 @@ import ManagerClockInsScreen from '../screens/ManagerClockInsScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
@@ -16,6 +16,7 @@ const Tab = createBottomTabNavigator();
 // Five-tab bottom bar for Manager/Administrator: Home | Book | Clock
 // ins | Appointment logs | Settings.
 export default function ManagerTabNavigator() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

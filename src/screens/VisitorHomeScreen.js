@@ -5,6 +5,7 @@ import {
   Screen, Text, Card, Badge, Avatar, CompanyMapSection,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +17,7 @@ import { useData } from '../context/DataContext';
 // preview (or a prompt to book, if there isn't one yet), and the
 // company map/tour section.
 export default function VisitorHomeScreen({ navigation }) {
+  const { colors: themeColors } = useTheme();
   const { user } = useAuth();
   const { employees, appointments } = useData();
 
@@ -33,8 +35,8 @@ export default function VisitorHomeScreen({ navigation }) {
         <Pressable onPress={() => navigation.navigate('Settings')}>
           <Avatar name={user?.name || 'You'} size={44} />
         </Pressable>
-        <Pressable onPress={onNotifications} style={styles.bellBtn} hitSlop={8}>
-          <Ionicons name="notifications-outline" size={22} color={colors.brand} />
+        <Pressable onPress={onNotifications} style={[styles.bellBtn, { backgroundColor: themeColors.primarySurface }]} hitSlop={8}>
+          <Ionicons name="notifications-outline" size={22} color={themeColors.brand} />
         </Pressable>
       </View>
 
@@ -55,10 +57,10 @@ export default function VisitorHomeScreen({ navigation }) {
       {myBooking ? (
         <Card accent="onsite">
           <View style={styles.cardHead}>
-            <Ionicons name="card" size={28} color={colors.primary} />
+            <Ionicons name="card" size={28} color={themeColors.primary} />
             <Badge label={myBooking.status} status="pending" size="sm" />
           </View>
-          <Text style={styles.code}>{myBooking.nfcCode}</Text>
+          <Text style={[styles.code, { color: themeColors.brand }]}>{myBooking.nfcCode}</Text>
           <Text variant="caption" color={colors.textSecondary}>
             Show this code at reception on arrival.
           </Text>
@@ -94,7 +96,6 @@ const styles = StyleSheet.create({
   },
   bellBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center', justifyContent: 'center',
   },
   welcome: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.textPrimary },
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   code: {
-    fontFamily: fonts.displayExtra, fontSize: 32, color: colors.brand,
+    fontFamily: fonts.displayExtra, fontSize: 32,
     letterSpacing: 2, marginBottom: spacing.xs,
   },
   divider: {

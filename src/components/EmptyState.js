@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Button from './Button';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
 // An empty screen is an invitation to act, not a dead end. Give it a clear
@@ -15,9 +15,10 @@ export default function EmptyState({
   actionLabel,
   onAction,
 }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.wrap}>
-      <View style={styles.badge}>
+      <View style={[styles.badge, { backgroundColor: colors.primarySurface }]}>
         <Ionicons name={icon} size={26} color={colors.primary} />
       </View>
       <Text variant="h2" align="center" style={styles.title}>
@@ -51,7 +52,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: radius.xl,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,

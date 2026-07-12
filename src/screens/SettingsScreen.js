@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Button, Input, Avatar, Badge,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,6 +13,7 @@ import { useAuth } from '../context/AuthContext';
 // Per the VisiLog spec: profile info, password change, notification
 // preferences, organisation branding, sign-out.
 export default function SettingsScreen({ navigation }) {
+  const { colors: themeColors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
 
   const [notifyAppts, setNotifyAppts] = useState(true);
@@ -40,7 +42,7 @@ export default function SettingsScreen({ navigation }) {
   const onLogout = () => {
     Alert.alert('Sign out?', 'You\u2019ll need to sign in again to access VisiLog.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => logout() },
+      { text: 'Sign out', style: 'destructive', onPress: () => { logout(); setOrgTheme(null); } },
     ]);
   };
 
@@ -92,7 +94,7 @@ export default function SettingsScreen({ navigation }) {
         ) : (
           <Pressable onPress={() => setEditingPassword(true)} style={styles.linkRow}>
             <View style={styles.linkIcon}>
-              <Ionicons name="key-outline" size={18} color={colors.brand} />
+              <Ionicons name="key-outline" size={18} color={themeColors.brand} />
             </View>
             <View style={{ flex: 1 }}>
               <Text variant="bodySemibold">Change password</Text>
@@ -171,6 +173,7 @@ export default function SettingsScreen({ navigation }) {
 }
 
 function ToggleRow({ label, sub, value, onChange }) {
+  const { colors: themeColors } = useTheme();
   return (
     <View style={styles.toggleRow}>
       <View style={{ flex: 1, marginRight: spacing.sm }}>
@@ -180,7 +183,7 @@ function ToggleRow({ label, sub, value, onChange }) {
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: colors.borderStrong, true: colors.primary }}
+        trackColor={{ false: colors.borderStrong, true: themeColors.primary }}
         thumbColor="#FFFFFF"
       />
     </View>
@@ -188,10 +191,11 @@ function ToggleRow({ label, sub, value, onChange }) {
 }
 
 function LinkRow({ icon, title, sub }) {
+  const { colors: themeColors } = useTheme();
   return (
     <Pressable style={styles.linkRow}>
       <View style={styles.linkIcon}>
-        <Ionicons name={icon} size={18} color={colors.brand} />
+        <Ionicons name={icon} size={18} color={themeColors.brand} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="bodySemibold">{title}</Text>

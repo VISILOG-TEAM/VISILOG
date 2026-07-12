@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Button, Input, Select, Badge,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { visitPurposes, nextBadgeId } from '../data/mockData';
@@ -17,6 +18,7 @@ import { visitPurposes, nextBadgeId } from '../data/mockData';
 //   - Optional consent / signature toggle
 // Submitting registers AND checks the visitor in (single click flow).
 export default function RegisterVisitorScreen({ navigation }) {
+  const { colors: themeColors } = useTheme();
   const { employees, visitors, registerAndCheckIn } = useData();
 
   const [firstName, setFirstName] = useState('');
@@ -145,8 +147,8 @@ export default function RegisterVisitorScreen({ navigation }) {
         />
 
         {/* Badge number (auto-generated, read-only preview) */}
-        <View style={styles.badgePreview}>
-          <Ionicons name="card-outline" size={18} color={colors.brand} />
+        <View style={[styles.badgePreview, { backgroundColor: themeColors.primarySurface }]}>
+          <Ionicons name="card-outline" size={18} color={themeColors.brand} />
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <Text variant="caption" color={colors.textSecondary}>
               Badge number (auto-generated)
@@ -161,7 +163,7 @@ export default function RegisterVisitorScreen({ navigation }) {
           onPress={() => setConsent((c) => !c)}
           style={styles.consent}
         >
-          <View style={[styles.checkbox, consent && styles.checkboxOn]}>
+          <View style={[styles.checkbox, consent && { backgroundColor: themeColors.primary, borderColor: themeColors.primary }]}>
             {consent ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
           </View>
           <View style={{ flex: 1, marginLeft: spacing.xs }}>
@@ -215,7 +217,6 @@ const styles = StyleSheet.create({
   badgePreview: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primarySurface,
     borderRadius: radius.md,
     padding: spacing.sm,
     marginBottom: spacing.md,
@@ -230,5 +231,4 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: colors.borderStrong,
     alignItems: 'center', justifyContent: 'center',
   },
-  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
 });

@@ -2,15 +2,8 @@ import React from 'react';
 import { Pressable, ActivityIndicator, View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
-
-const VARIANTS = {
-  primary: { bg: colors.primary, fg: colors.textInverse, border: 'transparent', pressed: colors.primaryPressed },
-  secondary: { bg: colors.surface, fg: colors.brand, border: colors.border, pressed: colors.surfaceAlt },
-  ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent', pressed: colors.primarySurface },
-  danger: { bg: colors.status.error.solid, fg: colors.textInverse, border: 'transparent', pressed: '#B91C1C' },
-};
 
 const HEIGHTS = { sm: 40, md: 48, lg: 56 };
 
@@ -27,6 +20,15 @@ export default function Button({
   fullWidth = true,
   style,
 }) {
+  const { colors } = useTheme();
+  // Built per-render (cheap, a handful of keys) so a signed-in org's
+  // brand color flows straight into every button without a reload.
+  const VARIANTS = {
+    primary: { bg: colors.primary, fg: colors.textInverse, border: 'transparent', pressed: colors.primaryPressed },
+    secondary: { bg: colors.surface, fg: colors.brand, border: colors.border, pressed: colors.surfaceAlt },
+    ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent', pressed: colors.primarySurface },
+    danger: { bg: colors.status.error.solid, fg: colors.textInverse, border: 'transparent', pressed: '#B91C1C' },
+  };
   const v = VARIANTS[variant] || VARIANTS.primary;
   const isDisabled = disabled || loading;
   const height = HEIGHTS[size] || HEIGHTS.md;

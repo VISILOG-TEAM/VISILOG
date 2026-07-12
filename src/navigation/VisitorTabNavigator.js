@@ -7,13 +7,14 @@ import VisitorBookScreen from '../screens/VisitorBookScreen';
 import VisitorVisitsScreen from '../screens/VisitorVisitsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
 // Four-tab bottom bar for the Visitor role: Home | Book | Visits | Settings.
 export default function VisitorTabNavigator() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

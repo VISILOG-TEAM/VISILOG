@@ -38,6 +38,43 @@ export const nextBadgeId = (existing = []) => {
   return `VIS-${year}-${String(next).padStart(3, '0')}`;
 };
 
+// ---------- organizations (tenants) ----------
+// Each paying company gets its own record and its own brand colors.
+// A company code is entered at login to resolve which org — and which
+// theme — a user belongs to (see LoginScreen.js / ThemeContext.js).
+// These two extra orgs are placeholder demo data, not real clients.
+export const organizations = [
+  {
+    id: 'org-vra', code: 'VRA2026', name: 'VRA',
+    theme: {
+      brand: '#0F3D2A', brandDark: '#0A2A1D', brandTint: '#155636',
+      primary: '#C9A227', primaryPressed: '#D4AF37',
+      primarySurface: '#FBF3DE', primarySurfaceStrong: '#F5E6BC',
+    },
+  },
+  {
+    id: 'org-atlas', code: 'ATLAS01', name: 'Atlas Konsult',
+    theme: {
+      brand: '#1B2A4A', brandDark: '#101A30', brandTint: '#25396B',
+      primary: '#4F8EF7', primaryPressed: '#3B76DD',
+      primarySurface: '#EAF1FE', primarySurfaceStrong: '#D3E3FD',
+    },
+  },
+  {
+    id: 'org-safari', code: 'SAFARI9', name: 'Safari Grove Hotels',
+    theme: {
+      brand: '#5C1A1A', brandDark: '#3D1010', brandTint: '#7A2626',
+      primary: '#E0A62B', primaryPressed: '#C48F20',
+      primarySurface: '#FDF3DF', primarySurfaceStrong: '#F8E4B8',
+    },
+  },
+];
+
+export const organizationByCode = (code) => {
+  const clean = (code || '').trim().toUpperCase();
+  return organizations.find((o) => o.code === clean);
+};
+
 // ---------- the signed-in receptionist ----------
 export const currentUser = {
   id: 'r-001',

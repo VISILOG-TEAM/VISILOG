@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Badge, Segmented, EmptyState, Avatar, Button,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
@@ -84,6 +85,7 @@ export default function NFCCardsScreen({ navigation }) {
 }
 
 function NfcCard({ card, onRevoke }) {
+  const { colors: themeColors } = useTheme();
   const isActive = card.status === 'active';
   return (
     <Card
@@ -91,11 +93,11 @@ function NfcCard({ card, onRevoke }) {
       style={{ marginHorizontal: spacing.md }}
     >
       <View style={styles.cardHead}>
-        <View style={[styles.chip, { backgroundColor: isActive ? colors.primarySurface : colors.status.rejected.bg }]}>
+        <View style={[styles.chip, { backgroundColor: isActive ? themeColors.primarySurface : themeColors.status.rejected.bg }]}>
           <Ionicons
             name="card"
             size={20}
-            color={isActive ? colors.primary : colors.status.rejected.solid}
+            color={isActive ? themeColors.primary : themeColors.status.rejected.solid}
           />
         </View>
         <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -109,7 +111,7 @@ function NfcCard({ card, onRevoke }) {
 
       <View style={styles.tokenRow}>
         <Text variant="caption" color={colors.textMuted}>Token</Text>
-        <Text style={styles.token}>{card.tokenHash}</Text>
+        <Text style={[styles.token, { color: themeColors.brand }]}>{card.tokenHash}</Text>
       </View>
 
       <View style={styles.dateRow}>
@@ -150,6 +152,6 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     marginBottom: spacing.sm,
   },
-  token: { fontFamily: fonts.semibold, fontSize: 16, color: colors.brand, letterSpacing: 1 },
+  token: { fontFamily: fonts.semibold, fontSize: 16, letterSpacing: 1 },
   dateRow: { flexDirection: 'row', gap: spacing.md },
 });

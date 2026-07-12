@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Badge, Button, Segmented, EmptyState, Avatar, RescheduleModal,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -246,6 +247,7 @@ const ROOM_STATUS_META = {
 };
 
 function RoomsList() {
+  const { colors: themeColors } = useTheme();
   const { roomBookings } = useData();
   const rooms = useMemo(
     () => meetingRooms.map((r) => ({ room: r, ...roomStatus(r, roomBookings) })),
@@ -264,8 +266,8 @@ function RoomsList() {
         return (
           <Card style={{ marginHorizontal: spacing.md }}>
             <View style={styles.headRow}>
-              <View style={styles.roomIcon}>
-                <Ionicons name="business" size={20} color={colors.primary} />
+              <View style={[styles.roomIcon, { backgroundColor: themeColors.primarySurface }]}>
+                <Ionicons name="business" size={20} color={themeColors.primary} />
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text variant="bodySemibold">{item.room.name}</Text>
@@ -302,7 +304,6 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', marginTop: spacing.xs },
   roomIcon: {
     width: 44, height: 44, borderRadius: 12,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center', justifyContent: 'center',
   },
 });

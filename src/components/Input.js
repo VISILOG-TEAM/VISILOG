@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 
@@ -21,6 +22,7 @@ export default function Input({
   multiline = false,
   style,
 }) {
+  const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
 
   return (
@@ -35,7 +37,7 @@ export default function Input({
         style={[
           styles.field,
           multiline && styles.multiline,
-          focused && styles.focused,
+          focused && { borderColor: colors.primary },
           error && styles.errored,
         ]}
       >
@@ -78,22 +80,21 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     height: 48,
   },
   multiline: { height: 100, alignItems: 'flex-start', paddingTop: 12 },
-  focused: { borderColor: colors.primary },
-  errored: { borderColor: colors.status.error.solid },
+  errored: { borderColor: staticColors.status.error.solid },
   icon: { marginRight: 8 },
   input: {
     flex: 1,
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.textPrimary,
+    color: staticColors.textPrimary,
     paddingVertical: 0,
   },
   error: { marginTop: 4 },

@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Button, Input, Select,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { visitPurposes } from '../data/mockData';
@@ -17,6 +18,7 @@ import { visitPurposes } from '../data/mockData';
 // Submitting creates a new appointment in 'pending' status, mirroring
 // the real visitor-side flow.
 export default function VisitorBookingScreen({ navigation }) {
+  const { colors: themeColors } = useTheme();
   const { employees, bookVisit } = useData();
 
   const [visitorName, setVisitorName] = useState('');
@@ -56,9 +58,9 @@ export default function VisitorBookingScreen({ navigation }) {
       />
 
       <Card>
-        <View style={styles.notice}>
-          <Ionicons name="information-circle" size={18} color={colors.primary} />
-          <Text variant="caption" color={colors.brand} style={{ marginLeft: 8, flex: 1 }}>
+        <View style={[styles.notice, { backgroundColor: themeColors.primarySurface }]}>
+          <Ionicons name="information-circle" size={18} color={themeColors.primary} />
+          <Text variant="caption" color={themeColors.brand} style={{ marginLeft: 8, flex: 1 }}>
             Pre-booking speeds up reception. You will receive a QR code & badge ID after approval.
           </Text>
         </View>
@@ -153,7 +155,6 @@ const styles = StyleSheet.create({
   notice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.primarySurface,
     borderRadius: radius.md,
     padding: spacing.sm,
     marginBottom: spacing.md,

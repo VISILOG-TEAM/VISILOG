@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Button, Segmented, StatTile, Badge,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
@@ -14,6 +15,7 @@ import { employeeById } from '../data/mockData';
 // drawn in plain React Native (no chart library required).
 // Per spec: date range, export PDF/CSV, "chart visualisations".
 export default function ReportsScreen({ navigation }) {
+  const { colors: themeColors } = useTheme();
   const { visitors, calls } = useData();
   const [range, setRange] = useState('7d'); // '24h' | '7d' | '30d'
 
@@ -111,7 +113,7 @@ export default function ReportsScreen({ navigation }) {
             return (
               <View key={i} style={styles.barCol}>
                 <View style={styles.barTrack}>
-                  <View style={[styles.bar, { height: Math.max(2, h) }]} />
+                  <View style={[styles.bar, { height: Math.max(2, h), backgroundColor: themeColors.primary }]} />
                 </View>
                 <Text variant="caption" color={colors.textSecondary} style={styles.barLabel}>
                   {b.label}
@@ -135,8 +137,8 @@ export default function ReportsScreen({ navigation }) {
         ) : (
           topHosts.map((h, i) => (
             <View key={h.employee?.id || i} style={styles.hostRow}>
-              <View style={styles.rank}>
-                <Text style={styles.rankNum}>{i + 1}</Text>
+              <View style={[styles.rank, { backgroundColor: themeColors.primarySurface }]}>
+                <Text style={[styles.rankNum, { color: themeColors.primary }]}>{i + 1}</Text>
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text variant="bodySemibold">{h.employee?.name || 'Unknown'}</Text>
@@ -187,7 +189,6 @@ const styles = StyleSheet.create({
   barTrack: { width: '100%', height: 120, justifyContent: 'flex-end' },
   bar: {
     width: '70%', alignSelf: 'center',
-    backgroundColor: colors.primary,
     borderTopLeftRadius: 4, borderTopRightRadius: 4,
   },
   barLabel: { marginTop: 4 },
@@ -196,8 +197,7 @@ const styles = StyleSheet.create({
   hostRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
   rank: {
     width: 28, height: 28, borderRadius: 14,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center', justifyContent: 'center',
   },
-  rankNum: { fontFamily: fonts.displayBold, color: colors.primary, fontSize: 13 },
+  rankNum: { fontFamily: fonts.displayBold, fontSize: 13 },
 });

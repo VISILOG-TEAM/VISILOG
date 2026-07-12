@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -19,6 +20,7 @@ import { fmtTime } from '../data/format';
 //   4. Visitors This Month
 // Plus pending appointment approvals and a Recent Visitor Logs preview.
 export default function DashboardScreen({ navigation }) {
+  const { colors: themeColors } = useTheme();
   const { user } = useAuth();
   const { stats, visitors, appointments } = useData();
 
@@ -71,7 +73,7 @@ export default function DashboardScreen({ navigation }) {
             <Ionicons name="time-outline" size={18} color={colors.status.pending.solid} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text variant="bodySemibold" color={colors.brand}>
+            <Text variant="bodySemibold" color={themeColors.brand}>
               {pending.length} appointment{pending.length === 1 ? '' : 's'} need your review
             </Text>
             <Text variant="caption" color={colors.textSecondary}>
@@ -127,7 +129,7 @@ export default function DashboardScreen({ navigation }) {
       <View style={styles.sectionHeader}>
         <Text variant="h2">Recent visitor logs</Text>
         <Pressable onPress={() => navigation.navigate('Visitors')}>
-          <Text variant="label" color={colors.primary}>
+          <Text variant="label" color={themeColors.primary}>
             View all
           </Text>
         </Pressable>
@@ -164,10 +166,11 @@ export default function DashboardScreen({ navigation }) {
 
 // Local quick-action button - vertical icon-over-label tile.
 function QuickAction({ icon, label, onPress }) {
+  const { colors: themeColors } = useTheme();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.qa, pressed && { opacity: 0.85 }]}>
-      <View style={styles.qaIcon}>
-        <Ionicons name={icon} size={22} color={colors.primary} />
+      <View style={[styles.qaIcon, { backgroundColor: themeColors.primarySurface }]}>
+        <Ionicons name={icon} size={22} color={themeColors.primary} />
       </View>
       <Text variant="caption" color={colors.textPrimary} align="center" numberOfLines={2}>
         {label}
@@ -208,7 +211,6 @@ const styles = StyleSheet.create({
   },
   qaIcon: {
     width: 36, height: 36, borderRadius: 12,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 6,
   },

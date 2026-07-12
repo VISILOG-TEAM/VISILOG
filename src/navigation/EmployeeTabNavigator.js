@@ -7,7 +7,7 @@ import EmployeeBookScreen from '../screens/EmployeeBookScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
@@ -15,6 +15,7 @@ const Tab = createBottomTabNavigator();
 // Four-tab bottom bar for Employee: Home | Book | Appointments | Settings
 // — same shape as Receptionist's, per the brief ("similar to receptionist").
 export default function EmployeeTabNavigator() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

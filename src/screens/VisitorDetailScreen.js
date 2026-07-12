@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Badge, Button, Input, Avatar,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { employeeById } from '../data/mockData';
@@ -152,10 +153,11 @@ export default function VisitorDetailScreen({ route, navigation }) {
 // Small internal helpers
 
 function DetailRow({ icon, label, value, sub }) {
+  const { colors: themeColors } = useTheme();
   return (
     <View style={styles.detailRow}>
       <View style={styles.detailIcon}>
-        <Ionicons name={icon} size={18} color={colors.brand} />
+        <Ionicons name={icon} size={18} color={themeColors.brand} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="caption" color={colors.textSecondary}>{label}</Text>
@@ -173,10 +175,11 @@ function Divider() {
 }
 
 function ActionPill({ icon, label, onPress }) {
+  const { colors: themeColors } = useTheme();
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.85 }]}>
-      <Ionicons name={icon} size={18} color={colors.primary} />
-      <Text variant="bodyMd" color={colors.brand} style={{ marginLeft: 6 }}>
+      <Ionicons name={icon} size={18} color={themeColors.primary} />
+      <Text variant="bodyMd" color={themeColors.brand} style={{ marginLeft: 6 }}>
         {label}
       </Text>
     </Pressable>

@@ -5,6 +5,7 @@ import {
   Screen, Header, Input, Text, Card, EmptyState, Avatar,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 
@@ -70,6 +71,7 @@ export default function DirectoryScreen({ navigation }) {
 }
 
 function DirectoryRow({ employee, onPress, onCall }) {
+  const { colors: themeColors } = useTheme();
   return (
     <Card padded={false} onPress={onPress} style={{ marginHorizontal: spacing.md }}>
       <View style={styles.row}>
@@ -80,8 +82,8 @@ function DirectoryRow({ employee, onPress, onCall }) {
             {employee.department} - Avaya {employee.avaya}
           </Text>
         </View>
-        <Pressable onPress={onCall} hitSlop={8} style={styles.callBtn}>
-          <Ionicons name="call" size={18} color={colors.primary} />
+        <Pressable onPress={onCall} hitSlop={8} style={[styles.callBtn, { backgroundColor: themeColors.primarySurface }]}>
+          <Ionicons name="call" size={18} color={themeColors.primary} />
         </Pressable>
       </View>
     </Card>
@@ -94,7 +96,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', padding: spacing.sm },
   callBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center', justifyContent: 'center',
   },
 });

@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Button, Input, Select,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -15,6 +16,7 @@ import { visitPurposes } from '../data/mockData';
 // sectioned treatment (distinct headers per group) since it's now a
 // dedicated screen rather than embedded on the dashboard.
 export default function VisitorBookScreen({ navigation }) {
+  const { colors: themeColors } = useTheme();
   const { user } = useAuth();
   const { employees, bookVisit } = useData();
 
@@ -46,7 +48,7 @@ export default function VisitorBookScreen({ navigation }) {
         subtitle="Complete each section below to request an appointment"
       />
 
-      <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
+      <Text variant="label" color={themeColors.brand} style={styles.sectionLabel}>
         1 · Your details
       </Text>
       <Card>
@@ -57,7 +59,7 @@ export default function VisitorBookScreen({ navigation }) {
           icon="business-outline" />
       </Card>
 
-      <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
+      <Text variant="label" color={themeColors.brand} style={styles.sectionLabel}>
         2 · Visit details
       </Text>
       <Card>
@@ -72,9 +74,9 @@ export default function VisitorBookScreen({ navigation }) {
           }))} />
       </Card>
 
-      <View style={styles.notice}>
-        <Ionicons name="information-circle" size={18} color={colors.primary} />
-        <Text variant="caption" color={colors.brand} style={{ marginLeft: 8, flex: 1 }}>
+      <View style={[styles.notice, { backgroundColor: themeColors.primarySurface }]}>
+        <Ionicons name="information-circle" size={18} color={themeColors.primary} />
+        <Text variant="caption" color={themeColors.brand} style={{ marginLeft: 8, flex: 1 }}>
           You’ll receive an NFC pass code once submitted — show it at reception on arrival.
         </Text>
       </View>
@@ -90,7 +92,6 @@ const styles = StyleSheet.create({
   notice: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.primarySurface,
     borderRadius: radius.md,
     padding: spacing.sm,
     marginTop: spacing.md,

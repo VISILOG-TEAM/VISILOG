@@ -7,7 +7,7 @@ import VisitorBookingScreen from '../screens/VisitorBookingScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
@@ -16,6 +16,7 @@ const Tab = createBottomTabNavigator();
 // Settings. Visitors & Directory moved to Dashboard's Quick Actions
 // (pushed screens on the root stack) so the bar stays to 4 tabs.
 export default function TabNavigator() {
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

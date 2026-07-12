@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text, Segmented } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 
@@ -22,11 +23,13 @@ export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [companyCode, setCompanyCode] = useState('');
   const { login } = useAuth();
   const { registerVisitorAccount } = useData();
+  const { setOrgTheme } = useTheme();
 
   const onSubmit = () => {
-    if (!fullName.trim() || !email.trim() || !password) {
+    if (!fullName.trim() || !email.trim() || !password || !companyCode.trim()) {
       Alert.alert('Almost there', 'Please fill in every field above.');
       return;
     }
@@ -36,7 +39,12 @@ export default function SignupScreen({ navigation }) {
     }
     // Create the visitor account and immediately log them in.
     registerVisitorAccount({ fullName, email, password });
-    login(email, password);
+    const result = login(email, password, companyCode);
+    if (!result.ok) {
+      Alert.alert('Signup failed', result.error);
+      return;
+    }
+    setOrgTheme(result.organization.theme);
   };
   return (
     <ImageBackground
@@ -82,6 +90,8 @@ export default function SignupScreen({ navigation }) {
                   Request access to the reception system.
                 </Text>
 
+                <Field icon="business-outline" placeholder="Company code" value={companyCode} onChangeText={setCompanyCode}
+                  autoCapitalize="characters" />
                 <Field icon="person-outline" placeholder="Full name" value={fullName} onChangeText={setFullName} />
                 <Field icon="mail-outline" placeholder="Email address" value={email} onChangeText={setEmail}
                   autoCapitalize="none" keyboardType="email-address" />

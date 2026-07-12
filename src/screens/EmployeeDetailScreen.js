@@ -3,6 +3,7 @@ import { View, StyleSheet, Pressable, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Avatar, Button } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 
@@ -86,10 +87,11 @@ export default function EmployeeDetailScreen({ route, navigation }) {
 }
 
 function Row({ icon, label, value }) {
+  const { colors: themeColors } = useTheme();
   return (
     <View style={styles.row}>
       <View style={styles.icon}>
-        <Ionicons name={icon} size={18} color={colors.brand} />
+        <Ionicons name={icon} size={18} color={themeColors.brand} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="caption" color={colors.textSecondary}>{label}</Text>
@@ -104,10 +106,11 @@ function Divider() {
 }
 
 function ActionPill({ icon, label, onPress }) {
+  const { colors: themeColors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.85 }]}>
-      <Ionicons name={icon} size={18} color={colors.primary} />
-      <Text variant="caption" color={colors.brand} style={{ marginTop: 2 }}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, { backgroundColor: themeColors.primarySurface }, pressed && { opacity: 0.85 }]}>
+      <Ionicons name={icon} size={18} color={themeColors.primary} />
+      <Text variant="caption" color={themeColors.brand} style={{ marginTop: 2 }}>
         {label}
       </Text>
     </Pressable>
@@ -119,7 +122,6 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', gap: spacing.xs },
   pill: {
     flex: 1, alignItems: 'center', paddingVertical: spacing.sm,
-    backgroundColor: colors.primarySurface,
     borderRadius: radius.md,
   },
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },

@@ -4,6 +4,7 @@ import {
   Screen, Header, Text, Card, Badge, StatTile, Avatar,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -12,8 +13,10 @@ import { fmtTime } from '../data/format';
 
 // View-only manager dashboard. No buttons, no actions — pure visibility.
 export default function ManagerHomeScreen() {
+  const { setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const { stats, visitors, calls, employees } = useData();
+  const onLogout = () => { logout(); setOrgTheme(null); };
 
   // Top hosts (employees with the most visitors).
   const hostCounts = {};
@@ -32,7 +35,7 @@ export default function ManagerHomeScreen() {
         title="Overview"
         subtitle="Read-only insight across the organisation"
         rightIcon="log-out-outline"
-        onRightPress={() => logout()}
+        onRightPress={onLogout}
       />
 
       <View style={{ flexDirection: 'row' }}>

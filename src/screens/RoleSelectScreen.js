@@ -2,6 +2,8 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthBackground, Text } from '../components';
+import { hexToRgb } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -18,9 +20,13 @@ const ROLES = [
 
 export default function RoleSelectScreen() {
   const { chooseRole } = useAuth();
+  const { colors: themeColors } = useTheme();
 
   return (
-    <AuthBackground>
+    <AuthBackground
+      gradientColors={[themeColors.brandTint, themeColors.brandDark, themeColors.brandDark]}
+      accentColor={hexToRgb(themeColors.primary)}
+    >
       <View style={styles.wrap}>
         <Text style={styles.heading}>Welcome to VisiLog</Text>
         <Text style={styles.subheading}>Which of these are you?</Text>
@@ -30,10 +36,14 @@ export default function RoleSelectScreen() {
             <Pressable
               key={r.value}
               onPress={() => chooseRole(r.value)}
-              style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
+              style={({ pressed }) => [
+                styles.card,
+                { borderColor: `rgba(${hexToRgb(themeColors.primary)},0.35)` },
+                pressed && { opacity: 0.85 },
+              ]}
             >
-              <View style={styles.iconWrap}>
-                <Ionicons name={r.icon} size={26} color="#D4AF37" />
+              <View style={[styles.iconWrap, { backgroundColor: `rgba(${hexToRgb(themeColors.primary)},0.12)` }]}>
+                <Ionicons name={r.icon} size={26} color={themeColors.primary} />
               </View>
               <Text style={styles.cardLabel}>{r.label}</Text>
               <Text style={styles.cardBlurb}>{r.blurb}</Text>
@@ -60,14 +70,12 @@ const styles = StyleSheet.create({
     width: '48%',
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(212,175,55,0.35)',
     backgroundColor: 'rgba(255,255,255,0.08)',
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
   iconWrap: {
     width: 44, height: 44, borderRadius: 12,
-    backgroundColor: 'rgba(212,175,55,0.12)',
     alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.sm,
   },

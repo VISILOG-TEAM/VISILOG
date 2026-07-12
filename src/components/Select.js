@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { View, Modal, Pressable, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
 // A labelled "select"-style field. Tapping it opens a modal list of
@@ -23,6 +24,7 @@ export default function Select({
   icon,
   error,
 }) {
+  const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
 
@@ -113,21 +115,21 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     height: 48,
   },
-  errored: { borderColor: colors.status.error.solid },
+  errored: { borderColor: staticColors.status.error.solid },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(14, 27, 44, 0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.md,
@@ -137,7 +139,7 @@ const styles = StyleSheet.create({
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
-    backgroundColor: colors.borderStrong,
+    backgroundColor: staticColors.borderStrong,
     alignSelf: 'center',
     marginBottom: spacing.sm,
   },
@@ -145,5 +147,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: spacing.sm,
   },
-  sep: { height: 1, backgroundColor: colors.border },
+  sep: { height: 1, backgroundColor: staticColors.border },
 });

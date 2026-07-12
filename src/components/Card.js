@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { shadows } from '../theme/shadows';
 
@@ -16,6 +17,7 @@ export default function Card({
   elevated = true,
   style,
 }) {
+  const { colors } = useTheme();
   const accentColor = accent ? colors.status[accent]?.solid || colors.primary : null;
 
   const padStyle = padded
@@ -42,12 +44,15 @@ export default function Card({
   return inner;
 }
 
+// Card background/border are neutral (identical across every
+// organization's theme), so a plain module-level StyleSheet is fine —
+// only `accentColor` above needs to react to the signed-in org's brand.
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     overflow: 'hidden',
   },
   stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { currentUser as defaultUser, employees } from '../data/mockData';
+import { currentUser as defaultUser, employees, organizationByCode } from '../data/mockData';
 
 // AuthContext exposes the signed-in user, plus login/logout actions.
 // In a real app these would hit an OAuth 2.0 / JWT endpoint (as described
@@ -9,6 +9,7 @@ const AuthContext = createContext(null);
 // The demo credentials shipped in the VisiLog User Guide:
 const DEMO_EMAIL = 'employee@company.com';
 const DEMO_PASSWORD = 'password1234';
+const DEMO_COMPANY_CODE = 'VRA2026';
 // Soft default so the role-picker can preselect something sensible —
 // the picker itself is now the source of truth for the final role.
 const detectRole = (email) => {
@@ -29,9 +30,16 @@ export function AuthProvider({ children }) {
   // employee-ID check yet?
   const [receptionistVerified, setReceptionistVerified] = useState(false);
 
-  const login = (email, password) => {
+  // `companyCode` resolves which paying organization (tenant) this
+  // login belongs to — required since VisiLog serves several
+  // companies, each with their own data and brand colors.
+  const login = (email, password, companyCode) => {
     if (!email || !password) {
       return { ok: false, error: 'Enter both an email and a password.' };
+    }
+    const org = organizationByCode(companyCode);
+    if (!org) {
+      return { ok: false, error: 'Enter a valid company code.' };
     }
     const role = detectRole(email);
 
@@ -49,10 +57,12 @@ export function AuthProvider({ children }) {
       name: defaultNames[role],
       role,
       avatarTint: 'gold',
+      organizationId: org.id,
+      organizationName: org.name,
     });
     setHasChosenRole(false);
     setReceptionistVerified(false);
-    return { ok: true };
+    return { ok: true, organization: org };
   };
 
   // Finalizes the role chosen on the one-time RoleSelectScreen.
@@ -93,7 +103,7 @@ export function AuthProvider({ children }) {
   return (
     <AuthContext.Provider
       value={{
-        user, login, logout, DEMO_EMAIL, DEMO_PASSWORD,
+        user, login, logout, DEMO_EMAIL, DEMO_PASSWORD, DEMO_COMPANY_CODE,
         hasChosenRole, chooseRole,
         receptionistVerified, verifyReceptionistId,
       }}

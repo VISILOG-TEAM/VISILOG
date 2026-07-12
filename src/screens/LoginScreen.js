@@ -12,6 +12,7 @@ import { Text, Segmented } from '../components';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../theme/ThemeContext';
 
 // LoginScreen
 // ---------------------------------------------------------------
@@ -20,27 +21,36 @@ import { useAuth } from '../context/AuthContext';
 // the newer Splash/RoleSelect screens). The sign-in/register pill at
 // the top of the card is purely navigational — tapping "Register"
 // jumps to the Signup screen (see Segmented usage below).
+//
+// The company code identifies which paying organization (tenant) this
+// login belongs to — VisiLog serves several companies, each with their
+// own data and brand colors, so this resolves both.
 export default function LoginScreen({ navigation }) {
-  const { login, DEMO_EMAIL, DEMO_PASSWORD } = useAuth();
+  const { login, DEMO_EMAIL, DEMO_PASSWORD, DEMO_COMPANY_CODE } = useAuth();
+  const { setOrgTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [companyCode, setCompanyCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = () => {
     setSubmitting(true);
-    const result = login(email, password);
+    const result = login(email, password, companyCode);
     setSubmitting(false);
     if (!result.ok) {
       Alert.alert('Login failed', result.error);
+      return;
     }
+    setOrgTheme(result.organization.theme);
     // On success the root navigator will swap to the app stack.
   };
 
   const fillDemo = () => {
     setEmail(DEMO_EMAIL);
     setPassword(DEMO_PASSWORD);
+    setCompanyCode(DEMO_COMPANY_CODE);
   };
 
   const onGoogleLogin = () => {
@@ -94,6 +104,19 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.subheading}>
                   Welcome back. Please sign in to continue.
                 </Text>
+
+                {/* Company code — resolves which organization this login is for */}
+                <View style={styles.fieldRow}>
+                  <Ionicons name="business-outline" size={18} color="rgba(255,255,255,0.85)" />
+                  <TextInput
+                    value={companyCode}
+                    onChangeText={setCompanyCode}
+                    placeholder="Company code"
+                    placeholderTextColor="rgba(255,255,255,0.65)"
+                    autoCapitalize="characters"
+                    style={styles.input}
+                  />
+                </View>
 
                 {/* Email */}
                 <View style={styles.fieldRow}>

@@ -3,7 +3,8 @@ import { View, StyleSheet, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Card from './Card';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { meetingRooms } from '../data/mockData';
 
@@ -32,6 +33,7 @@ const LOCATIONS = [
 ];
 
 export default function CompanyMapSection() {
+  const { colors } = useTheme();
   const [selected, setSelected] = useState(null);
 
   return (
@@ -47,7 +49,7 @@ export default function CompanyMapSection() {
               onPress={() => setSelected(loc)}
               style={[styles.room, ROOM_LAYOUT[i % ROOM_LAYOUT.length]]}
             >
-              <View style={styles.pin}>
+              <View style={[styles.pin, { backgroundColor: colors.primarySurface }]}>
                 <Ionicons name={loc.icon} size={16} color={colors.brand} />
               </View>
               <Text variant="caption" color={colors.textPrimary} numberOfLines={1} style={styles.roomLabel}>
@@ -61,7 +63,7 @@ export default function CompanyMapSection() {
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
         <View style={styles.modalWrap}>
           <View style={styles.modalCard}>
-            <View style={styles.modalPhoto}>
+            <View style={[styles.modalPhoto, { backgroundColor: colors.primarySurface }]}>
               <Ionicons name={selected?.icon || 'business-outline'} size={40} color={colors.primary} />
             </View>
             <Text variant="h3">{selected?.name}</Text>
@@ -70,13 +72,13 @@ export default function CompanyMapSection() {
             </Text>
             {selected?.directions.map((step, i) => (
               <View key={i} style={styles.stepRow}>
-                <View style={styles.stepNum}>
+                <View style={[styles.stepNum, { backgroundColor: colors.brand }]}>
                   <Text variant="caption" color={colors.textInverse}>{i + 1}</Text>
                 </View>
                 <Text variant="bodyMd" style={{ flex: 1 }}>{step}</Text>
               </View>
             ))}
-            <Pressable onPress={() => setSelected(null)} style={styles.closeBtn}>
+            <Pressable onPress={() => setSelected(null)} style={[styles.closeBtn, { backgroundColor: colors.brand }]}>
               <Text variant="bodySemibold" color={colors.textInverse}>Got it</Text>
             </Pressable>
           </View>
@@ -100,23 +102,22 @@ const styles = StyleSheet.create({
   mapCard: { overflow: 'hidden' },
   floor: {
     height: 200,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: staticColors.surfaceAlt,
     position: 'relative',
   },
   room: {
     position: 'absolute',
     width: 120,
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
   },
   pin: {
     width: 30, height: 30, borderRadius: 15,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 4,
   },
@@ -128,26 +129,23 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%', maxWidth: 360,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   modalPhoto: {
     height: 80, borderRadius: radius.md,
-    backgroundColor: colors.primarySurface,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs, gap: 8 },
   stepNum: {
     width: 20, height: 20, borderRadius: 10,
-    backgroundColor: colors.brand,
     alignItems: 'center', justifyContent: 'center',
     marginTop: 2,
   },
   closeBtn: {
     marginTop: spacing.md, height: 44, borderRadius: radius.md,
-    backgroundColor: colors.brand,
     alignItems: 'center', justifyContent: 'center',
   },
 });

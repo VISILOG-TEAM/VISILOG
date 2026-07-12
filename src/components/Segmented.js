@@ -1,13 +1,15 @@
 import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/spacing';
 
 // Pill-style filter group used at the top of list screens (e.g. Visitors:
 // All · On-site · Completed). Pass an array of { label, value } options
 // and the selected value; emits the new value on press.
 export default function Segmented({ options, value, onChange, style }) {
+  const { colors } = useTheme();
   return (
     <View style={[styles.wrap, style]}>
       {options.map((opt) => {
@@ -16,7 +18,7 @@ export default function Segmented({ options, value, onChange, style }) {
           <Pressable
             key={opt.value}
             onPress={() => onChange?.(opt.value)}
-            style={[styles.btn, active && styles.btnActive]}
+            style={[styles.btn, active && { backgroundColor: colors.brand }]}
           >
             <Text
               variant="bodyMd"
@@ -34,7 +36,7 @@ export default function Segmented({ options, value, onChange, style }) {
 const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: staticColors.surfaceAlt,
     borderRadius: radius.pill,
     padding: 4,
   },
@@ -45,5 +47,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.pill,
   },
-  btnActive: { backgroundColor: colors.brand },
 });

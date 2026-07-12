@@ -5,6 +5,7 @@ import {
   Screen, Header, Text, Card, Button, Avatar, StatTile, ClockCard,
 } from '../components';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -13,8 +14,10 @@ import { fmtTime } from '../data/format';
 // Employee dashboard: check in/out for work, accept/decline visitors
 // who picked them as host, view incoming calls, see their NFC card.
 export default function EmployeeHomeScreen() {
+  const { colors: themeColors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const { appointments, calls, updateAppointmentStatus, admitAppointment } = useData();
+  const onLogout = () => { logout(); setOrgTheme(null); };
 
   // Visitor requests that picked any employee as host (demo — in production
   // we'd match by user.id == hostId).
@@ -28,7 +31,7 @@ export default function EmployeeHomeScreen() {
         title={`Hi, ${user.name?.split(' ')[0]}`}
         subtitle={user.email}
         rightIcon="log-out-outline"
-        onRightPress={() => logout()}
+        onRightPress={onLogout}
       />
 
       <ClockCard />
@@ -86,7 +89,7 @@ export default function EmployeeHomeScreen() {
         ) : (
           myCalls.map((c) => (
             <View key={c.id} style={styles.callRow}>
-              <Ionicons name="call" size={16} color={colors.primary} />
+              <Ionicons name="call" size={16} color={themeColors.primary} />
               <Text variant="bodyMd" style={{ flex: 1, marginLeft: 8 }}>
                 {c.callerName}
               </Text>

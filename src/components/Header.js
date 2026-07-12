@@ -2,7 +2,8 @@ import React from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
 // Consistent page header. Pass `rightIcon` (+ onRightPress) for a quick
@@ -19,6 +20,7 @@ export default function Header({
   right,
   onBackPress,
 }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.row}>
       {onBackPress ? (
@@ -55,6 +57,8 @@ export default function Header({
   );
 }
 
+// row/left/backBtn/eyebrow/subtitle are layout-only; iconBtn's
+// background/border are neutral, so this stays a plain StyleSheet.
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
@@ -76,8 +80,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: staticColors.border,
   },
 });

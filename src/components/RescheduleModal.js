@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Modal, TextInput, Pressable, Alert } from 'react-native';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
@@ -10,6 +11,7 @@ import { useData } from '../context/DataContext';
 // time, but only with a reason on record (per spec). Shared between
 // AppointmentsScreen (Employee tab) and VisitorVisitsScreen.
 export default function RescheduleModal({ appointment, visible, onClose }) {
+  const { colors } = useTheme();
   const { rescheduleAppointment } = useData();
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -42,7 +44,7 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
             <Pressable onPress={onClose} style={[styles.btn, styles.btnGhost]}>
               <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
             </Pressable>
-            <Pressable onPress={onSave} style={[styles.btn, styles.btnPrimary]}>
+            <Pressable onPress={onSave} style={[styles.btn, { backgroundColor: colors.brand }]}>
               <Text variant="bodySemibold" color={colors.textInverse}>Save</Text>
             </Pressable>
           </View>
@@ -55,11 +57,11 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
 function Field({ label, ...inputProps }) {
   return (
     <View style={{ marginBottom: spacing.sm }}>
-      <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>{label}</Text>
+      <Text variant="caption" color={staticColors.textSecondary} style={{ marginBottom: 4 }}>{label}</Text>
       <TextInput
         {...inputProps}
         style={styles.input}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={staticColors.textMuted}
       />
     </View>
   );
@@ -72,17 +74,16 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%', maxWidth: 360,
-    backgroundColor: colors.surface,
+    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   input: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    borderWidth: 1, borderColor: staticColors.border, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, paddingVertical: 10,
-    fontFamily: fonts.regular, fontSize: 14, color: colors.textPrimary,
+    fontFamily: fonts.regular, fontSize: 14, color: staticColors.textPrimary,
   },
   row: { flexDirection: 'row', marginTop: spacing.sm, gap: spacing.sm },
   btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  btnGhost: { backgroundColor: colors.surfaceAlt },
-  btnPrimary: { backgroundColor: colors.brand },
+  btnGhost: { backgroundColor: staticColors.surfaceAlt },
 });

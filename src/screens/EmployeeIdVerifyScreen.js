@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Pressable, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthBackground, Text } from '../components';
+import { hexToRgb } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +15,7 @@ import { useAuth } from '../context/AuthContext';
 // requires the match to be in the Reception department.
 export default function EmployeeIdVerifyScreen() {
   const { verifyReceptionistId, logout } = useAuth();
+  const { colors: themeColors } = useTheme();
   const [employeeId, setEmployeeId] = useState('');
   const [error, setError] = useState('');
   const [checking, setChecking] = useState(false);
@@ -31,10 +34,19 @@ export default function EmployeeIdVerifyScreen() {
   };
 
   return (
-    <AuthBackground>
+    <AuthBackground
+      gradientColors={[themeColors.brandTint, themeColors.brandDark, themeColors.brandDark]}
+      accentColor={hexToRgb(themeColors.primary)}
+    >
       <View style={styles.wrap}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="finger-print-outline" size={40} color="#D4AF37" />
+        <View style={[
+          styles.iconWrap,
+          {
+            borderColor: `rgba(${hexToRgb(themeColors.primary)},0.5)`,
+            backgroundColor: `rgba(${hexToRgb(themeColors.primary)},0.10)`,
+          },
+        ]}>
+          <Ionicons name="finger-print-outline" size={40} color={themeColors.primary} />
         </View>
         <Text style={styles.heading}>Confirm your employee ID</Text>
         <Text style={styles.subheading}>
@@ -55,8 +67,8 @@ export default function EmployeeIdVerifyScreen() {
         </View>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Pressable onPress={onSubmit} disabled={checking} style={styles.submitBtn}>
-          <Text style={styles.submitBtnText}>{checking ? 'Checking…' : 'Confirm'}</Text>
+        <Pressable onPress={onSubmit} disabled={checking} style={[styles.submitBtn, { backgroundColor: themeColors.primary }]}>
+          <Text style={[styles.submitBtnText, { color: themeColors.brandDark }]}>{checking ? 'Checking…' : 'Confirm'}</Text>
         </Pressable>
 
         <Pressable onPress={() => logout()} style={{ marginTop: spacing.md }}>
@@ -71,8 +83,7 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.lg },
   iconWrap: {
     width: 72, height: 72, borderRadius: 20,
-    borderWidth: 1.5, borderColor: 'rgba(212,175,55,0.5)',
-    backgroundColor: 'rgba(212,175,55,0.10)',
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
     alignSelf: 'center', marginBottom: spacing.lg,
   },
@@ -101,9 +112,9 @@ const styles = StyleSheet.create({
   error: { fontFamily: fonts.medium, fontSize: 12, color: '#F5A3A3', marginTop: 8 },
   submitBtn: {
     height: 50, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
-    marginTop: spacing.lg, backgroundColor: '#D4AF37',
+    marginTop: spacing.lg,
   },
-  submitBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#1B3324' },
+  submitBtnText: { fontFamily: fonts.bold, fontSize: 16 },
   backLink: {
     fontFamily: fonts.medium, fontSize: 12, color: 'rgba(255,255,255,0.75)',
     textAlign: 'center', textDecorationLine: 'underline',

@@ -3,7 +3,8 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Avatar from './Avatar';
-import { colors } from '../theme/colors';
+import { colors as staticColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 
 // Used by every list screen (visitors, employees, calls, NFC cards, etc.).
@@ -21,6 +22,7 @@ export default function ListItem({
   chevron = false,
   onPress,
 }) {
+  const { colors } = useTheme();
   const content = (
     <>
       {left ? (
@@ -93,7 +95,7 @@ const styles = StyleSheet.create({
   },
   iconWrap: {
     width: 40, height: 40, borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: staticColors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
   },
   middle: { flex: 1, marginHorizontal: spacing.xs },
