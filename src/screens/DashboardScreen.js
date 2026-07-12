@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, StatTile, ListItem,
+  Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard,
 } from '../components';
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
@@ -47,8 +47,10 @@ export default function DashboardScreen({ navigation }) {
         onRightPress={() => {}}
       />
 
+      <ClockCard />
+
       {/* Four headline stats — rendered as a 2x2 grid */}
-      <View style={styles.statsRow}>
+      <View style={[styles.statsRow, { marginTop: spacing.md }]}>
         <StatTile icon="people" tint="primary" label="Visitors today" value={stats.visitorsToday} />
         <View style={{ width: spacing.sm }} />
         <StatTile icon="checkmark-circle" tint="success" label="Currently on-site" value={stats.onsite} />
@@ -62,7 +64,7 @@ export default function DashboardScreen({ navigation }) {
       {/* Pending approvals call-out - only shown when there are some */}
       {pending.length > 0 && (
         <Pressable
-          onPress={() => navigation.navigate('Tabs', { screen: 'Appointments' })}
+          onPress={() => navigation.navigate('Appointments')}
           style={({ pressed }) => [styles.alert, pressed && { opacity: 0.9 }]}
         >
           <View style={styles.alertIcon}>
@@ -80,22 +82,40 @@ export default function DashboardScreen({ navigation }) {
         </Pressable>
       )}
 
-      {/* Quick actions */}
+      {/* Quick actions — Visitors, Directory, NFC lookup/cards & Call
+          log all live here now instead of as their own tabs/More menu,
+          since the bottom bar shrank to 4 tabs. */}
       <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionEyebrow}>
         Quick actions
       </Text>
-      <View style={styles.quickRow}>
+      <View style={styles.quickGrid}>
         <QuickAction
           icon="person-add" label="Register visitor"
           onPress={() => navigation.navigate('RegisterVisitor')}
         />
         <QuickAction
-          icon="log-out-outline" label="Check out"
-          onPress={() => navigation.navigate('Tabs', { screen: 'Visitors' })}
+          icon="people-outline" label="Visitors"
+          onPress={() => navigation.navigate('Visitors')}
         />
         <QuickAction
-          icon="call-outline" label="Log call"
-          onPress={() => navigation.navigate('LogCall')}
+          icon="book-outline" label="Directory"
+          onPress={() => navigation.navigate('Directory')}
+        />
+        <QuickAction
+          icon="call-outline" label="Call log"
+          onPress={() => navigation.navigate('CallLog')}
+        />
+        <QuickAction
+          icon="scan-outline" label="NFC lookup"
+          onPress={() => navigation.navigate('NFCLookup')}
+        />
+        <QuickAction
+          icon="card-outline" label="NFC cards"
+          onPress={() => navigation.navigate('NFCCards')}
+        />
+        <QuickAction
+          icon="finger-print-outline" label="Attendance"
+          onPress={() => navigation.navigate('Attendance')}
         />
         <QuickAction
           icon="document-text-outline" label="Reports"
@@ -103,10 +123,10 @@ export default function DashboardScreen({ navigation }) {
         />
       </View>
 
-      {/* Recent visitor logs - preview that links to the full Visitors tab */}
+      {/* Recent visitor logs - preview that links to the full Visitors screen */}
       <View style={styles.sectionHeader}>
         <Text variant="h2">Recent visitor logs</Text>
-        <Pressable onPress={() => navigation.navigate('Tabs', { screen: 'Visitors' })}>
+        <Pressable onPress={() => navigation.navigate('Visitors')}>
           <Text variant="label" color={colors.primary}>
             View all
           </Text>
@@ -175,9 +195,9 @@ const styles = StyleSheet.create({
   },
 
   sectionEyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
-  quickRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.xs },
+  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   qa: {
-    flex: 1,
+    width: '31%',
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,

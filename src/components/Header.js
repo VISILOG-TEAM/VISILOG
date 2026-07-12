@@ -6,7 +6,10 @@ import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 
 // Consistent page header. Pass `rightIcon` (+ onRightPress) for a quick
-// action button, or `right` to drop in a fully custom element.
+// action button, or `right` to drop in a fully custom element. Pass
+// `onBackPress` for a leading back chevron on screens pushed onto the
+// stack (the app hides the native header, so this is the only back
+// affordance those screens get).
 export default function Header({
   title,
   subtitle,
@@ -14,9 +17,15 @@ export default function Header({
   rightIcon,
   onRightPress,
   right,
+  onBackPress,
 }) {
   return (
     <View style={styles.row}>
+      {onBackPress ? (
+        <Pressable onPress={onBackPress} hitSlop={8} style={styles.backBtn}>
+          <Ionicons name="chevron-back" size={22} color={colors.brand} />
+        </Pressable>
+      ) : null}
       <View style={styles.left}>
         {eyebrow ? (
           <Text variant="eyebrow" color={colors.primary} style={styles.eyebrow}>
@@ -54,6 +63,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   left: { flex: 1, paddingRight: spacing.md },
+  backBtn: {
+    width: 36, height: 36, borderRadius: radius.md,
+    alignItems: 'center', justifyContent: 'center',
+    marginRight: spacing.xs, marginTop: 2,
+  },
   eyebrow: { marginBottom: 4 },
   subtitle: { marginTop: 2 },
   iconBtn: {

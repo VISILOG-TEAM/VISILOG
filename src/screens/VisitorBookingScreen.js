@@ -43,7 +43,7 @@ export default function VisitorBookingScreen({ navigation }) {
     Alert.alert(
       'Appointment requested',
       `${visitorName} is now in the pending queue. The host will be notified to approve the visit.`,
-      [{ text: 'Done', onPress: () => navigation.goBack() }]
+      [{ text: 'Done', onPress: () => navigation.navigate('Home') }]
     );
   };
 
@@ -52,9 +52,7 @@ export default function VisitorBookingScreen({ navigation }) {
       <Header
         eyebrow="Pre-registration"
         title="Book a visit"
-        subtitle="Self-service appointment booking"
-        rightIcon="close"
-        onRightPress={() => navigation.goBack()}
+        subtitle="Face-to-face bookings taken over the phone or in person"
       />
 
       <Card>
@@ -139,12 +137,6 @@ export default function VisitorBookingScreen({ navigation }) {
         icon="checkmark-circle-outline"
         onPress={onSubmit}
         style={{ marginTop: spacing.md }}
-      />
-      <Button
-        label="Cancel"
-        variant="ghost"
-        onPress={() => navigation.goBack()}
-        style={{ marginTop: spacing.xs }}
       />
     </Screen>
   );

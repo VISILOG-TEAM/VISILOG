@@ -2,8 +2,9 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-import DashboardScreen from '../screens/DashboardScreen';
-import VisitorBookingScreen from '../screens/VisitorBookingScreen';
+import ManagerHomeScreen from '../screens/ManagerHomeScreen';
+import EmployeeBookScreen from '../screens/EmployeeBookScreen';
+import ManagerClockInsScreen from '../screens/ManagerClockInsScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
@@ -12,10 +13,9 @@ import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
-// Four-tab bottom bar for Receptionist: Home | Book | Appointments |
-// Settings. Visitors & Directory moved to Dashboard's Quick Actions
-// (pushed screens on the root stack) so the bar stays to 4 tabs.
-export default function TabNavigator() {
+// Five-tab bottom bar for Manager/Administrator: Home | Book | Clock
+// ins | Appointment logs | Settings.
+export default function ManagerTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -30,24 +30,23 @@ export default function TabNavigator() {
           paddingBottom: 8,
           paddingTop: 6,
         },
-        tabBarLabelStyle: {
-          fontFamily: fonts.medium,
-          fontSize: 11,
-        },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
         tabBarIcon: ({ color, focused }) => {
           const icons = {
             Home: focused ? 'home' : 'home-outline',
             Book: focused ? 'calendar' : 'calendar-outline',
-            Appointments: focused ? 'checkmark-done' : 'checkmark-done-outline',
+            'Clock ins': focused ? 'time' : 'time-outline',
+            Logs: focused ? 'document-text' : 'document-text-outline',
             Settings: focused ? 'settings' : 'settings-outline',
           };
           return <Ionicons name={icons[route.name]} size={22} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={DashboardScreen} />
-      <Tab.Screen name="Book" component={VisitorBookingScreen} />
-      <Tab.Screen name="Appointments" component={AppointmentsScreen} />
+      <Tab.Screen name="Home" component={ManagerHomeScreen} />
+      <Tab.Screen name="Book" component={EmployeeBookScreen} />
+      <Tab.Screen name="Clock ins" component={ManagerClockInsScreen} />
+      <Tab.Screen name="Logs" component={AppointmentsScreen} options={{ tabBarLabel: 'Logs' }} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

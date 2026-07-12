@@ -51,14 +51,14 @@ export const currentUser = {
 // ---------- employees (hosts) ----------
 // Dropdown source for "host" pickers across the app, and the directory.
 export const employees = [
-  { id: 'e-01', name: 'Irene Gbadago', department: 'Operations', phone: '+233 24 615 9824', avaya: '2068', email: 'irene.gbadago@vra.com' },
-  { id: 'e-02', name: 'Naa Abbey', department: 'Customer Service', phone: '+233 24 612 2824', avaya: '5282', email: 'naa.abbey@vra.com' },
-  { id: 'e-03', name: 'Blessing Amaning-Kwarteng', department: 'Finance', phone: '+233 24 613 6024', avaya: '4779', email: 'blessing.ak@vra.com' },
-  { id: 'e-04', name: 'Wendy Abagna', department: 'Reception', phone: '+233 24 612 1924', avaya: '2596', email: 'wendy.abagna@vra.com' },
-  { id: 'e-05', name: 'Abigail Hermann', department: 'Engineering', phone: '+233 24 616 1624', avaya: '1931', email: 'abigail.hermann@vra.com' },
-  { id: 'e-06', name: 'Kojo Mensah', department: 'Security', phone: '+233 24 555 0102', avaya: '3401', email: 'kojo.mensah@vra.com' },
-  { id: 'e-07', name: 'Ama Owusu', department: 'Human Resources', phone: '+233 24 555 0103', avaya: '3402', email: 'ama.owusu@vra.com' },
-  { id: 'e-08', name: 'Yaw Boateng', department: 'IT', phone: '+233 24 555 0104', avaya: '3403', email: 'yaw.boateng@vra.com' },
+  { id: 'e-01', employeeId: 'VRA-1001', name: 'Irene Gbadago', department: 'Operations', phone: '+233 24 615 9824', avaya: '2068', email: 'irene.gbadago@vra.com' },
+  { id: 'e-02', employeeId: 'VRA-1002', name: 'Naa Abbey', department: 'Customer Service', phone: '+233 24 612 2824', avaya: '5282', email: 'naa.abbey@vra.com' },
+  { id: 'e-03', employeeId: 'VRA-1003', name: 'Blessing Amaning-Kwarteng', department: 'Finance', phone: '+233 24 613 6024', avaya: '4779', email: 'blessing.ak@vra.com' },
+  { id: 'e-04', employeeId: 'VRA-1004', name: 'Wendy Abagna', department: 'Reception', phone: '+233 24 612 1924', avaya: '2596', email: 'wendy.abagna@vra.com' },
+  { id: 'e-05', employeeId: 'VRA-1005', name: 'Abigail Hermann', department: 'Engineering', phone: '+233 24 616 1624', avaya: '1931', email: 'abigail.hermann@vra.com' },
+  { id: 'e-06', employeeId: 'VRA-1006', name: 'Kojo Mensah', department: 'Security', phone: '+233 24 555 0102', avaya: '3401', email: 'kojo.mensah@vra.com' },
+  { id: 'e-07', employeeId: 'VRA-1007', name: 'Ama Owusu', department: 'Human Resources', phone: '+233 24 555 0103', avaya: '3402', email: 'ama.owusu@vra.com' },
+  { id: 'e-08', employeeId: 'VRA-1008', name: 'Yaw Boateng', department: 'IT', phone: '+233 24 555 0104', avaya: '3403', email: 'yaw.boateng@vra.com' },
 ];
 
 // ---------- purpose-of-visit options ----------

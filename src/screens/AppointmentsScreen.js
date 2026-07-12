@@ -2,12 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, Button, Segmented, EmptyState, Avatar,
+  Screen, Header, Text, Card, Badge, Button, Segmented, EmptyState, Avatar, RescheduleModal,
 } from '../components';
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
+import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
+import { employeeById, meetingRooms } from '../data/mockData';
 import { fmtTime, fmtDate } from '../data/format';
 
 // AppointmentsScreen
@@ -15,10 +16,43 @@ import { fmtTime, fmtDate } from '../data/format';
 //   - Pending  (needs receptionist action)
 //   - Admitted (already approved + checked in)
 //   - Rejected (denied entry)
-// Each pending row has one-tap Admit / Reject buttons.
+// Each pending row has one-tap Admit / Reject buttons. A top-level
+// slider also switches over to a Meeting Rooms view (available /
+// booked / in-use), since reception manages both from one screen.
 export default function AppointmentsScreen({ navigation }) {
+  const [view, setView] = useState('appointments');
+
+  return (
+    <Screen scroll={false} padded={false}>
+      <View style={styles.head}>
+        <Header
+          title={view === 'appointments' ? 'Appointments' : 'Meeting Rooms'}
+          subtitle={view === 'appointments' ? 'Pre-booked visits & approvals' : 'Availability & NFC access'}
+        />
+        <Segmented
+          value={view}
+          onChange={setView}
+          options={[
+            { label: 'Appointments', value: 'appointments' },
+            { label: 'Meeting Rooms', value: 'rooms' },
+          ]}
+          style={{ marginBottom: spacing.sm }}
+        />
+      </View>
+
+      {view === 'appointments' ? <AppointmentsList /> : <RoomsList />}
+    </Screen>
+  );
+}
+
+function AppointmentsList() {
+  const { user } = useAuth();
   const { appointments, updateAppointmentStatus, admitAppointment } = useData();
   const [filter, setFilter] = useState('pending');
+  const [rescheduling, setRescheduling] = useState(null);
+  // Only Employees (and Visitors, on their own Visits screen) can edit
+  // an appointment's time — Receptionist/Manager use Admit/Reject instead.
+  const canReschedule = user?.role === 'employee';
 
   const filtered = useMemo(
     () => appointments
@@ -60,12 +94,8 @@ export default function AppointmentsScreen({ navigation }) {
   };
 
   return (
-    <Screen scroll={false} padded={false}>
-      <View style={styles.head}>
-        <Header
-          title="Appointments"
-          subtitle="Pre-booked visits & approvals"
-        />
+    <>
+      <View style={styles.subHead}>
         <Segmented
           value={filter}
           onChange={setFilter}
@@ -89,7 +119,7 @@ export default function AppointmentsScreen({ navigation }) {
             title="No appointments here"
             message={
               filter === 'pending'
-                ? 'You\u2019re all caught up - no visitors waiting for approval.'
+                ? 'You’re all caught up - no visitors waiting for approval.'
                 : 'Try a different filter to see appointments in other states.'
             }
           />
@@ -99,14 +129,21 @@ export default function AppointmentsScreen({ navigation }) {
             appointment={item}
             onAdmit={() => onAdmit(item)}
             onReject={() => onReject(item)}
+            onReschedule={canReschedule ? () => setRescheduling(item) : null}
           />
         )}
       />
-    </Screen>
+
+      <RescheduleModal
+        appointment={rescheduling}
+        visible={!!rescheduling}
+        onClose={() => setRescheduling(null)}
+      />
+    </>
   );
 }
 
-function AppointmentRow({ appointment, onAdmit, onReject }) {
+function AppointmentRow({ appointment, onAdmit, onReject, onReschedule }) {
   const host = employeeById(appointment.hostId);
   const accent =
     appointment.status === 'admitted' ? 'success' :
@@ -137,7 +174,22 @@ function AppointmentRow({ appointment, onAdmit, onReject }) {
           icon="time-outline"
           text={`${fmtDate(appointment.scheduledAt)} - ${fmtTime(appointment.scheduledAt)}`}
         />
+        {/* NFC code, visible so reception can read it aloud if a card fails */}
+        <MetaRow icon="card-outline" text={`Code: ${appointment.nfcCode || '—'}`} />
+        {appointment.rescheduleReason ? (
+          <MetaRow icon="swap-horizontal-outline" text={`Rescheduled: ${appointment.rescheduleReason}`} />
+        ) : null}
       </View>
+
+      {onReschedule && (
+        <Button
+          label="Reschedule"
+          variant="secondary"
+          icon="calendar-outline"
+          onPress={onReschedule}
+          style={{ marginBottom: spacing.xs }}
+        />
+      )}
 
       {appointment.status === 'pending' && (
         <View style={styles.actionRow}>
@@ -171,11 +223,86 @@ function MetaRow({ icon, text }) {
   );
 }
 
+// ---- Meeting Rooms view: available / booked / in-use ----
+
+function roomStatus(room, roomBookings) {
+  const now = Date.now();
+  const forRoom = roomBookings.filter((b) => b.roomId === room.id);
+  const live = forRoom.find(
+    (b) => new Date(b.startTime).getTime() <= now && new Date(b.endTime).getTime() > now
+  );
+  if (live) return { status: 'inuse', booking: live };
+  const upcoming = forRoom
+    .filter((b) => new Date(b.startTime).getTime() > now)
+    .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))[0];
+  if (upcoming) return { status: 'booked', booking: upcoming };
+  return { status: 'available', booking: null };
+}
+
+const ROOM_STATUS_META = {
+  available: { label: 'Available', badge: 'success' },
+  booked: { label: 'Booked', badge: 'pending' },
+  inuse: { label: 'In use', badge: 'onsite' },
+};
+
+function RoomsList() {
+  const { roomBookings } = useData();
+  const rooms = useMemo(
+    () => meetingRooms.map((r) => ({ room: r, ...roomStatus(r, roomBookings) })),
+    [roomBookings]
+  );
+
+  return (
+    <FlatList
+      data={rooms}
+      keyExtractor={(r) => r.room.id}
+      contentContainerStyle={styles.list}
+      ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+      renderItem={({ item }) => {
+        const meta = ROOM_STATUS_META[item.status];
+        const organiser = item.booking ? employeeById(item.booking.organiserId) : null;
+        return (
+          <Card style={{ marginHorizontal: spacing.md }}>
+            <View style={styles.headRow}>
+              <View style={styles.roomIcon}>
+                <Ionicons name="business" size={20} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text variant="bodySemibold">{item.room.name}</Text>
+                <Text variant="caption" color={colors.textSecondary}>
+                  {item.room.floor} · Capacity {item.room.capacity}
+                </Text>
+              </View>
+              <Badge label={meta.label} status={meta.badge} size="sm" />
+            </View>
+            {item.booking && (
+              <View style={styles.metaList}>
+                <MetaRow icon="document-text-outline" text={item.booking.title} />
+                <MetaRow
+                  icon="time-outline"
+                  text={`${fmtTime(item.booking.startTime)} → ${fmtTime(item.booking.endTime)}`}
+                />
+                <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '—'}`} />
+              </View>
+            )}
+          </Card>
+        );
+      }}
+    />
+  );
+}
+
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: 0 },
+  subHead: { paddingHorizontal: spacing.md },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
   headRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   metaList: { gap: 6, marginBottom: spacing.sm },
   metaRow: { flexDirection: 'row', alignItems: 'center' },
   actionRow: { flexDirection: 'row', marginTop: spacing.xs },
+  roomIcon: {
+    width: 44, height: 44, borderRadius: 12,
+    backgroundColor: colors.primarySurface,
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

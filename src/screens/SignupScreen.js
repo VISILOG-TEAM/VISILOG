@@ -1,21 +1,21 @@
 import React, { useState } from 'react';
 import {
-  View, ImageBackground, StyleSheet, Pressable, TextInput,
+  View, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '../components';
+import { AuthBackground, Text, Segmented } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 
-// Signup uses the exact same backdrop and glass card style as Login, so
-// the two pages feel like one continuous flow.
+// Signup uses the exact same AuthBackground as Login, so the two pages
+// feel like one continuous flow. The sign-in/register pill at the top
+// mirrors Login's — tapping "Sign in" here just goes back.
 export default function SignupScreen({ navigation }) {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,7 +30,7 @@ export default function SignupScreen({ navigation }) {
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Passwords don\u2019t match', 'Please re-enter the same password twice.');
+      Alert.alert('Passwords don’t match', 'Please re-enter the same password twice.');
       return;
     }
     // Create the visitor account and immediately log them in.
@@ -38,14 +38,7 @@ export default function SignupScreen({ navigation }) {
     login(email, password);
   };
   return (
-    <ImageBackground
-      source={require('../../assets/login-bg.jpg')}
-      style={styles.bg}
-      resizeMode="cover"
-    >
-      <StatusBar style="light" />
-      <View style={styles.wash} />
-
+    <AuthBackground>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -64,6 +57,19 @@ export default function SignupScreen({ navigation }) {
             <BlurView intensity={40} tint="light" style={styles.card}>
               <View style={styles.cardInner}>
                 <Text style={styles.wordmark}>VisiLog</Text>
+
+                <Segmented
+                  value="register"
+                  onChange={(v) => {
+                    if (v === 'signin') navigation.goBack();
+                  }}
+                  options={[
+                    { label: 'Sign in', value: 'signin' },
+                    { label: 'Register', value: 'register' },
+                  ]}
+                  style={{ marginBottom: spacing.lg }}
+                />
+
                 <Text style={styles.heading}>Create account</Text>
                 <Text style={styles.subheading}>
                   Request access to the reception system.
@@ -79,7 +85,7 @@ export default function SignupScreen({ navigation }) {
 
                 <Pressable onPress={onSubmit} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
                   <LinearGradient
-                    colors={['#A7F37A', '#16A34A', '#0E9F8E']}
+                    colors={['#F0D998', '#D4AF37', '#A9791B']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.signupBtn}
@@ -99,7 +105,7 @@ export default function SignupScreen({ navigation }) {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </AuthBackground>
   );
 }
 
@@ -119,8 +125,6 @@ function Field({ icon, ...inputProps }) {
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: '#0E4E55' },
-  wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
   safe: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.xxl },
 
@@ -156,7 +160,7 @@ const styles = StyleSheet.create({
     height: 50, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
     marginTop: spacing.sm,
   },
-  signupBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFFFFF', letterSpacing: 0.3 },
+  signupBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#1B3324', letterSpacing: 0.3 },
 
   loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
   loginHint: { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)' },

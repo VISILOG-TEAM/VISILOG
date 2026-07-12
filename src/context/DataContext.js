@@ -16,9 +16,14 @@ export function DataProvider({ children }) {
   const [calls, setCalls] = useState(initialCalls);
   const [nfcCards] = useState(initialNfcCards);
   const [attendance] = useState(initialAttendance);
-  const [roomBookings] = useState(initialRoomBookings);
+  const [roomBookings, setRoomBookings] = useState(initialRoomBookings);
   const [employees, setEmployees] = useState(initialEmployees);
   const [visitorAccounts, setVisitorAccounts] = useState([]);
+  // Shared clock-in/out ledger. Distinct from `attendance` (the NFC tap
+  // log, seeded demo data) — this is the live record behind the personal
+  // "on the clock" cards on Employee/Receptionist home screens, and the
+  // Manager's Clock-ins screen, so every role sees the same truth.
+  const [clockRecords, setClockRecords] = useState([]);
 
   // ---- visitor operations ----
 
@@ -158,6 +163,70 @@ export function DataProvider({ children }) {
     setEmployees((es) => es.filter((e) => e.id !== id));
   };
 
+  // ---- clock in/out (work attendance, not NFC taps) ----
+
+  const clockIn = (employeeId, employeeName) => {
+    const record = {
+      id: `clk-${Date.now()}`,
+      employeeId, employeeName,
+      type: 'in',
+      timestamp: new Date().toISOString(),
+    };
+    setClockRecords((cs) => [record, ...cs]);
+    return record;
+  };
+
+  const clockOut = (employeeId, employeeName) => {
+    const record = {
+      id: `clk-${Date.now()}`,
+      employeeId, employeeName,
+      type: 'out',
+      timestamp: new Date().toISOString(),
+    };
+    setClockRecords((cs) => [record, ...cs]);
+    return record;
+  };
+
+  // Whether `employeeId`'s most recent clock record is an "in" — i.e.
+  // they're currently on the clock. Records are newest-first.
+  const isClockedIn = (employeeId) => {
+    const mine = clockRecords.find((c) => c.employeeId === employeeId);
+    return !!mine && mine.type === 'in';
+  };
+
+  // ---- self-service room booking (Employee/Manager "Book" tab —
+  // booking a meeting/interview slot for themselves, e.g. a room) ----
+
+  const bookRoom = (input) => {
+    const booking = {
+      id: `rb-${Date.now()}`,
+      roomId: input.roomId,
+      organiserId: input.organiserId,
+      title: input.title || 'Meeting',
+      startTime: input.startTime,
+      endTime: input.endTime,
+      participantIds: input.participantIds || [],
+    };
+    setRoomBookings((rs) => [booking, ...rs]);
+    return booking;
+  };
+
+  // ---- appointment rescheduling (Employee & Visitor only, per spec —
+  // requires a reason so there's a record of why the time changed) ----
+
+  const rescheduleAppointment = (id, newScheduledAt, reason) => {
+    setAppointments((as) => as.map((a) => (
+      a.id === id
+        ? {
+            ...a,
+            scheduledAt: newScheduledAt,
+            rescheduleReason: reason || '',
+            rescheduledAt: new Date().toISOString(),
+          }
+        : a
+    )));
+  };
+
   // ---- derived stats for the dashboard ----
   const stats = useMemo(() => {
     const now = new Date();
@@ -196,6 +265,10 @@ export function DataProvider({ children }) {
         logCall, addEmployee, removeEmployee,
         // visitor self-service (Signup / VisitorBooking / NFCLookup screens)
         visitorAccounts, registerVisitorAccount, bookVisit, findAppointmentByCode,
+        // work attendance (clock in/out) + appointment rescheduling
+        clockRecords, clockIn, clockOut, isClockedIn, rescheduleAppointment,
+        // self-service room booking
+        bookRoom,
         // derived
         stats,
       }}

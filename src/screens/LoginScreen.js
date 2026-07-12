@@ -1,26 +1,23 @@
 import React, { useState } from 'react';
 import {
-  View, ImageBackground, StyleSheet, Pressable, TextInput,
+  View, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, ScrollView, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Text } from '../components';
-import { colors } from '../theme/colors';
+import { AuthBackground, Text, Segmented } from '../components';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 
 // LoginScreen
 // ---------------------------------------------------------------
-// Design brief (from the user): use the teal-silk image as the
-// background, and a frosted-glass card holding the form — matching
-// the reference mock the user shared. The card sits centered, the
-// "Login" button is a green gradient, with "Don't have an account?
-// Signup" beneath it.
+// Shares the AuthBackground gradient with Signup/Splash/RoleSelect so
+// the whole onboarding flow feels continuous. The sign-in/register
+// pill at the top of the card is purely navigational — tapping
+// "Register" jumps to the Signup screen (see Segmented usage below).
 export default function LoginScreen({ navigation }) {
   const { login, DEMO_EMAIL, DEMO_PASSWORD } = useAuth();
   const [email, setEmail] = useState('');
@@ -44,16 +41,15 @@ export default function LoginScreen({ navigation }) {
     setPassword(DEMO_PASSWORD);
   };
 
-  return (
-    <ImageBackground
-      source={require('../../assets/login-bg.jpg')}
-      style={styles.bg}
-      resizeMode="cover"
-    >
-      <StatusBar style="light" />
-      {/* Subtle dark wash so the glass card stays readable on any phone */}
-      <View style={styles.wash} />
+  const onGoogleLogin = () => {
+    Alert.alert(
+      'Demo only',
+      'Google sign-in requires a live OAuth backend, which is outside this demo’s scope.'
+    );
+  };
 
+  return (
+    <AuthBackground>
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -73,6 +69,18 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.tagline}>
                   Visitor Management & Reception Operations
                 </Text>
+
+                <Segmented
+                  value="signin"
+                  onChange={(v) => {
+                    if (v === 'register') navigation.navigate('Signup');
+                  }}
+                  options={[
+                    { label: 'Sign in', value: 'signin' },
+                    { label: 'Register', value: 'register' },
+                  ]}
+                  style={{ marginBottom: spacing.lg }}
+                />
 
                 <Text style={styles.heading}>Login</Text>
                 <Text style={styles.subheading}>
@@ -126,7 +134,7 @@ export default function LoginScreen({ navigation }) {
                   { opacity: pressed || submitting ? 0.85 : 1 },
                 ]}>
                   <LinearGradient
-                    colors={['#A7F37A', '#16A34A', '#0E9F8E']}
+                    colors={['#F0D998', '#D4AF37', '#A9791B']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.loginBtn}
@@ -135,6 +143,12 @@ export default function LoginScreen({ navigation }) {
                       {submitting ? 'Signing in…' : 'Login'}
                     </Text>
                   </LinearGradient>
+                </Pressable>
+
+                {/* Google sign-in — UI only, no live OAuth backend in this demo */}
+                <Pressable onPress={onGoogleLogin} style={styles.googleBtn}>
+                  <Ionicons name="logo-google" size={18} color="#FFFFFF" />
+                  <Text style={styles.googleBtnText}>Continue with Google</Text>
                 </Pressable>
 
                 {/* Demo credentials helper — the spec's User Guide ships an
@@ -157,13 +171,11 @@ export default function LoginScreen({ navigation }) {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </AuthBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: '#0E4E55' },
-  wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
   safe: { flex: 1 },
   scroll: {
     flexGrow: 1,
@@ -244,7 +256,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginRight: 8,
   },
-  checkboxOn: { backgroundColor: '#16A34A', borderColor: '#16A34A' },
+  checkboxOn: { backgroundColor: '#D4AF37', borderColor: '#D4AF37' },
   rememberText: { fontFamily: fonts.medium, fontSize: 13, color: '#FFFFFF' },
 
   // Login button
@@ -258,9 +270,24 @@ const styles = StyleSheet.create({
   loginBtnText: {
     fontFamily: fonts.bold,
     fontSize: 16,
-    color: '#FFFFFF',
+    color: '#1B3324',
     letterSpacing: 0.3,
   },
+
+  // Google button
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    marginTop: spacing.sm,
+    gap: 8,
+  },
+  googleBtnText: { fontFamily: fonts.medium, fontSize: 14, color: '#FFFFFF' },
 
   demoLink: {
     fontFamily: fonts.medium,

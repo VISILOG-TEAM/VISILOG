@@ -2,9 +2,9 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-import DashboardScreen from '../screens/DashboardScreen';
-import VisitorBookingScreen from '../screens/VisitorBookingScreen';
-import AppointmentsScreen from '../screens/AppointmentsScreen';
+import VisitorHomeScreen from '../screens/VisitorHomeScreen';
+import VisitorBookScreen from '../screens/VisitorBookScreen';
+import VisitorVisitsScreen from '../screens/VisitorVisitsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 import { colors } from '../theme/colors';
@@ -12,10 +12,8 @@ import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
-// Four-tab bottom bar for Receptionist: Home | Book | Appointments |
-// Settings. Visitors & Directory moved to Dashboard's Quick Actions
-// (pushed screens on the root stack) so the bar stays to 4 tabs.
-export default function TabNavigator() {
+// Four-tab bottom bar for the Visitor role: Home | Book | Visits | Settings.
+export default function VisitorTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -30,24 +28,21 @@ export default function TabNavigator() {
           paddingBottom: 8,
           paddingTop: 6,
         },
-        tabBarLabelStyle: {
-          fontFamily: fonts.medium,
-          fontSize: 11,
-        },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
         tabBarIcon: ({ color, focused }) => {
           const icons = {
             Home: focused ? 'home' : 'home-outline',
             Book: focused ? 'calendar' : 'calendar-outline',
-            Appointments: focused ? 'checkmark-done' : 'checkmark-done-outline',
+            Visits: focused ? 'time' : 'time-outline',
             Settings: focused ? 'settings' : 'settings-outline',
           };
           return <Ionicons name={icons[route.name]} size={22} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={DashboardScreen} />
-      <Tab.Screen name="Book" component={VisitorBookingScreen} />
-      <Tab.Screen name="Appointments" component={AppointmentsScreen} />
+      <Tab.Screen name="Home" component={VisitorHomeScreen} />
+      <Tab.Screen name="Book" component={VisitorBookScreen} />
+      <Tab.Screen name="Visits" component={VisitorVisitsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

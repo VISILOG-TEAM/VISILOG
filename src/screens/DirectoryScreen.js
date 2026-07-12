@@ -33,6 +33,7 @@ export default function DirectoryScreen({ navigation }) {
         <Header
           title="Directory"
           subtitle={`${employees.length} employees`}
+          onBackPress={() => navigation.goBack()}
           rightIcon="person-add-outline"
           onRightPress={() => navigation.navigate('AddEmployee')}
         />

@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Button, Badge, Avatar, StatTile,
+  Screen, Header, Text, Card, Button, Avatar, StatTile, ClockCard,
 } from '../components';
 import { colors } from '../theme/colors';
-import { spacing, radius } from '../theme/spacing';
+import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
@@ -16,28 +16,10 @@ export default function EmployeeHomeScreen() {
   const { user, logout } = useAuth();
   const { appointments, calls, updateAppointmentStatus, admitAppointment } = useData();
 
-  // Local work check-in/out state. In production this would call
-  // an /attendance endpoint on the backend.
-  const [workCheckedIn, setWorkCheckedIn] = useState(false);
-  const [checkInTime, setCheckInTime] = useState(null);
-
   // Visitor requests that picked any employee as host (demo — in production
   // we'd match by user.id == hostId).
   const myPending = appointments.filter((a) => a.status === 'pending');
   const myCalls = calls.slice(0, 3);
-
-  const toggleWork = () => {
-    if (workCheckedIn) {
-      Alert.alert('Checked out', `You worked from ${fmtTime(checkInTime)} to ${fmtTime(new Date().toISOString())}.`);
-      setWorkCheckedIn(false);
-      setCheckInTime(null);
-    } else {
-      const now = new Date().toISOString();
-      setWorkCheckedIn(true);
-      setCheckInTime(now);
-      Alert.alert('Checked in', `Welcome. Check-in time: ${fmtTime(now)}.`);
-    }
-  };
 
   return (
     <Screen>
@@ -49,26 +31,7 @@ export default function EmployeeHomeScreen() {
         onRightPress={() => logout()}
       />
 
-      {/* Work status */}
-      <Card accent={workCheckedIn ? 'onsite' : 'neutral'}>
-        <View style={styles.workRow}>
-          <View style={{ flex: 1 }}>
-            <Text variant="caption" color={colors.textSecondary}>Work status</Text>
-            <Text variant="h2">{workCheckedIn ? 'On the clock' : 'Off the clock'}</Text>
-            {workCheckedIn ? (
-              <Text variant="caption" color={colors.textMuted}>
-                Since {fmtTime(checkInTime)}
-              </Text>
-            ) : null}
-          </View>
-          <Button
-            label={workCheckedIn ? 'Check out' : 'Check in'}
-            icon={workCheckedIn ? 'log-out-outline' : 'log-in-outline'}
-            variant={workCheckedIn ? 'danger' : 'primary'}
-            onPress={toggleWork}
-          />
-        </View>
-      </Card>
+      <ClockCard />
 
       {/* Stats */}
       <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
@@ -139,7 +102,6 @@ export default function EmployeeHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  workRow: { flexDirection: 'row', alignItems: 'center' },
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   requestRow: { flexDirection: 'row', alignItems: 'center' },
   callRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },

@@ -2,8 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
-import DashboardScreen from '../screens/DashboardScreen';
-import VisitorBookingScreen from '../screens/VisitorBookingScreen';
+import EmployeeHomeScreen from '../screens/EmployeeHomeScreen';
+import EmployeeBookScreen from '../screens/EmployeeBookScreen';
 import AppointmentsScreen from '../screens/AppointmentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
@@ -12,10 +12,9 @@ import { fonts } from '../theme/typography';
 
 const Tab = createBottomTabNavigator();
 
-// Four-tab bottom bar for Receptionist: Home | Book | Appointments |
-// Settings. Visitors & Directory moved to Dashboard's Quick Actions
-// (pushed screens on the root stack) so the bar stays to 4 tabs.
-export default function TabNavigator() {
+// Four-tab bottom bar for Employee: Home | Book | Appointments | Settings
+// — same shape as Receptionist's, per the brief ("similar to receptionist").
+export default function EmployeeTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -30,10 +29,7 @@ export default function TabNavigator() {
           paddingBottom: 8,
           paddingTop: 6,
         },
-        tabBarLabelStyle: {
-          fontFamily: fonts.medium,
-          fontSize: 11,
-        },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
         tabBarIcon: ({ color, focused }) => {
           const icons = {
             Home: focused ? 'home' : 'home-outline',
@@ -45,8 +41,8 @@ export default function TabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={DashboardScreen} />
-      <Tab.Screen name="Book" component={VisitorBookingScreen} />
+      <Tab.Screen name="Home" component={EmployeeHomeScreen} />
+      <Tab.Screen name="Book" component={EmployeeBookScreen} />
       <Tab.Screen name="Appointments" component={AppointmentsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>

@@ -45,6 +45,7 @@ export default function VisitorsScreen({ navigation }) {
         <Header
           title="Visitors"
           subtitle="Live visitor log & check-in"
+          onBackPress={() => navigation.goBack()}
           rightIcon="person-add"
           onRightPress={() => navigation.navigate('RegisterVisitor')}
         />

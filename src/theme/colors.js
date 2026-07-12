@@ -1,22 +1,23 @@
 // VisiLog color system
 // -------------------------------------------------------------
-// Brand identity: a deep institutional navy ("ink") paired with a
-// contactless teal accent (the "access-granted / tap" colour).
+// Brand identity: a deep institutional emerald green paired with a
+// gold accent (the "access-granted / tap" colour).
 // Functional status colours stay conventional (green / amber / red)
-// so a receptionist can never misread a visitor's state at a glance.
+// so a receptionist can never misread a visitor's state at a glance
+// — kept distinct from the brand emerald so the two don't get confused.
 
 const palette = {
-  // Brand navy
-  ink900: '#0E1B2C', // deepest — primary text on light surfaces
-  ink800: '#14253B', // brand ink — nav bars, dark surfaces, logo
-  ink700: '#1E3654',
-  ink600: '#2C4A70',
+  // Brand emerald green
+  emerald900: '#0A2A1D', // deepest — primary text on light surfaces
+  emerald800: '#0F3D2A', // brand ink — nav bars, dark surfaces, logo
+  emerald700: '#155636',
+  emerald600: '#1D7248',
 
-  // Teal accent (contactless / verified)
-  teal600: '#0E9F8E', // primary action colour
-  teal500: '#13B5A0', // pressed / hover
-  teal100: '#D6F3EE',
-  teal050: '#EAF8F5',
+  // Gold accent (contactless / verified)
+  gold600: '#C9A227', // primary action colour
+  gold500: '#D4AF37', // pressed / hover
+  gold100: '#F5E6BC',
+  gold050: '#FBF3DE',
 
   // Cool, lobby-clean neutrals
   slate900: '#0F172A',
@@ -40,15 +41,15 @@ const palette = {
 
 export const colors = {
   // Brand
-  brand: palette.ink800,
-  brandDark: palette.ink900,
-  brandTint: palette.ink700,
+  brand: palette.emerald800,
+  brandDark: palette.emerald900,
+  brandTint: palette.emerald700,
 
   // Primary action
-  primary: palette.teal600,
-  primaryPressed: palette.teal500,
-  primarySurface: palette.teal050,
-  primarySurfaceStrong: palette.teal100,
+  primary: palette.gold600,
+  primaryPressed: palette.gold500,
+  primarySurface: palette.gold050,
+  primarySurfaceStrong: palette.gold100,
 
   // Surfaces
   background: palette.slate050,
@@ -56,7 +57,7 @@ export const colors = {
   surfaceAlt: palette.slate100,
 
   // Text
-  textPrimary: palette.ink900,
+  textPrimary: palette.emerald900,
   textSecondary: palette.slate500,
   textMuted: palette.slate400,
   textInverse: palette.white,

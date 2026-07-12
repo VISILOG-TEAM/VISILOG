@@ -1,0 +1,88 @@
+import React, { useState } from 'react';
+import { View, StyleSheet, Modal, TextInput, Pressable, Alert } from 'react-native';
+import Text from './Text';
+import { colors } from '../theme/colors';
+import { spacing, radius } from '../theme/spacing';
+import { fonts } from '../theme/typography';
+import { useData } from '../context/DataContext';
+
+// RescheduleModal — lets an Employee or Visitor move an appointment's
+// time, but only with a reason on record (per spec). Shared between
+// AppointmentsScreen (Employee tab) and VisitorVisitsScreen.
+export default function RescheduleModal({ appointment, visible, onClose }) {
+  const { rescheduleAppointment } = useData();
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [reason, setReason] = useState('');
+
+  const onSave = () => {
+    if (!date.trim() || !time.trim() || !reason.trim()) {
+      Alert.alert('Almost there', 'New date, time and a reason are all required.');
+      return;
+    }
+    rescheduleAppointment(appointment.id, `${date}T${time}`, reason.trim());
+    setDate(''); setTime(''); setReason('');
+    onClose();
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.wrap}>
+        <View style={styles.card}>
+          <Text variant="h3">Reschedule visit</Text>
+          <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
+            {appointment?.visitorName}
+          </Text>
+
+          <Field label="New date (YYYY-MM-DD)" value={date} onChangeText={setDate} />
+          <Field label="New time (HH:MM)" value={time} onChangeText={setTime} />
+          <Field label="Reason for change" value={reason} onChangeText={setReason} multiline />
+
+          <View style={styles.row}>
+            <Pressable onPress={onClose} style={[styles.btn, styles.btnGhost]}>
+              <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
+            </Pressable>
+            <Pressable onPress={onSave} style={[styles.btn, styles.btnPrimary]}>
+              <Text variant="bodySemibold" color={colors.textInverse}>Save</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function Field({ label, ...inputProps }) {
+  return (
+    <View style={{ marginBottom: spacing.sm }}>
+      <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>{label}</Text>
+      <TextInput
+        {...inputProps}
+        style={styles.input}
+        placeholderTextColor={colors.textMuted}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: {
+    flex: 1, backgroundColor: 'rgba(10,42,29,0.55)',
+    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+  },
+  card: {
+    width: '100%', maxWidth: 360,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+  },
+  input: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    paddingHorizontal: spacing.sm, paddingVertical: 10,
+    fontFamily: fonts.regular, fontSize: 14, color: colors.textPrimary,
+  },
+  row: { flexDirection: 'row', marginTop: spacing.sm, gap: spacing.sm },
+  btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  btnGhost: { backgroundColor: colors.surfaceAlt },
+  btnPrimary: { backgroundColor: colors.brand },
+});

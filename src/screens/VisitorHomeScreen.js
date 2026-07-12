@@ -1,115 +1,104 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Alert, ScrollView } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Button, Input, Select, Badge, Avatar,
+  Screen, Text, Card, Badge, Avatar, CompanyMapSection,
 } from '../components';
 import { colors } from '../theme/colors';
-import { spacing, radius } from '../theme/spacing';
+import { spacing } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { visitPurposes } from '../data/mockData';
 
-// The visitor's only screen. Shows their NFC card if they've booked,
-// otherwise the booking form. Plus a "help / contact" section.
-export default function VisitorHomeScreen() {
-  const { user, logout } = useAuth();
-  const { employees, appointments, bookVisit } = useData();
+// VisitorHomeScreen — the visitor's tab-bar landing page. The booking
+// form itself now lives on its own "Book" tab (VisitorBookScreen); this
+// screen is a dashboard: profile + notifications up top, an NFC-card
+// preview (or a prompt to book, if there isn't one yet), and the
+// company map/tour section.
+export default function VisitorHomeScreen({ navigation }) {
+  const { user } = useAuth();
+  const { employees, appointments } = useData();
 
-  // Show their most recent booking (if any).
   const myBooking = appointments
     .filter((a) => a.bookedByEmail === user.email)
     .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))[0];
 
-  const [name, setName] = useState(user.name || '');
-  const [phone, setPhone] = useState('');
-  const [company, setCompany] = useState('');
-  const [purpose, setPurpose] = useState('Official Business');
-  const [hostId, setHostId] = useState(null);
-
-  const onSubmit = () => {
-    if (!name.trim() || !phone.trim() || !hostId) {
-      Alert.alert('Almost there', 'Name, phone and host are required.');
-      return;
-    }
-    const a = bookVisit({
-      visitorName: name, visitorPhone: phone, visitorCompany: company,
-      purpose, hostId, bookedByEmail: user.email,
-    });
-    Alert.alert('Booked', `Your visit code is ${a.nfcCode}. Show it at reception.`);
+  const onNotifications = () => {
+    Alert.alert('Notifications', 'No new notifications right now.');
   };
 
   return (
     <Screen>
-      <Header
-        eyebrow="Welcome"
-        title={`Hi, ${user.name?.split(' ')[0] || 'there'}`}
-        subtitle="Book a visit or show your NFC card"
-        rightIcon="log-out-outline"
-        onRightPress={() => logout()}
-      />
+      <View style={styles.topRow}>
+        <Pressable onPress={() => navigation.navigate('Settings')}>
+          <Avatar name={user?.name || 'You'} size={44} />
+        </Pressable>
+        <Pressable onPress={onNotifications} style={styles.bellBtn} hitSlop={8}>
+          <Ionicons name="notifications-outline" size={22} color={colors.brand} />
+        </Pressable>
+      </View>
 
-      {myBooking && (
-        <>
-          <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-            Your NFC card
+      <Text style={styles.welcome}>
+        {myBooking
+          ? `Welcome back, ${user.name?.split(' ')[0] || 'there'}`
+          : 'Ready to book your first appointment?'}
+      </Text>
+      <Text variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
+        {myBooking
+          ? 'Here’s your latest visit pass.'
+          : 'Head to the Book tab to schedule a visit and get your NFC pass.'}
+      </Text>
+
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Your NFC card
+      </Text>
+      {myBooking ? (
+        <Card accent="onsite">
+          <View style={styles.cardHead}>
+            <Ionicons name="card" size={28} color={colors.primary} />
+            <Badge label={myBooking.status} status="pending" size="sm" />
+          </View>
+          <Text style={styles.code}>{myBooking.nfcCode}</Text>
+          <Text variant="caption" color={colors.textSecondary}>
+            Show this code at reception on arrival.
           </Text>
-          <Card accent="onsite">
-            <View style={styles.cardHead}>
-              <Ionicons name="card" size={28} color={colors.primary} />
-              <Badge label={myBooking.status} status="pending" size="sm" />
-            </View>
-            <Text style={styles.code}>{myBooking.nfcCode}</Text>
-            <Text variant="caption" color={colors.textSecondary}>
-              Show this code at reception on arrival.
+          <View style={styles.divider} />
+          <Text variant="caption" color={colors.textMuted}>Host</Text>
+          <Text variant="bodySemibold">
+            {employees.find((e) => e.id === myBooking.hostId)?.name || '—'}
+          </Text>
+        </Card>
+      ) : (
+        <Card>
+          <View style={styles.emptyCard}>
+            <Ionicons name="card-outline" size={28} color={colors.textMuted} />
+            <Text variant="bodySemibold" color={colors.textSecondary} style={{ marginTop: 8 }}>
+              No upcoming visit
             </Text>
-            <View style={styles.divider} />
-            <Text variant="caption" color={colors.textMuted}>Host</Text>
-            <Text variant="bodySemibold">
-              {employees.find((e) => e.id === myBooking.hostId)?.name || '—'}
+            <Text variant="caption" color={colors.textMuted}>
+              Book one below to get your NFC pass.
             </Text>
-          </Card>
-        </>
+          </View>
+        </Card>
       )}
 
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Book a new visit
-      </Text>
-      <Card>
-        <Input label="Full name" value={name} onChangeText={setName} icon="person-outline" />
-        <Input label="Phone" value={phone} onChangeText={setPhone}
-          icon="call-outline" keyboardType="phone-pad" />
-        <Input label="Company (optional)" value={company} onChangeText={setCompany}
-          icon="business-outline" />
-        <Select label="Purpose" value={purpose} onChange={setPurpose}
-          icon="briefcase-outline"
-          options={visitPurposes.map((p) => ({ label: p, value: p }))} />
-        <Select label="Who are you visiting?" value={hostId} onChange={setHostId}
-          icon="people-outline" placeholder="Pick a host..."
-          options={employees.map((e) => ({
-            label: e.name, value: e.id,
-            sublabel: `${e.department} - ${e.avaya}`,
-          }))} />
-      </Card>
-      <Button label="Submit booking" icon="checkmark-circle-outline"
-        onPress={onSubmit} style={{ marginTop: spacing.md }} />
-
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Need help?
-      </Text>
-      <Card>
-        <Text variant="body">
-          Call reception: +233 24 555 0100{'\n'}
-          Email: reception@vra.com
-        </Text>
-      </Card>
+      <CompanyMapSection />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
+  topRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  bellBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.primarySurface,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  welcome: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.textPrimary },
+  eyebrow: { marginTop: spacing.md, marginBottom: spacing.sm },
   cardHead: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginBottom: spacing.sm,
@@ -122,4 +111,5 @@ const styles = StyleSheet.create({
     height: 1, backgroundColor: colors.border,
     marginVertical: spacing.sm,
   },
+  emptyCard: { alignItems: 'center', paddingVertical: spacing.sm },
 });
