@@ -75,6 +75,63 @@ export const organizationByCode = (code) => {
   return organizations.find((o) => o.code === clean);
 };
 
+// ---------- subscription plans ----------
+// Flat pricing tiers every organization subscribes to. This is what
+// "several companies paying us subscriptions" looks like in the app —
+// an Administrator (Manager role) can review and switch their org's
+// plan from Settings > Billing & subscription.
+export const plans = [
+  {
+    id: 'starter', name: 'Starter', pricePerMonth: 49, seatLimit: 10,
+    features: ['Up to 10 staff seats', 'Visitor check-in & badges', 'Email support'],
+  },
+  {
+    id: 'pro', name: 'Pro', pricePerMonth: 149, seatLimit: 50,
+    features: ['Up to 50 staff seats', 'NFC cards & access logs', 'Meeting room booking', 'Priority support'],
+  },
+  {
+    id: 'enterprise', name: 'Enterprise', pricePerMonth: 399, seatLimit: 500,
+    features: ['Up to 500 staff seats', 'Custom branding & theming', 'Dedicated account manager', 'SLA-backed support'],
+  },
+];
+
+export const planById = (id) => plans.find((p) => p.id === id);
+
+// Per-organization subscription state. `seatsUsed` is a static demo
+// figure (not derived from the live employees list) so each tenant has
+// a believable, distinct billing story.
+export const initialOrgBilling = {
+  'org-vra': {
+    planId: 'pro', status: 'active', seatsUsed: 34,
+    renewalDate: isoDaysAgo(-19), paymentLast4: '4242',
+  },
+  'org-atlas': {
+    planId: 'starter', status: 'trial', seatsUsed: 6,
+    renewalDate: isoDaysAgo(-6), paymentLast4: '8420',
+  },
+  'org-safari': {
+    planId: 'enterprise', status: 'past_due', seatsUsed: 118,
+    renewalDate: isoDaysAgo(3), paymentLast4: '1187',
+  },
+};
+
+// Mock invoice history, most recent first, keyed by organization.
+export const initialInvoices = {
+  'org-vra': [
+    { id: 'inv-vra-3', date: isoDaysAgo(11), amount: 149, status: 'paid' },
+    { id: 'inv-vra-2', date: isoDaysAgo(41), amount: 149, status: 'paid' },
+    { id: 'inv-vra-1', date: isoDaysAgo(71), amount: 149, status: 'paid' },
+  ],
+  'org-atlas': [
+    { id: 'inv-atlas-1', date: isoDaysAgo(24), amount: 49, status: 'paid' },
+  ],
+  'org-safari': [
+    { id: 'inv-safari-3', date: isoDaysAgo(27), amount: 399, status: 'failed' },
+    { id: 'inv-safari-2', date: isoDaysAgo(57), amount: 399, status: 'paid' },
+    { id: 'inv-safari-1', date: isoDaysAgo(87), amount: 399, status: 'paid' },
+  ],
+};
+
 // ---------- the signed-in receptionist ----------
 export const currentUser = {
   id: 'r-001',

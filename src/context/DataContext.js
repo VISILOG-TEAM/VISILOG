@@ -3,6 +3,7 @@ import {
   initialVisitors, initialAppointments, initialCalls,
   initialNfcCards, initialAttendance, initialRoomBookings,
   nextBadgeId, employees as initialEmployees,
+  initialOrgBilling, initialInvoices,
 } from '../data/mockData';
 
 // DataContext gathers every piece of mutable demo data and exposes
@@ -24,6 +25,13 @@ export function DataProvider({ children }) {
   // "on the clock" cards on Employee/Receptionist home screens, and the
   // Manager's Clock-ins screen, so every role sees the same truth.
   const [clockRecords, setClockRecords] = useState([]);
+  // Per-organization subscription state, keyed by organizationId — this
+  // is what makes the "several companies paying us subscriptions"
+  // business model visible in the app (Settings > Billing & subscription,
+  // Manager/Administrator only). Invoices are demo history, not appended
+  // to on a plan switch — only the live plan/status/seats change.
+  const [orgBilling, setOrgBilling] = useState(initialOrgBilling);
+  const [invoices] = useState(initialInvoices);
 
   // ---- visitor operations ----
 
@@ -227,6 +235,18 @@ export function DataProvider({ children }) {
     )));
   };
 
+  // ---- billing operations (Manager/Administrator only, from Settings) ----
+
+  // Switches an organization's plan, resetting status to 'active' (a
+  // successful switch clears any trial/past-due state) — stands in for
+  // a real Stripe checkout/upgrade flow.
+  const changePlan = (organizationId, planId) => {
+    setOrgBilling((b) => ({
+      ...b,
+      [organizationId]: { ...b[organizationId], planId, status: 'active' },
+    }));
+  };
+
   // ---- derived stats for the dashboard ----
   const stats = useMemo(() => {
     const now = new Date();
@@ -269,6 +289,8 @@ export function DataProvider({ children }) {
         clockRecords, clockIn, clockOut, isClockedIn, rescheduleAppointment,
         // self-service room booking
         bookRoom,
+        // billing / subscriptions
+        orgBilling, invoices, changePlan,
         // derived
         stats,
       }}

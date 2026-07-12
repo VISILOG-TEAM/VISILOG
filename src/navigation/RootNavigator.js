@@ -28,6 +28,7 @@ import CallLogScreen from '../screens/CallLogScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import NFCCardsScreen from '../screens/NFCCardsScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
+import BillingScreen from '../screens/BillingScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -87,6 +88,7 @@ export default function RootNavigator() {
           <Stack.Screen name="NFCCards" component={NFCCardsScreen} />
           <Stack.Screen name="NFCLookup" component={NFCLookupScreen} />
           <Stack.Screen name="Attendance" component={AttendanceScreen} />
+          <Stack.Screen name="Billing" component={BillingScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>

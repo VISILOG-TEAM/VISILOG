@@ -136,6 +136,14 @@ export default function SettingsScreen({ navigation }) {
         Organisation
       </Text>
       <Card padded={false}>
+        {user?.role === 'manager' ? (
+          <>
+            <LinkRow icon="card-outline" title="Billing & subscription"
+              sub={`${user.organizationName} · manage plan & invoices`}
+              onPress={() => navigation.navigate('Billing')} />
+            <Divider />
+          </>
+        ) : null}
         <LinkRow icon="business-outline" title="Company branding"
           sub="Logo, primary colour, badge layout" />
         <Divider />
@@ -190,10 +198,10 @@ function ToggleRow({ label, sub, value, onChange }) {
   );
 }
 
-function LinkRow({ icon, title, sub }) {
+function LinkRow({ icon, title, sub, onPress }) {
   const { colors: themeColors } = useTheme();
   return (
-    <Pressable style={styles.linkRow}>
+    <Pressable style={styles.linkRow} onPress={onPress}>
       <View style={styles.linkIcon}>
         <Ionicons name={icon} size={18} color={themeColors.brand} />
       </View>
