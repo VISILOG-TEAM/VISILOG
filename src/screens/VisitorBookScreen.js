@@ -26,18 +26,22 @@ export default function VisitorBookScreen({ navigation }) {
   const [purpose, setPurpose] = useState('Official Business');
   const [hostId, setHostId] = useState(null);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!name.trim() || !phone.trim() || !hostId) {
       Alert.alert('Almost there', 'Name, phone and host are required.');
       return;
     }
-    const a = bookVisit({
-      visitorName: name, visitorPhone: phone, visitorCompany: company,
-      purpose, hostId, bookedByEmail: user.email,
-    });
-    Alert.alert('Booked', `Your visit code is ${a.nfcCode}. Show it at reception.`, [
-      { text: 'Done', onPress: () => navigation.navigate('Home') },
-    ]);
+    try {
+      const a = await bookVisit({
+        visitorName: name, visitorPhone: phone, visitorCompany: company,
+        purpose, hostId,
+      });
+      Alert.alert('Booked', `Your visit code is ${a.nfcCode}. Show it at reception.`, [
+        { text: 'Done', onPress: () => navigation.navigate('Home') },
+      ]);
+    } catch (err) {
+      Alert.alert('Could not book visit', err.message);
+    }
   };
 
   return (

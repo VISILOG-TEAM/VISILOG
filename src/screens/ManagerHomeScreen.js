@@ -8,7 +8,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtTime } from '../data/format';
 
 // Manager dashboard: organisation-wide insight, plus the same
@@ -17,7 +16,7 @@ import { fmtTime } from '../data/format';
 export default function ManagerHomeScreen() {
   const { setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
-  const { stats, visitors, calls, employees } = useData();
+  const { stats, visitors, calls, employees, employeeById } = useData();
   const onLogout = () => { logout(); setOrgTheme(null); };
 
   // Top hosts (employees with the most visitors).

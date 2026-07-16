@@ -12,7 +12,6 @@ import { Text, Segmented } from '../components';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../theme/ThemeContext';
 
 // LoginScreen
 // ---------------------------------------------------------------
@@ -26,8 +25,7 @@ import { useTheme } from '../theme/ThemeContext';
 // login belongs to — VisiLog serves several companies, each with their
 // own data and brand colors, so this resolves both.
 export default function LoginScreen({ navigation }) {
-  const { login, DEMO_EMAIL, DEMO_PASSWORD, DEMO_COMPANY_CODE } = useAuth();
-  const { setOrgTheme } = useTheme();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [companyCode, setCompanyCode] = useState('');
@@ -35,22 +33,15 @@ export default function LoginScreen({ navigation }) {
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     setSubmitting(true);
-    const result = login(email, password, companyCode);
+    const result = await login(email, password, companyCode);
     setSubmitting(false);
     if (!result.ok) {
       Alert.alert('Login failed', result.error);
       return;
     }
-    setOrgTheme(result.organization.theme);
     // On success the root navigator will swap to the app stack.
-  };
-
-  const fillDemo = () => {
-    setEmail(DEMO_EMAIL);
-    setPassword(DEMO_PASSWORD);
-    setCompanyCode(DEMO_COMPANY_CODE);
   };
 
   const onGoogleLogin = () => {
@@ -182,17 +173,19 @@ export default function LoginScreen({ navigation }) {
                   <Text style={styles.googleBtnText}>Continue with Google</Text>
                 </Pressable>
 
-                {/* Demo credentials helper — the spec's User Guide ships an
-                    employee@vra.com / password1234 demo account. */}
-                <Pressable onPress={fillDemo} style={{ marginTop: spacing.sm }}>
-                  <Text style={styles.demoLink}>Use demo account</Text>
-                </Pressable>
-
                 {/* Signup */}
                 <View style={styles.signupRow}>
                   <Text style={styles.signupHint}>Don&apos;t have an account? </Text>
                   <Pressable onPress={() => navigation.navigate('Signup')}>
                     <Text style={styles.signupLink}>Signup</Text>
+                  </Pressable>
+                </View>
+
+                {/* New company */}
+                <View style={styles.signupRow}>
+                  <Text style={styles.signupHint}>Setting up VisiLog for your company? </Text>
+                  <Pressable onPress={() => navigation.navigate('RegisterCompany')}>
+                    <Text style={styles.signupLink}>Register your company</Text>
                   </Pressable>
                 </View>
               </View>
@@ -322,14 +315,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   googleBtnText: { fontFamily: fonts.medium, fontSize: 14, color: '#FFFFFF' },
-
-  demoLink: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
-  },
 
   // Signup
   signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },

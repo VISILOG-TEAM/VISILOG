@@ -2,10 +2,10 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 import { buildColors, colors as defaultColors } from './colors';
 
 // ThemeContext — makes the color palette multi-tenant. `setOrgTheme`
-// is called once the signed-in user's organization is known (see
-// AuthContext.chooseRole / the company-code login flow); every screen
-// that reads colors via useTheme() re-renders with that org's brand
-// colors live, no reload needed.
+// is called by AuthContext whenever the signed-in organization changes
+// (login, signup, registerCompany, or restoring a session on boot);
+// every screen that reads colors via useTheme() re-renders with that
+// org's brand colors live, no reload needed.
 const ThemeContext = createContext({ colors: defaultColors, setOrgTheme: () => {} });
 
 export function ThemeProvider({ children }) {

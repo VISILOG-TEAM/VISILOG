@@ -7,31 +7,31 @@ import {
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtTime, fmtRelative } from '../data/format';
 
-// AttendanceScreen — NFC attendance taps.
-// Each row represents one card tap at a reader, building up the
-// punctuality picture for the day.
+// AttendanceScreen — the clock-in/out ledger, presented as a tap log.
+// (There's no separate NFC-tap-log concept in the real backend — this
+// reads the same shared clockRecords ledger as the Employee/Receptionist
+// "on the clock" cards and ManagerClockInsScreen.)
 export default function AttendanceScreen({ navigation }) {
-  const { attendance, employees } = useData();
+  const { clockRecords, employeeById } = useData();
 
-  const sorted = [...attendance].sort(
+  const sorted = [...clockRecords].sort(
     (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
   );
 
   // Stat: how many distinct employees are currently signed in (based on
-  // their last tap of the day being 'in').
+  // their last record of the day being 'in').
   const onsiteCount = (() => {
     const last = {};
     sorted.forEach((t) => {
-      if (!last[t.employeeId]) last[t.employeeId] = t.tapType;
+      if (!last[t.employeeId]) last[t.employeeId] = t.type;
     });
     return Object.values(last).filter((t) => t === 'in').length;
   })();
 
   const lateCount = sorted.filter((t) => {
-    if (t.tapType !== 'in') return false;
+    if (t.type !== 'in') return false;
     const d = new Date(t.timestamp);
     return d.getHours() > 8 || (d.getHours() === 8 && d.getMinutes() > 30);
   }).length;
@@ -41,7 +41,7 @@ export default function AttendanceScreen({ navigation }) {
       <View style={styles.head}>
         <Header
           title="Attendance"
-          subtitle="NFC tap log & punctuality"
+          subtitle="Clock-in/out log & punctuality"
           rightIcon="close"
           onRightPress={() => navigation.goBack()}
         />
@@ -62,8 +62,8 @@ export default function AttendanceScreen({ navigation }) {
         ListEmptyComponent={
           <EmptyState
             icon="card-outline"
-            title="No taps today"
-            message="Attendance taps from NFC readers will appear here as they arrive."
+            title="No clock records yet"
+            message="Clock-in/out activity will appear here as it happens."
           />
         }
         renderItem={({ item }) => (
@@ -75,7 +75,7 @@ export default function AttendanceScreen({ navigation }) {
 }
 
 function TapRow({ tap, employee }) {
-  const isIn = tap.tapType === 'in';
+  const isIn = tap.type === 'in';
   return (
     <Card padded={false} style={{ marginHorizontal: spacing.md }}>
       <View style={styles.row}>

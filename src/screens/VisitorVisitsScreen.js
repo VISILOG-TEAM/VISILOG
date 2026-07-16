@@ -7,7 +7,6 @@ import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtDate, fmtTime } from '../data/format';
 
 // VisitorVisitsScreen — every booking this visitor has made, past and
@@ -16,7 +15,7 @@ import { fmtDate, fmtTime } from '../data/format';
 // Employees can on their own Appointments tab.
 export default function VisitorVisitsScreen() {
   const { user } = useAuth();
-  const { appointments } = useData();
+  const { appointments, employeeById } = useData();
   const [rescheduling, setRescheduling] = useState(null);
 
   const mine = useMemo(

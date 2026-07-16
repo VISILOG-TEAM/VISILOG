@@ -1,111 +1,169 @@
-import React, { createContext, useContext, useState } from 'react';
-import { currentUser as defaultUser, employees, organizationByCode } from '../data/mockData';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { apiClient, ApiError } from '../api/client';
+import { setToken, clearToken, loadStoredToken } from '../api/tokenStore';
+import { useTheme } from '../theme/ThemeContext';
 
-// AuthContext exposes the signed-in user, plus login/logout actions.
-// In a real app these would hit an OAuth 2.0 / JWT endpoint (as described
-// in the VisiLog architecture). For the demo we just toggle state.
+// AuthContext talks to the real VisiLog backend (see server/). Role is
+// decided once, server-side, at signup time (by matching the signing-up
+// email against the company's staff roster) — there is no more
+// role-picker or employee-ID-verify step on the frontend.
 const AuthContext = createContext(null);
 
-// The demo credentials shipped in the VisiLog User Guide:
-const DEMO_EMAIL = 'employee@company.com';
-const DEMO_PASSWORD = 'password1234';
-const DEMO_COMPANY_CODE = 'VRA2026';
-// Soft default so the role-picker can preselect something sensible —
-// the picker itself is now the source of truth for the final role.
-const detectRole = (email) => {
-  const e = (email || '').toLowerCase().trim();
-  if (e.startsWith('manager@')) return 'manager';
-  if (e.startsWith('reception@') || e.startsWith('receptionist@')) return 'receptionist';
-  if (e.endsWith('@company.com')) return 'employee';
-  return 'visitor';
-};
+// Backend roles are uppercase enum names (VISITOR/RECEPTIONIST/EMPLOYEE/
+// MANAGER); every screen in this app was built against lowercase.
+const mapUser = (userDto) => ({
+  id: userDto.id,
+  email: userDto.email,
+  name: userDto.name,
+  role: userDto.role.toLowerCase(),
+  employeeId: userDto.employeeId,
+  organizationId: userDto.organizationId,
+  organizationName: userDto.organizationName,
+});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null); // null = signed out
-  // Shown once right after a successful login — resets on every fresh
-  // login since this is a stateless mock (no persistence across app
-  // reloads), but never reappears again during that same signed-in session.
-  const [hasChosenRole, setHasChosenRole] = useState(false);
-  // Only relevant once role === 'receptionist': have they passed the
-  // employee-ID check yet?
-  const [receptionistVerified, setReceptionistVerified] = useState(false);
+  const [organization, setOrganization] = useState(null);
+  // True until a previously-stored session (if any) has been checked
+  // against the backend, so RootNavigator can hold the splash screen
+  // rather than flash the login screen for a signed-in user.
+  const [initializing, setInitializing] = useState(true);
+  const { setOrgTheme } = useTheme();
+
+  // Keep the color palette in sync with whichever org is currently
+  // signed in — covers login/signup/registerCompany and boot-restore
+  // in one place instead of every screen calling setOrgTheme itself.
+  useEffect(() => {
+    setOrgTheme(organization ? organization.theme : null);
+  }, [organization, setOrgTheme]);
+
+  useEffect(() => {
+    (async () => {
+      const token = await loadStoredToken();
+      if (!token) {
+        setInitializing(false);
+        return;
+      }
+      try {
+        const [userDto, org] = await Promise.all([
+          apiClient.get('/api/v1/auth/me'),
+          apiClient.get('/api/v1/org'),
+        ]);
+        setUser(mapUser(userDto));
+        setOrganization(org);
+      } catch {
+        // Stored token is stale/invalid — sign out quietly.
+        await clearToken();
+      } finally {
+        setInitializing(false);
+      }
+    })();
+  }, []);
+
+  const applyAuthResponse = async (res) => {
+    await setToken(res.token);
+    setUser(mapUser(res.user));
+    setOrganization(res.organization);
+  };
 
   // `companyCode` resolves which paying organization (tenant) this
   // login belongs to — required since VisiLog serves several
   // companies, each with their own data and brand colors.
-  const login = (email, password, companyCode) => {
-    if (!email || !password) {
-      return { ok: false, error: 'Enter both an email and a password.' };
+  const login = async (email, password, companyCode) => {
+    if (!email || !password || !companyCode) {
+      return { ok: false, error: 'Enter your company code, email and password.' };
     }
-    const org = organizationByCode(companyCode);
-    if (!org) {
-      return { ok: false, error: 'Enter a valid company code.' };
+    try {
+      const res = await apiClient.post('/api/v1/auth/login', {
+        companyCode: companyCode.trim(),
+        email: email.trim(),
+        password,
+      });
+      await applyAuthResponse(res);
+      return { ok: true, organization: res.organization };
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : 'Login failed.' };
     }
-    const role = detectRole(email);
-
-    // Default name shown in the header for each role
-    const defaultNames = {
-      visitor: 'Visitor',
-      employee: 'Employee',
-      receptionist: 'Receptionist',
-      manager: 'Manager',
-    };
-
-    setUser({
-      id: `${role}-${Date.now()}`,
-      email: email.trim(),
-      name: defaultNames[role],
-      role,
-      avatarTint: 'gold',
-      organizationId: org.id,
-      organizationName: org.name,
-    });
-    setHasChosenRole(false);
-    setReceptionistVerified(false);
-    return { ok: true, organization: org };
   };
 
-  // Finalizes the role chosen on the one-time RoleSelectScreen.
-  const chooseRole = (role) => {
-    const defaultNames = {
-      visitor: 'Visitor',
-      employee: 'Employee',
-      receptionist: 'Receptionist',
-      manager: 'Manager',
-    };
-    setUser((u) => (u ? { ...u, role, name: u.name || defaultNames[role] } : u));
-    setHasChosenRole(true);
+  // Creates a login account under an existing company. Role is decided
+  // server-side: matches `email` against the company's staff roster
+  // (that role) or falls back to visitor if there's no match.
+  const signup = async (companyCode, email, password, name) => {
+    if (!companyCode || !email || !password || !name) {
+      return { ok: false, error: 'Please fill in every field above.' };
+    }
+    try {
+      const res = await apiClient.post('/api/v1/auth/signup', {
+        companyCode: companyCode.trim(),
+        email: email.trim(),
+        password,
+        name: name.trim(),
+      });
+      await applyAuthResponse(res);
+      return { ok: true, organization: res.organization };
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : 'Signup failed.' };
+    }
   };
 
-  // Receptionist employee-ID check against the mock staff directory —
-  // confirms the ID belongs to someone in the Reception department and
-  // adopts their name, standing in for "the app checks the company database."
-  const verifyReceptionistId = (employeeId) => {
-    const clean = (employeeId || '').trim().toUpperCase();
-    const match = employees.find((e) => e.employeeId.toUpperCase() === clean);
-    if (!match) {
-      return { ok: false, error: 'That employee ID was not found.' };
+  // Self-serve "sign your company up" — creates the Organization, its
+  // first Administrator (Manager) account, and hands back a company
+  // code the admin can then share with their staff/visitors.
+  const registerCompany = async (companyName, adminName, adminEmail, adminPassword) => {
+    if (!companyName || !adminName || !adminEmail || !adminPassword) {
+      return { ok: false, error: 'Please fill in every field above.' };
     }
-    if (match.department !== 'Reception') {
-      return { ok: false, error: 'This ID is not registered as a Receptionist.' };
+    try {
+      const res = await apiClient.post('/api/v1/companies/register', {
+        companyName: companyName.trim(),
+        adminName: adminName.trim(),
+        adminEmail: adminEmail.trim(),
+        adminPassword,
+      });
+      await applyAuthResponse(res);
+      return { ok: true, organization: res.organization };
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not register your company.' };
     }
-    setUser((u) => (u ? { ...u, name: match.name, employeeId: match.employeeId } : u));
-    setReceptionistVerified(true);
-    return { ok: true };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await clearToken();
     setUser(null);
-    setHasChosenRole(false);
-    setReceptionistVerified(false);
+    setOrganization(null);
+  };
+
+  // Company Setup > branding (manager only). `theme`, if present, is
+  // sent as a whole object — see UpdateOrgRequest on the backend.
+  const updateOrganization = async (patch) => {
+    try {
+      const org = await apiClient.patch('/api/v1/org', patch);
+      setOrganization(org);
+      return { ok: true, organization: org };
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not save your changes.' };
+    }
+  };
+
+  // Company Setup > office location (manager only) — backs the
+  // clock-in geofence check (src/data/locationCheck.js).
+  const updateOfficeLocation = async (latitude, longitude, radiusMeters) => {
+    try {
+      const org = await apiClient.patch('/api/v1/org/office-location', { latitude, longitude, radiusMeters });
+      setOrganization(org);
+      return { ok: true, organization: org };
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not save the office location.' };
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user, login, logout, DEMO_EMAIL, DEMO_PASSWORD, DEMO_COMPANY_CODE,
-        hasChosenRole, chooseRole,
-        receptionistVerified, verifyReceptionistId,
+        user, organization, initializing,
+        login, signup, registerCompany, logout,
+        updateOrganization, updateOfficeLocation,
       }}
     >
       {children}

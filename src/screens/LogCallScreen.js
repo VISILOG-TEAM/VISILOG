@@ -22,7 +22,7 @@ export default function LogCallScreen({ navigation }) {
 
   const [errors, setErrors] = useState({});
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const e = {};
     if (!callerName.trim()) e.callerName = 'Enter the caller\u2019s name (or "Unknown").';
     if (!callerPhone.trim()) e.callerPhone = 'A phone number is required.';
@@ -30,12 +30,16 @@ export default function LogCallScreen({ navigation }) {
     setErrors(e);
     if (Object.keys(e).length) return;
 
-    const call = logCall({
-      callerName, callerPhone, hostId, callType, purpose, durationMinutes, notes,
-    });
-    Alert.alert('Call logged', `${call.callType} from ${call.callerName}.`, [
-      { text: 'Done', onPress: () => navigation.goBack() },
-    ]);
+    try {
+      const call = await logCall({
+        callerName, callerPhone, hostId, callType, purpose, durationMinutes, notes,
+      });
+      Alert.alert('Call logged', `${call.callType} from ${call.callerName}.`, [
+        { text: 'Done', onPress: () => navigation.goBack() },
+      ]);
+    } catch (err) {
+      Alert.alert('Could not log call', err.message);
+    }
   };
 
   return (

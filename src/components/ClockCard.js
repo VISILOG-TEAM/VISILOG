@@ -9,7 +9,6 @@ import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
 import { isOnWifi } from '../data/wifiCheck';
 import { isAtOffice } from '../data/locationCheck';
-import { organizationById } from '../data/mockData';
 
 // ClockCard — the personal "on the clock" card shared by every role's
 // home screen. Backed by DataContext's shared clock ledger (not local
@@ -21,7 +20,7 @@ import { organizationById } from '../data/mockData';
 // having already clocked in once today (one in/out cycle per day).
 // Clocking OUT never blocks.
 export default function ClockCard() {
-  const { user } = useAuth();
+  const { user, organization } = useAuth();
   const { clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday } = useData();
   const [checking, setChecking] = useState(false);
 
@@ -43,18 +42,27 @@ export default function ClockCard() {
         Alert.alert('Company network required', 'Connect to the company WiFi to clock in.');
         return;
       }
-      const org = organizationById(user?.organizationId);
-      const locationResult = await isAtOffice(org?.officeLocation);
-      setChecking(false);
+      const locationResult = await isAtOffice(organization?.officeLocation);
       if (!locationResult.ok) {
+        setChecking(false);
         Alert.alert('Location check failed', locationResult.error);
         return;
       }
-      const r = clockIn(employeeId, user.name);
-      Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
+      try {
+        const r = await clockIn(employeeId, user.name);
+        Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
+      } catch (err) {
+        Alert.alert('Could not clock in', err.message);
+      } finally {
+        setChecking(false);
+      }
     } else {
-      const r = clockOut(employeeId, user.name);
-      Alert.alert('Checked out', `See you next time. Clocked out at ${fmtTime(r.timestamp)}.`);
+      try {
+        const r = await clockOut(employeeId, user.name);
+        Alert.alert('Checked out', `See you next time. Clocked out at ${fmtTime(r.timestamp)}.`);
+      } catch (err) {
+        Alert.alert('Could not clock out', err.message);
+      }
     }
   };
 

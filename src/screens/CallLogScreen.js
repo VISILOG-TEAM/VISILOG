@@ -7,13 +7,12 @@ import {
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtDateTime } from '../data/format';
 
 // CallLogScreen — every incoming / outgoing / missed call.
 // Fields per the User Guide: date+time, caller name+phone, host, duration, purpose.
 export default function CallLogScreen({ navigation }) {
-  const { calls } = useData();
+  const { calls, employeeById } = useData();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
 
@@ -31,7 +30,7 @@ export default function CallLogScreen({ navigation }) {
         );
       })
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  }, [calls, query, filter]);
+  }, [calls, query, filter, employeeById]);
 
   return (
     <Screen scroll={false} padded={false}>
@@ -81,6 +80,7 @@ export default function CallLogScreen({ navigation }) {
 }
 
 function CallRow({ call }) {
+  const { employeeById } = useData();
   const host = employeeById(call.hostId);
   const icon =
     call.callType === 'Incoming' ? 'call' :

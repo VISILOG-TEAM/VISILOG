@@ -9,7 +9,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtTime } from '../data/format';
 
 // DashboardScreen — the receptionist's landing page.
@@ -22,7 +21,7 @@ import { fmtTime } from '../data/format';
 export default function DashboardScreen({ navigation }) {
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const { stats, visitors, appointments } = useData();
+  const { stats, visitors, appointments, employeeById } = useData();
 
   // Personalise the greeting by time of day.
   const greeting = (() => {

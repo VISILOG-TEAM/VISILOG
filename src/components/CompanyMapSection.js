@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
@@ -6,35 +6,36 @@ import Card from './Card';
 import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
-import { meetingRooms } from '../data/mockData';
+import { useData } from '../context/DataContext';
 
 // A simplified "tour" map: a stylized floor-plan grid with tappable
 // pins for reception + each meeting room. There's no real indoor
 // positioning here (that needs BLE beacons / indoor GPS infrastructure
 // this demo doesn't have) — tapping a pin shows a photo placeholder and
 // short walking directions instead, giving the tour feel without it.
-const LOCATIONS = [
-  {
-    id: 'reception', name: 'Reception', floor: 'Ground Floor', icon: 'desktop-outline',
-    directions: ['Enter through the main doors.', 'Reception desk is straight ahead.'],
-  },
-  ...meetingRooms.map((r, i) => ({
-    id: r.id,
-    name: r.name,
-    floor: r.floor,
-    capacity: r.capacity,
-    icon: 'business-outline',
-    directions: [
-      'From reception, take the lift or stairs up.',
-      `Follow signage to ${r.floor}.`,
-      `${r.name} is the ${i === 0 ? 'first' : i === 1 ? 'second' : 'third'} door on the left.`,
-    ],
-  })),
-];
-
 export default function CompanyMapSection() {
   const { colors } = useTheme();
+  const { meetingRooms } = useData();
   const [selected, setSelected] = useState(null);
+
+  const LOCATIONS = useMemo(() => [
+    {
+      id: 'reception', name: 'Reception', floor: 'Ground Floor', icon: 'desktop-outline',
+      directions: ['Enter through the main doors.', 'Reception desk is straight ahead.'],
+    },
+    ...meetingRooms.map((r, i) => ({
+      id: r.id,
+      name: r.name,
+      floor: r.floor,
+      capacity: r.capacity,
+      icon: 'business-outline',
+      directions: [
+        'From reception, take the lift or stairs up.',
+        `Follow signage to ${r.floor}.`,
+        `${r.name} is the ${i === 0 ? 'first' : i === 1 ? 'second' : 'third'} door on the left.`,
+      ],
+    })),
+  ], [meetingRooms]);
 
   return (
     <View>

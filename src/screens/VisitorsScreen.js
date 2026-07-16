@@ -7,7 +7,6 @@ import {
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtTime, fmtDuration } from '../data/format';
 
 // VisitorsScreen — the live visitor log.
@@ -18,7 +17,7 @@ import { fmtTime, fmtDuration } from '../data/format';
 //   - each row links into a detail page where check-out happens
 // A floating "Register" button opens the registration modal.
 export default function VisitorsScreen({ navigation }) {
-  const { visitors } = useData();
+  const { visitors, employeeById } = useData();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all'); // 'all' | 'onsite' | 'completed'
 

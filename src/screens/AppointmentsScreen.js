@@ -9,7 +9,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { employeeById, meetingRooms } from '../data/mockData';
 import { fmtTime, fmtDate } from '../data/format';
 
 // AppointmentsScreen
@@ -70,9 +69,13 @@ function AppointmentsList() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Admit',
-          onPress: () => {
-            const v = admitAppointment(appt);
-            Alert.alert('Admitted', `${v.fullName} - ${v.badgeId}`);
+          onPress: async () => {
+            try {
+              const v = await admitAppointment(appt);
+              Alert.alert('Admitted', `${v.fullName} - ${v.badgeId}`);
+            } catch (err) {
+              Alert.alert('Could not admit visitor', err.message);
+            }
           },
         },
       ]
@@ -88,7 +91,7 @@ function AppointmentsList() {
         {
           text: 'Reject',
           style: 'destructive',
-          onPress: () => updateAppointmentStatus(appt.id, 'rejected'),
+          onPress: () => updateAppointmentStatus(appt.id, 'rejected').catch((err) => Alert.alert('Could not reject', err.message)),
         },
       ]
     );
@@ -145,6 +148,7 @@ function AppointmentsList() {
 }
 
 function AppointmentRow({ appointment, onAdmit, onReject, onReschedule }) {
+  const { employeeById } = useData();
   const host = employeeById(appointment.hostId);
   const accent =
     appointment.status === 'admitted' ? 'success' :
@@ -248,10 +252,10 @@ const ROOM_STATUS_META = {
 
 function RoomsList() {
   const { colors: themeColors } = useTheme();
-  const { roomBookings } = useData();
+  const { roomBookings, meetingRooms, employeeById } = useData();
   const rooms = useMemo(
     () => meetingRooms.map((r) => ({ room: r, ...roomStatus(r, roomBookings) })),
-    [roomBookings]
+    [roomBookings, meetingRooms]
   );
 
   return (

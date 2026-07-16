@@ -17,14 +17,18 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
   const [time, setTime] = useState('');
   const [reason, setReason] = useState('');
 
-  const onSave = () => {
+  const onSave = async () => {
     if (!date.trim() || !time.trim() || !reason.trim()) {
       Alert.alert('Almost there', 'New date, time and a reason are all required.');
       return;
     }
-    rescheduleAppointment(appointment.id, `${date}T${time}`, reason.trim());
-    setDate(''); setTime(''); setReason('');
-    onClose();
+    try {
+      await rescheduleAppointment(appointment.id, `${date}T${time}`, reason.trim());
+      setDate(''); setTime(''); setReason('');
+      onClose();
+    } catch (err) {
+      Alert.alert('Could not reschedule', err.message);
+    }
   };
 
   return (

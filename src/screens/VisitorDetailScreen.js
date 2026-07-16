@@ -8,7 +8,6 @@ import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtTime, fmtDate, fmtDuration } from '../data/format';
 
 // VisitorDetailScreen — the full record for one visitor.
@@ -20,7 +19,7 @@ import { fmtTime, fmtDate, fmtDuration } from '../data/format';
 //   - Check-out action (when on-site)
 export default function VisitorDetailScreen({ route, navigation }) {
   const { visitorId } = route.params;
-  const { visitors, checkOutVisitor } = useData();
+  const { visitors, checkOutVisitor, employeeById } = useData();
   const visitor = visitors.find((v) => v.id === visitorId);
 
   const [note, setNote] = useState('');
@@ -48,9 +47,13 @@ export default function VisitorDetailScreen({ route, navigation }) {
         {
           text: 'Check out',
           style: 'destructive',
-          onPress: () => {
-            checkOutVisitor(visitor.id, note);
-            navigation.goBack();
+          onPress: async () => {
+            try {
+              await checkOutVisitor(visitor.id, note);
+              navigation.goBack();
+            } catch (err) {
+              Alert.alert('Could not check out', err.message);
+            }
           },
         },
       ]

@@ -9,17 +9,16 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtDateTime } from '../data/format';
 
 // Receptionist enters a visitor's NFC code, sees their full booking.
 export default function NFCLookupScreen({ navigation }) {
-  const { findAppointmentByCode, admitAppointment } = useData();
+  const { findAppointmentByCode, admitAppointment, employeeById } = useData();
   const [code, setCode] = useState('');
   const [found, setFound] = useState(null);
 
-  const lookup = () => {
-    const a = findAppointmentByCode(code);
+  const lookup = async () => {
+    const a = await findAppointmentByCode(code);
     if (!a) {
       Alert.alert('Not found', `No booking matches code "${code}".`);
       setFound(null);
@@ -73,10 +72,14 @@ export default function NFCLookupScreen({ navigation }) {
           {found.status === 'pending' && (
             <Button label="Admit & check in"
               icon="checkmark-circle-outline"
-              onPress={() => {
-                const v = admitAppointment(found);
-                Alert.alert('Admitted', `${v.fullName} (${v.badgeId}) is on-site.`);
-                setFound(null); setCode('');
+              onPress={async () => {
+                try {
+                  const v = await admitAppointment(found);
+                  Alert.alert('Admitted', `${v.fullName} (${v.badgeId}) is on-site.`);
+                  setFound(null); setCode('');
+                } catch (err) {
+                  Alert.alert('Could not admit visitor', err.message);
+                }
               }}
               style={{ marginTop: spacing.sm }}
             />

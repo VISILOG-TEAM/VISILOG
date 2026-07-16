@@ -31,24 +31,28 @@ export default function VisitorBookingScreen({ navigation }) {
   const [date, setDate] = useState(formatDate(new Date()));
   const [time, setTime] = useState('10:00');
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     if (!visitorName.trim() || !visitorPhone.trim() || !hostId) {
       Alert.alert('Almost there', 'Name, phone and host are required.');
       return;
     }
-    bookVisit({
-      visitorName: visitorName.trim(),
-      visitorPhone: visitorPhone.trim(),
-      visitorCompany: visitorCompany.trim(),
-      purpose,
-      hostId,
-      scheduledAt: `${date}T${time}`,
-    });
-    Alert.alert(
-      'Appointment requested',
-      `${visitorName} is now in the pending queue. The host will be notified to approve the visit.`,
-      [{ text: 'Done', onPress: () => navigation.navigate('Home') }]
-    );
+    try {
+      await bookVisit({
+        visitorName: visitorName.trim(),
+        visitorPhone: visitorPhone.trim(),
+        visitorCompany: visitorCompany.trim(),
+        purpose,
+        hostId,
+        scheduledAt: `${date}T${time}`,
+      });
+      Alert.alert(
+        'Appointment requested',
+        `${visitorName} is now in the pending queue. The host will be notified to approve the visit.`,
+        [{ text: 'Done', onPress: () => navigation.navigate('Home') }]
+      );
+    } catch (err) {
+      Alert.alert('Could not request appointment', err.message);
+    }
   };
 
   return (

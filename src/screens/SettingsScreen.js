@@ -144,11 +144,9 @@ export default function SettingsScreen({ navigation }) {
               sub={`${user.organizationName} · manage plan & invoices`}
               onPress={() => navigation.navigate('Billing')} />
             <Divider />
-            <LinkRow icon="business-outline" title="Company branding"
-              sub="Logo, primary colour, badge layout" />
-            <Divider />
-            <LinkRow icon="card-outline" title="Badge template"
-              sub="Customise badge ID format & print layout" />
+            <LinkRow icon="business-outline" title="Company Setup"
+              sub="Branding, office location, staff & rooms"
+              onPress={() => navigation.navigate('CompanySetup')} />
             <Divider />
             <LinkRow icon="globe-outline" title="Languages"
               sub="English (default)" />

@@ -7,9 +7,7 @@ import Select from './Select';
 import MultiSelect from './MultiSelect';
 import Segmented from './Segmented';
 import { spacing } from '../theme/spacing';
-import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { meetingRooms } from '../data/mockData';
 
 // BookMeetingForm — self-service internal meeting booking. Shared by
 // Employee, Manager (EmployeeBookScreen) and Receptionist (the
@@ -17,10 +15,11 @@ import { meetingRooms } from '../data/mockData';
 // Administrator or anyone else can invite whoever they need — not
 // just their own direct reports — and can book either one of the
 // company's meeting rooms or an outside location (a client's office,
-// a restaurant, etc.) for meetings that don't happen on-site.
+// a restaurant, etc.) for meetings that don't happen on-site. The
+// organiser is derived server-side from the signed-in user's own
+// employee record — see RoomBookingController.
 export default function BookMeetingForm({ onDone }) {
-  const { user } = useAuth();
-  const { employees, bookRoom } = useData();
+  const { employees, meetingRooms, bookRoom } = useData();
 
   const [title, setTitle] = useState('');
   const [locationType, setLocationType] = useState('room'); // 'room' | 'outside'
@@ -31,7 +30,7 @@ export default function BookMeetingForm({ onDone }) {
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const hasPlace = locationType === 'room' ? !!roomId : !!outsideLocation.trim();
     if (!title.trim() || !hasPlace) {
       Alert.alert('Almost there', locationType === 'room'
@@ -39,18 +38,21 @@ export default function BookMeetingForm({ onDone }) {
         : 'Give the meeting a title and enter a location.');
       return;
     }
-    bookRoom({
-      title: title.trim(),
-      roomId: locationType === 'room' ? roomId : null,
-      location: locationType === 'outside' ? outsideLocation.trim() : '',
-      organiserId: user.employeeId || user.id,
-      startTime: `${date}T${startTime}`,
-      endTime: `${date}T${endTime}`,
-      participantIds: attendeeIds,
-    });
-    Alert.alert('Booked', `${title} is on the calendar.`, [
-      { text: 'Done', onPress: onDone },
-    ]);
+    try {
+      await bookRoom({
+        title: title.trim(),
+        roomId: locationType === 'room' ? roomId : null,
+        location: locationType === 'outside' ? outsideLocation.trim() : '',
+        startTime: `${date}T${startTime}`,
+        endTime: `${date}T${endTime}`,
+        participantIds: attendeeIds,
+      });
+      Alert.alert('Booked', `${title} is on the calendar.`, [
+        { text: 'Done', onPress: onDone },
+      ]);
+    } catch (err) {
+      Alert.alert('Could not book meeting', err.message);
+    }
   };
 
   return (

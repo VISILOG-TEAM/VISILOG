@@ -8,28 +8,26 @@ import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, Segmented } from '../components';
+import { Text } from '../components';
 import { useAuth } from '../context/AuthContext';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 
-// Signup uses the exact same background photo as Login, so the two
-// pages feel like one continuous flow. The sign-in/register pill at
-// the top mirrors Login's — tapping "Sign in" here just goes back.
-//
-// Role isn't chosen here — the backend matches `email` against the
-// company's staff roster (that role) or falls back to visitor.
-export default function SignupScreen({ navigation }) {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+// RegisterCompanyScreen — the self-serve "sign your company up" entry
+// point. Creates the Organization plus its first Administrator account
+// in one step and hands back a company code; the admin shares that
+// code with their staff and visitors afterwards (see Company Setup).
+export default function RegisterCompanyScreen({ navigation }) {
+  const [companyName, setCompanyName] = useState('');
+  const [adminName, setAdminName] = useState('');
+  const [adminEmail, setAdminEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [companyCode, setCompanyCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const { signup } = useAuth();
+  const { registerCompany } = useAuth();
 
   const onSubmit = async () => {
-    if (!fullName.trim() || !email.trim() || !password || !companyCode.trim()) {
+    if (!companyName.trim() || !adminName.trim() || !adminEmail.trim() || !password) {
       Alert.alert('Almost there', 'Please fill in every field above.');
       return;
     }
@@ -38,14 +36,19 @@ export default function SignupScreen({ navigation }) {
       return;
     }
     setSubmitting(true);
-    const result = await signup(companyCode, email, password, fullName);
+    const result = await registerCompany(companyName, adminName, adminEmail, password);
     setSubmitting(false);
     if (!result.ok) {
-      Alert.alert('Signup failed', result.error);
+      Alert.alert('Could not register your company', result.error);
       return;
     }
-    // On success the root navigator will swap to the app stack.
+    Alert.alert(
+      'You’re all set',
+      `${result.organization.name} is registered. Your company code is ${result.organization.code} — share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`
+    );
+    // On success the root navigator will swap to the manager tab shell.
   };
+
   return (
     <ImageBackground
       source={require('../../assets/login-bg.jpg')}
@@ -64,7 +67,6 @@ export default function SignupScreen({ navigation }) {
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* Back chevron */}
             <Pressable onPress={() => navigation.goBack()} style={styles.back} hitSlop={8}>
               <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
             </Pressable>
@@ -72,28 +74,16 @@ export default function SignupScreen({ navigation }) {
             <BlurView intensity={40} tint="light" style={styles.card}>
               <View style={styles.cardInner}>
                 <Text style={styles.wordmark}>VisiLog</Text>
-
-                <Segmented
-                  value="register"
-                  onChange={(v) => {
-                    if (v === 'signin') navigation.goBack();
-                  }}
-                  options={[
-                    { label: 'Sign in', value: 'signin' },
-                    { label: 'Register', value: 'register' },
-                  ]}
-                  style={{ marginBottom: spacing.lg }}
-                />
-
-                <Text style={styles.heading}>Create account</Text>
+                <Text style={styles.heading}>Register your company</Text>
                 <Text style={styles.subheading}>
-                  Request access to the reception system.
+                  Set up VisiLog for your organization. You’ll be the first
+                  Administrator — add your staff roster and office details
+                  afterwards in Company Setup.
                 </Text>
 
-                <Field icon="business-outline" placeholder="Company code" value={companyCode} onChangeText={setCompanyCode}
-                  autoCapitalize="characters" />
-                <Field icon="person-outline" placeholder="Full name" value={fullName} onChangeText={setFullName} />
-                <Field icon="mail-outline" placeholder="Email address" value={email} onChangeText={setEmail}
+                <Field icon="business-outline" placeholder="Company name" value={companyName} onChangeText={setCompanyName} />
+                <Field icon="person-outline" placeholder="Your full name" value={adminName} onChangeText={setAdminName} />
+                <Field icon="mail-outline" placeholder="Your work email" value={adminEmail} onChangeText={setAdminEmail}
                   autoCapitalize="none" keyboardType="email-address" />
                 <Field icon="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword}
                   secureTextEntry />
@@ -105,16 +95,16 @@ export default function SignupScreen({ navigation }) {
                     colors={['#F0D998', '#D4AF37', '#A9791B']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    style={styles.signupBtn}
+                    style={styles.submitBtn}
                   >
-                    <Text style={styles.signupBtnText}>
-                      {submitting ? 'Creating account…' : 'Create account'}
+                    <Text style={styles.submitBtnText}>
+                      {submitting ? 'Registering…' : 'Register company'}
                     </Text>
                   </LinearGradient>
                 </Pressable>
 
                 <View style={styles.loginRow}>
-                  <Text style={styles.loginHint}>Already have one? </Text>
+                  <Text style={styles.loginHint}>Already have a company code? </Text>
                   <Pressable onPress={() => navigation.goBack()}>
                     <Text style={styles.loginLink}>Login</Text>
                   </Pressable>
@@ -128,8 +118,6 @@ export default function SignupScreen({ navigation }) {
   );
 }
 
-// Small internal field component to keep the JSX above readable. Local
-// because it's only used on this screen.
 function Field({ icon, ...inputProps }) {
   return (
     <View style={styles.fieldRow}>
@@ -177,11 +165,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 8, paddingVertical: 0,
   },
 
-  signupBtn: {
+  submitBtn: {
     height: 50, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
     marginTop: spacing.sm,
   },
-  signupBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#1B3324', letterSpacing: 0.3 },
+  submitBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#1B3324', letterSpacing: 0.3 },
 
   loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
   loginHint: { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)' },

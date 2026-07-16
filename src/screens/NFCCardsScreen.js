@@ -9,7 +9,6 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 import { fmtDate } from '../data/format';
 
 // NFCCardsScreen — list of virtual NFC cards.
@@ -17,7 +16,7 @@ import { fmtDate } from '../data/format';
 // an expiry, and a status ('active' | 'revoked'). Receptionists can
 // revoke (or in this demo, "rotate") a card.
 export default function NFCCardsScreen({ navigation }) {
-  const { nfcCards, employees } = useData();
+  const { nfcCards, employeeById } = useData();
   const [filter, setFilter] = useState('active');
 
   const list = useMemo(() => {
@@ -29,7 +28,7 @@ export default function NFCCardsScreen({ navigation }) {
         else holder = `Visitor ${c.holderId}`;
         return { ...c, holderName: holder };
       });
-  }, [nfcCards, filter, employees]);
+  }, [nfcCards, filter, employeeById]);
 
   const onRevoke = (card) => {
     Alert.alert(

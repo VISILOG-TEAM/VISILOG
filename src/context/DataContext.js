@@ -1,210 +1,261 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
-import {
-  initialVisitors, initialAppointments, initialCalls,
-  initialNfcCards, initialAttendance, initialRoomBookings,
-  nextBadgeId, employees as initialEmployees,
-  initialOrgBilling, initialInvoices,
-} from '../data/mockData';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { apiClient } from '../api/client';
+import { useAuth } from './AuthContext';
 
-// DataContext gathers every piece of mutable demo data and exposes
-// the operations the receptionist workflow needs.
+// DataContext talks to the real VisiLog backend (see server/). Every
+// collection below is fetched for the signed-in user's own organization
+// (the backend derives that from the JWT, never from anything we send)
+// and kept in local state, updated from each mutation's response so the
+// UI doesn't need a full refetch after every action.
+//
+// Backend enums come back as UPPERCASE strings (VisitorStatus, Role,
+// etc.) — every screen in this app was built against the mock data's
+// lowercase/Capitalized casing, so the map* helpers below normalize at
+// the boundary and every screen keeps working unchanged.
 const DataContext = createContext(null);
 
+const cap = (s) => (s ? s.charAt(0) + s.slice(1).toLowerCase() : s);
+
+const mapVisitor = (d) => ({ ...d, status: d.status.toLowerCase() });
+const mapAppointment = (d) => ({ ...d, status: d.status.toLowerCase() });
+const mapCall = (d) => ({ ...d, callType: cap(d.callType) });
+const mapEmployee = (d) => ({
+  id: d.id,
+  employeeId: d.employeeCode,
+  name: d.name,
+  department: d.department || '',
+  phone: d.phone || '',
+  avaya: d.avaya || '',
+  email: d.email || '',
+  role: d.role.toLowerCase(),
+});
+const mapClockRecord = (d) => ({ ...d, type: d.type.toLowerCase() });
+const mapRoomBooking = (d) => ({ ...d, location: d.location || '', participantIds: d.participantIds || [] });
+const mapPlan = (d) => ({ ...d, pricePerMonth: Number(d.pricePerMonth) });
+const mapBilling = (d) => ({
+  planId: d.plan.id,
+  status: d.status.toLowerCase(),
+  seatsUsed: d.seatsUsed,
+  renewalDate: d.renewalDate,
+  paymentLast4: d.paymentLast4,
+});
+const mapInvoice = (d) => ({ ...d, amount: Number(d.amount), status: d.status.toLowerCase() });
+
 export function DataProvider({ children }) {
-  // ---- state ----
-  const [visitors, setVisitors] = useState(initialVisitors);
-  const [appointments, setAppointments] = useState(initialAppointments);
-  const [calls, setCalls] = useState(initialCalls);
-  const [nfcCards] = useState(initialNfcCards);
-  const [attendance] = useState(initialAttendance);
-  const [roomBookings, setRoomBookings] = useState(initialRoomBookings);
-  const [employees, setEmployees] = useState(initialEmployees);
-  const [visitorAccounts, setVisitorAccounts] = useState([]);
-  // Shared clock-in/out ledger. Distinct from `attendance` (the NFC tap
-  // log, seeded demo data) — this is the live record behind the personal
-  // "on the clock" cards on Employee/Receptionist home screens, and the
-  // Manager's Clock-ins screen, so every role sees the same truth.
+  const { user } = useAuth();
+
+  const [visitors, setVisitors] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [calls, setCalls] = useState([]);
+  // No backend model for standalone NFC cards in this pass — the
+  // per-visit NFC code lives on the appointment itself (see nfcCode).
+  const [nfcCards] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [meetingRooms, setMeetingRooms] = useState([]);
   const [clockRecords, setClockRecords] = useState([]);
-  // Per-organization subscription state, keyed by organizationId — this
-  // is what makes the "several companies paying us subscriptions"
-  // business model visible in the app (Settings > Billing & subscription,
-  // Manager/Administrator only). Invoices are demo history, not appended
-  // to on a plan switch — only the live plan/status/seats change.
-  const [orgBilling, setOrgBilling] = useState(initialOrgBilling);
-  const [invoices] = useState(initialInvoices);
+  const [roomBookings, setRoomBookings] = useState([]);
+  const [billing, setBilling] = useState(null);
+  const [invoices, setInvoices] = useState([]);
+  const [plans, setPlans] = useState([]);
+
+  // Load every collection once a user is signed in. Billing/invoices
+  // are manager-only on the backend, so non-managers skip those calls
+  // entirely rather than getting a 403.
+  useEffect(() => {
+    if (!user) {
+      setVisitors([]); setAppointments([]); setCalls([]); setEmployees([]);
+      setMeetingRooms([]); setClockRecords([]); setRoomBookings([]);
+      setBilling(null); setInvoices([]); setPlans([]);
+      return;
+    }
+    const isManager = user.role === 'manager';
+    const appointmentsPath = user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';
+
+    (async () => {
+      const [v, a, c, e, r, cr, rb, p] = await Promise.all([
+        apiClient.get('/api/v1/visitors'),
+        apiClient.get(appointmentsPath),
+        apiClient.get('/api/v1/calls'),
+        apiClient.get('/api/v1/employees'),
+        apiClient.get('/api/v1/meeting-rooms'),
+        apiClient.get('/api/v1/clock-records'),
+        apiClient.get('/api/v1/room-bookings'),
+        apiClient.get('/api/v1/plans'),
+      ]);
+      setVisitors(v.map(mapVisitor));
+      setAppointments(a.map(mapAppointment));
+      setCalls(c.map(mapCall));
+      setEmployees(e.map(mapEmployee));
+      setMeetingRooms(r);
+      setClockRecords(cr.map(mapClockRecord));
+      setRoomBookings(rb.map(mapRoomBooking));
+      setPlans(p.map(mapPlan));
+
+      if (isManager) {
+        const [b, inv] = await Promise.all([
+          apiClient.get('/api/v1/billing'),
+          apiClient.get('/api/v1/billing/invoices'),
+        ]);
+        setBilling(mapBilling(b));
+        setInvoices(inv.map(mapInvoice));
+      }
+    })();
+  }, [user?.id]);
+
+  // ---- lookup helpers ----
+  const employeeById = (id) => employees.find((e) => e.id === id);
+  const roomById = (id) => meetingRooms.find((r) => r.id === id);
 
   // ---- visitor operations ----
 
-  // Adds a new visitor and immediately checks them in. Returns the new record.
-  const registerAndCheckIn = (input) => {
-    const fullName = `${(input.firstName || '').trim()} ${(input.lastName || '').trim()}`.trim();
-    const visitor = {
-      id: `v-${Date.now()}`,
-      badgeId: nextBadgeId(visitors),
-      firstName: input.firstName || '',
-      lastName: input.lastName || '',
-      fullName,
-      phone: input.phone || '',
-      company: input.company || '',
-      purpose: input.purpose || 'Official Business',
-      hostId: input.hostId,
-      checkInAt: new Date().toISOString(),
-      checkOutAt: null,
-      status: 'onsite',
-      notes: input.notes || '',
-    };
+  const registerAndCheckIn = async (input) => {
+    const dto = await apiClient.post('/api/v1/visitors', {
+      firstName: input.firstName, lastName: input.lastName, phone: input.phone,
+      company: input.company, purpose: input.purpose, hostId: input.hostId, notes: input.notes,
+    });
+    const visitor = mapVisitor(dto);
     setVisitors((vs) => [visitor, ...vs]);
     return visitor;
   };
 
-  // Marks a visitor as checked out at the current time, with optional notes.
-  const checkOutVisitor = (visitorId, notes = '') => {
-    setVisitors((vs) =>
-      vs.map((v) =>
-        v.id === visitorId
-          ? { ...v, status: 'completed', checkOutAt: new Date().toISOString(), notes: notes || v.notes }
-          : v
-      )
-    );
+  const checkOutVisitor = async (visitorId, notes = '') => {
+    const dto = await apiClient.patch(`/api/v1/visitors/${visitorId}/check-out`, { notes });
+    const visitor = mapVisitor(dto);
+    setVisitors((vs) => vs.map((v) => (v.id === visitorId ? visitor : v)));
+    return visitor;
   };
 
   // ---- appointment operations ----
 
-  // Visitor self-registration (from the Signup screen).
-  const registerVisitorAccount = (input) => {
-    const account = {
-      id: `va-${Date.now()}`,
-      fullName: input.fullName,
-      email: input.email.toLowerCase().trim(),
-      password: input.password,
-      phone: input.phone || '',
-      company: input.company || '',
-    };
-    setVisitorAccounts((a) => [...a, account]);
-    return account;
-  };
-
-  // Make a unique NFC code for a visitor booking.
-  // Format: VC-XXXX-XXXX (digits only, easy to read out loud).
-  const generateVisitorCode = () => {
-    const rand = () => Math.floor(1000 + Math.random() * 9000);
-    return `VC-${rand()}-${rand()}`;
-  };
-
-  // Visitor books a visit — creates a pending appointment with an NFC code.
-  const bookVisit = (input) => {
-    const appointment = {
-      id: `a-${Date.now()}`,
-      visitorName: input.visitorName,
-      visitorPhone: input.visitorPhone,
-      visitorCompany: input.visitorCompany || '',
-      purpose: input.purpose,
-      hostId: input.hostId,
-      scheduledAt: input.scheduledAt || new Date().toISOString(),
-      status: 'pending',
-      nfcCode: generateVisitorCode(),
-      bookedByEmail: input.bookedByEmail || '',
-    };
+  const bookVisit = async (input) => {
+    const dto = await apiClient.post('/api/v1/appointments', {
+      visitorName: input.visitorName, visitorPhone: input.visitorPhone,
+      visitorCompany: input.visitorCompany, purpose: input.purpose, hostId: input.hostId,
+      scheduledAt: input.scheduledAt,
+    });
+    const appointment = mapAppointment(dto);
     setAppointments((as) => [appointment, ...as]);
     return appointment;
   };
 
-  // Receptionist's NFC lookup — find a booking by its code.
-  const findAppointmentByCode = (code) => {
+  const findAppointmentByCode = async (code) => {
     const clean = (code || '').trim().toUpperCase();
-    return appointments.find((a) => a.nfcCode === clean);
+    if (!clean) return null;
+    try {
+      const dto = await apiClient.get(`/api/v1/appointments/by-code/${encodeURIComponent(clean)}`);
+      return mapAppointment(dto);
+    } catch {
+      return null;
+    }
   };
 
-  const updateAppointmentStatus = (id, status) => {
-    setAppointments((as) => as.map((a) => (a.id === id ? { ...a, status } : a)));
+  const updateAppointmentStatus = async (id, status) => {
+    const dto = await apiClient.patch(`/api/v1/appointments/${id}/status`, { status });
+    const appointment = mapAppointment(dto);
+    setAppointments((as) => as.map((a) => (a.id === id ? appointment : a)));
+    return appointment;
   };
 
-  // When an appointment is admitted we ALSO register the visitor and
-  // check them in, so the front desk doesn't repeat the data entry.
-  const admitAppointment = (appointment) => {
-    updateAppointmentStatus(appointment.id, 'admitted');
-    const [firstName, ...rest] = (appointment.visitorName || '').split(' ');
-    return registerAndCheckIn({
-      firstName,
-      lastName: rest.join(' '),
-      phone: appointment.visitorPhone,
-      company: appointment.visitorCompany,
-      purpose: appointment.purpose,
-      hostId: appointment.hostId,
-    });
+  // Admitting also registers + checks in the visitor server-side. The
+  // admit response is only the updated appointment, so we refetch the
+  // visitor list (newest-first) and hand back that just-created record.
+  const admitAppointment = async (appointment) => {
+    const apptDto = await apiClient.post(`/api/v1/appointments/${appointment.id}/admit`);
+    const updated = mapAppointment(apptDto);
+    setAppointments((as) => as.map((a) => (a.id === updated.id ? updated : a)));
+
+    const visitorDtos = await apiClient.get('/api/v1/visitors');
+    const mapped = visitorDtos.map(mapVisitor);
+    setVisitors(mapped);
+    return mapped[0];
   };
 
   // ---- call log operations ----
 
-  const logCall = (input) => {
-    const call = {
-      id: `c-${Date.now()}`,
-      callerName: input.callerName || 'Unknown',
-      callerPhone: input.callerPhone || '',
-      hostId: input.hostId,
-      callType: input.callType || 'Incoming',
-      purpose: input.purpose || '',
-      durationMinutes: Number(input.durationMinutes) || 0,
-      notes: input.notes || '',
-      timestamp: new Date().toISOString(),
-    };
+  const logCall = async (input) => {
+    const dto = await apiClient.post('/api/v1/calls', {
+      callerName: input.callerName, callerPhone: input.callerPhone, hostId: input.hostId,
+      callType: input.callType, purpose: input.purpose,
+      durationMinutes: Number(input.durationMinutes) || 0, notes: input.notes,
+    });
+    const call = mapCall(dto);
     setCalls((cs) => [call, ...cs]);
     return call;
   };
 
-  // ---- directory operations ----
+  // ---- directory (staff roster) operations — manager only ----
 
-  const addEmployee = (input) => {
-    const emp = {
-      id: `e-${Date.now()}`,
-      name: input.name || '',
-      department: input.department || '',
-      phone: input.phone || '',
-      avaya: input.avaya || '',
-      email: input.email || '',
-    };
-    setEmployees((es) => [...es, emp]);
-    return emp;
+  const addEmployee = async (input) => {
+    const dto = await apiClient.post('/api/v1/employees', {
+      employeeCode: input.employeeId, name: input.name, department: input.department,
+      phone: input.phone, avaya: input.avaya, email: input.email, role: input.role || 'employee',
+    });
+    const employee = mapEmployee(dto);
+    setEmployees((es) => [...es, employee]);
+    return employee;
   };
 
-  const removeEmployee = (id) => {
+  const updateEmployee = async (id, input) => {
+    const dto = await apiClient.patch(`/api/v1/employees/${id}`, {
+      employeeCode: input.employeeId, name: input.name, department: input.department,
+      phone: input.phone, avaya: input.avaya, email: input.email, role: input.role,
+    });
+    const employee = mapEmployee(dto);
+    setEmployees((es) => es.map((e) => (e.id === id ? employee : e)));
+    return employee;
+  };
+
+  const removeEmployee = async (id) => {
+    await apiClient.delete(`/api/v1/employees/${id}`);
     setEmployees((es) => es.filter((e) => e.id !== id));
   };
 
-  // ---- clock in/out (work attendance, not NFC taps) ----
+  // ---- meeting rooms (Company Setup, manager only) ----
 
-  const clockIn = (employeeId, employeeName) => {
-    const record = {
-      id: `clk-${Date.now()}`,
-      employeeId, employeeName,
-      type: 'in',
-      timestamp: new Date().toISOString(),
-    };
+  const addMeetingRoom = async (input) => {
+    const room = await apiClient.post('/api/v1/meeting-rooms', {
+      name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
+    });
+    setMeetingRooms((rs) => [...rs, room]);
+    return room;
+  };
+
+  const updateMeetingRoom = async (id, input) => {
+    const room = await apiClient.patch(`/api/v1/meeting-rooms/${id}`, {
+      name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
+    });
+    setMeetingRooms((rs) => rs.map((r) => (r.id === id ? room : r)));
+    return room;
+  };
+
+  const removeMeetingRoom = async (id) => {
+    await apiClient.delete(`/api/v1/meeting-rooms/${id}`);
+    setMeetingRooms((rs) => rs.filter((r) => r.id !== id));
+  };
+
+  // ---- clock in/out (work attendance) ----
+
+  const clockIn = async (employeeId, employeeName) => {
+    const dto = await apiClient.post('/api/v1/clock-records/in', { employeeId, employeeName });
+    const record = mapClockRecord(dto);
     setClockRecords((cs) => [record, ...cs]);
     return record;
   };
 
-  const clockOut = (employeeId, employeeName) => {
-    const record = {
-      id: `clk-${Date.now()}`,
-      employeeId, employeeName,
-      type: 'out',
-      timestamp: new Date().toISOString(),
-    };
+  const clockOut = async (employeeId, employeeName) => {
+    const dto = await apiClient.post('/api/v1/clock-records/out', { employeeId, employeeName });
+    const record = mapClockRecord(dto);
     setClockRecords((cs) => [record, ...cs]);
     return record;
   };
 
-  // Whether `employeeId`'s most recent clock record is an "in" — i.e.
-  // they're currently on the clock. Records are newest-first.
+  // Records are newest-first — these stay synchronous, derived from the
+  // locally-held ledger, so ClockCard's render logic doesn't change.
   const isClockedIn = (employeeId) => {
     const mine = clockRecords.find((c) => c.employeeId === employeeId);
     return !!mine && mine.type === 'in';
   };
 
-  // One clock-in per calendar day per employee — once they've clocked
-  // in today (whether or not they've since clocked out), no more
-  // clock-ins are allowed until tomorrow.
   const hasClockedInToday = (employeeId) => {
     const todayKey = new Date().toDateString();
     return clockRecords.some((c) => (
@@ -214,51 +265,40 @@ export function DataProvider({ children }) {
     ));
   };
 
-  // ---- self-service meeting booking (Employee/Manager "Book" tab,
-  // and the Receptionist's "Internal meeting" pane — booking a room OR
-  // an outside location, with any attendees from the directory) ----
+  // ---- self-service meeting booking ----
 
-  const bookRoom = (input) => {
-    const booking = {
-      id: `rb-${Date.now()}`,
+  const bookRoom = async (input) => {
+    const dto = await apiClient.post('/api/v1/room-bookings', {
       roomId: input.roomId || null,
-      location: input.location || '', // set when roomId is null — an outside meeting
-      organiserId: input.organiserId,
+      location: input.roomId ? null : (input.location || ''),
       title: input.title || 'Meeting',
       startTime: input.startTime,
       endTime: input.endTime,
       participantIds: input.participantIds || [],
-    };
+    });
+    const booking = mapRoomBooking(dto);
     setRoomBookings((rs) => [booking, ...rs]);
     return booking;
   };
 
-  // ---- appointment rescheduling (Employee & Visitor only, per spec —
-  // requires a reason so there's a record of why the time changed) ----
+  // ---- appointment rescheduling (Employee & Visitor only) ----
 
-  const rescheduleAppointment = (id, newScheduledAt, reason) => {
-    setAppointments((as) => as.map((a) => (
-      a.id === id
-        ? {
-            ...a,
-            scheduledAt: newScheduledAt,
-            rescheduleReason: reason || '',
-            rescheduledAt: new Date().toISOString(),
-          }
-        : a
-    )));
+  const rescheduleAppointment = async (id, newScheduledAt, reason) => {
+    const dto = await apiClient.patch(`/api/v1/appointments/${id}/reschedule`, {
+      newScheduledAt, reason: reason || '',
+    });
+    const appointment = mapAppointment(dto);
+    setAppointments((as) => as.map((a) => (a.id === id ? appointment : a)));
+    return appointment;
   };
 
-  // ---- billing operations (Manager/Administrator only, from Settings) ----
+  // ---- billing (manager only) ----
 
-  // Switches an organization's plan, resetting status to 'active' (a
-  // successful switch clears any trial/past-due state) — stands in for
-  // a real Stripe checkout/upgrade flow.
-  const changePlan = (organizationId, planId) => {
-    setOrgBilling((b) => ({
-      ...b,
-      [organizationId]: { ...b[organizationId], planId, status: 'active' },
-    }));
+  const changePlan = async (planId) => {
+    const dto = await apiClient.patch('/api/v1/billing/plan', { planId });
+    const next = mapBilling(dto);
+    setBilling(next);
+    return next;
   };
 
   // ---- derived stats for the dashboard ----
@@ -292,19 +332,21 @@ export function DataProvider({ children }) {
     <DataContext.Provider
       value={{
         // collections
-        visitors, appointments, calls, nfcCards, attendance, roomBookings, employees,
+        visitors, appointments, calls, nfcCards, roomBookings, employees, meetingRooms,
+        // lookup helpers
+        employeeById, roomById,
         // operations
         registerAndCheckIn, checkOutVisitor,
         updateAppointmentStatus, admitAppointment,
-        logCall, addEmployee, removeEmployee,
-        // visitor self-service (Signup / VisitorBooking / NFCLookup screens)
-        visitorAccounts, registerVisitorAccount, bookVisit, findAppointmentByCode,
+        logCall, addEmployee, updateEmployee, removeEmployee,
+        addMeetingRoom, updateMeetingRoom, removeMeetingRoom,
+        bookVisit, findAppointmentByCode,
         // work attendance (clock in/out) + appointment rescheduling
         clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, rescheduleAppointment,
         // self-service room booking
         bookRoom,
         // billing / subscriptions
-        orgBilling, invoices, changePlan,
+        plans, billing, invoices, changePlan,
         // derived
         stats,
       }}

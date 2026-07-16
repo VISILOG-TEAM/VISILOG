@@ -29,7 +29,14 @@ export default function EmployeeDetailScreen({ route, navigation }) {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Remove', style: 'destructive',
-          onPress: () => { removeEmployee(employee.id); navigation.goBack(); },
+          onPress: async () => {
+            try {
+              await removeEmployee(employee.id);
+              navigation.goBack();
+            } catch (err) {
+              Alert.alert('Could not remove employee', err.message);
+            }
+          },
         },
       ]
     );

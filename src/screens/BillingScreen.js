@@ -10,7 +10,6 @@ import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { plans, planById } from '../data/mockData';
 import { fmtDate } from '../data/format';
 
 const STATUS_META = {
@@ -28,20 +27,21 @@ const STATUS_META = {
 export default function BillingScreen({ navigation }) {
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const { orgBilling, invoices, changePlan } = useData();
+  const { plans, billing, invoices, changePlan } = useData();
 
-  const orgId = user.organizationId;
-  const billing = orgBilling[orgId];
-  const currentPlan = planById(billing?.planId);
-  const orgInvoices = invoices[orgId] || [];
+  const currentPlan = plans.find((p) => p.id === billing?.planId);
   const statusMeta = STATUS_META[billing?.status] || STATUS_META.active;
 
   // Switches immediately rather than gating behind a confirm dialog —
   // a real build would hand off to Stripe Checkout here instead.
-  const onSwitchPlan = (plan) => {
+  const onSwitchPlan = async (plan) => {
     if (plan.id === currentPlan?.id) return;
-    changePlan(orgId, plan.id);
-    Alert.alert('Plan updated', `You're now on the ${plan.name} plan ($${plan.pricePerMonth}/mo).`);
+    try {
+      await changePlan(plan.id);
+      Alert.alert('Plan updated', `You're now on the ${plan.name} plan ($${plan.pricePerMonth}/mo).`);
+    } catch (err) {
+      Alert.alert('Could not switch plan', err.message);
+    }
   };
 
   return (
@@ -144,12 +144,12 @@ export default function BillingScreen({ navigation }) {
         Billing history
       </Text>
       <Card padded={false}>
-        {orgInvoices.length === 0 ? (
+        {invoices.length === 0 ? (
           <Text variant="body" color={colors.textSecondary} style={{ padding: spacing.md }}>
             No invoices yet.
           </Text>
         ) : (
-          orgInvoices.map((inv, i) => (
+          invoices.map((inv, i) => (
             <View key={inv.id}>
               <View style={styles.invoiceRow}>
                 <View style={{ flex: 1 }}>
@@ -168,7 +168,7 @@ export default function BillingScreen({ navigation }) {
                   dot={false}
                 />
               </View>
-              {i < orgInvoices.length - 1 ? <View style={styles.divider} /> : null}
+              {i < invoices.length - 1 ? <View style={styles.divider} /> : null}
             </View>
           ))
         )}

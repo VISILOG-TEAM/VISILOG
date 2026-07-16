@@ -36,7 +36,7 @@ export default function RegisterVisitorScreen({ navigation }) {
   // so it stays accurate if the visitor list changes underneath.
   const previewBadge = nextBadgeId(visitors);
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const nextErrors = {};
     if (!firstName.trim()) nextErrors.firstName = 'Enter the visitor\u2019s first name.';
     if (!lastName.trim()) nextErrors.lastName = 'Enter the visitor\u2019s last name.';
@@ -46,15 +46,18 @@ export default function RegisterVisitorScreen({ navigation }) {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    const visitor = registerAndCheckIn({
-      firstName, lastName, phone, company, purpose, hostId,
-    });
-
-    Alert.alert(
-      'Checked in',
-      `${visitor.fullName} (${visitor.badgeId}) is now on-site.`,
-      [{ text: 'Done', onPress: () => navigation.goBack() }]
-    );
+    try {
+      const visitor = await registerAndCheckIn({
+        firstName, lastName, phone, company, purpose, hostId,
+      });
+      Alert.alert(
+        'Checked in',
+        `${visitor.fullName} (${visitor.badgeId}) is now on-site.`,
+        [{ text: 'Done', onPress: () => navigation.goBack() }]
+      );
+    } catch (err) {
+      Alert.alert('Could not check in visitor', err.message);
+    }
   };
 
   return (

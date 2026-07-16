@@ -9,14 +9,13 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
-import { employeeById } from '../data/mockData';
 
 // ReportsScreen — date-range filtered visit summary with simple charts
 // drawn in plain React Native (no chart library required).
 // Per spec: date range, export PDF/CSV, "chart visualisations".
 export default function ReportsScreen({ navigation }) {
   const { colors: themeColors } = useTheme();
-  const { visitors, calls } = useData();
+  const { visitors, calls, employeeById } = useData();
   const [range, setRange] = useState('7d'); // '24h' | '7d' | '30d'
 
   const days = range === '24h' ? 1 : range === '7d' ? 7 : 30;
@@ -57,7 +56,7 @@ export default function ReportsScreen({ navigation }) {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([id, count]) => ({ employee: employeeById(id), count }));
-  }, [windowVisitors]);
+  }, [windowVisitors, employeeById]);
 
   const avgDuration = useMemo(() => {
     const completed = windowVisitors.filter((v) => v.checkOutAt);
