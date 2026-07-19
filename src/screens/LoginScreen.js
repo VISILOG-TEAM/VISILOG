@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }) {
           >
             {/* The frosted glass card. expo-blur renders a real iOS-style
                 blur; on Android it falls back to a translucent fill. */}
-            <BlurView intensity={40} tint="light" style={styles.card}>
+            <BlurView intensity={25} tint="light" style={styles.card}>
               <View style={styles.cardInner}>
                 {/* Wordmark — used here instead of a separate logo image */}
                 <Text style={styles.wordmark}>VisiLog</Text>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   cardInner: {
     padding: spacing.xl,
     // On Android BlurView is weaker, so we tint the inner panel too
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)',
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
   },
 
   // Branding inside the card

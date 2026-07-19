@@ -69,7 +69,7 @@ export default function RegisterCompanyScreen({ navigation }) {
               <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
             </Pressable>
 
-            <BlurView intensity={40} tint="light" style={styles.card}>
+            <BlurView intensity={25} tint="light" style={styles.card}>
               <View style={styles.cardInner}>
                 <Text style={styles.wordmark}>VisiLog</Text>
                 <Text style={styles.heading}>Register your company</Text>
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   card: { borderRadius: radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
   cardInner: {
     padding: spacing.xl,
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.08)',
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
   },
 
   wordmark: { fontFamily: fonts.displayExtra, fontSize: 28, lineHeight: 36, color: '#FFFFFF', textAlign: 'center', marginBottom: spacing.md },
