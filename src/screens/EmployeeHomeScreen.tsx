@@ -19,8 +19,9 @@ export default function EmployeeHomeScreen() {
   const { appointments, calls, updateAppointmentStatus, admitAppointment } = useData();
   const onLogout = () => { logout(); setOrgTheme(null); };
 
-  // Visitor requests that picked any employee as host (demo — in production
-  // we'd match by user.id == hostId).
+  // The backend already scopes GET /appointments to only this employee's
+  // own hosted visits (see AppointmentService.list) — reception is the
+  // only role that ever gets the whole org's list.
   const myPending = appointments.filter((a) => a.status === 'pending');
   const myCalls = calls.slice(0, 3);
 
