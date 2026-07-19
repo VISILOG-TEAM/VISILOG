@@ -3,8 +3,8 @@ import { apiClient } from '../api/client';
 import { useAuth } from './AuthContext';
 import type {
   Appointment, AppointmentStatus, Billing, BookRoomInput, BookVisitInput, Call, ClockRecord,
-  ClockType, Employee, EmployeeInput, Invoice, LogCallInput, MeetingRoom, MeetingRoomInput, Plan,
-  RegisterVisitorInput, Role, RoomBooking, Visitor, VisitorStatus,
+  ClockType, Employee, EmployeeInput, Invoice, LogCallInput, MeetingRoom, MeetingRoomInput,
+  NfcCard, Plan, RegisterVisitorInput, Role, RoomBooking, Visitor, VisitorStatus,
 } from '../types';
 
 // DataContext talks to the real VisiLog backend (see server/). Every
@@ -74,7 +74,7 @@ interface DataContextValue {
   visitors: Visitor[];
   appointments: Appointment[];
   calls: Call[];
-  nfcCards: unknown[];
+  nfcCards: NfcCard[];
   roomBookings: RoomBooking[];
   employees: Employee[];
   meetingRooms: MeetingRoom[];
@@ -131,7 +131,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [calls, setCalls] = useState<Call[]>([]);
   // No backend model for standalone NFC cards in this pass — the
   // per-visit NFC code lives on the appointment itself (see nfcCode).
-  const [nfcCards] = useState<unknown[]>([]);
+  const [nfcCards] = useState<NfcCard[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [meetingRooms, setMeetingRooms] = useState<MeetingRoom[]>([]);
   const [clockRecords, setClockRecords] = useState<ClockRecord[]>([]);

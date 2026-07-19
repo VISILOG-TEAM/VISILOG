@@ -6,7 +6,9 @@
 
 import type { ComponentProps } from 'react';
 import type { Ionicons } from '@expo/vector-icons';
-import type { BrandTheme } from '../theme/colors';
+import type { BrandTheme, StatusKey } from '../theme/colors';
+
+export type { BrandTheme, StatusKey };
 
 export type IoniconName = ComponentProps<typeof Ionicons>['name'];
 
@@ -60,6 +62,7 @@ export interface Visitor {
   badgeId: string;
   firstName: string;
   lastName: string;
+  fullName: string;
   phone: string;
   email: string;
   company: string;
@@ -217,6 +220,23 @@ export interface BookRoomInput {
   endTime: string;
   participantIds?: string[];
   externalGuests?: string | null;
+}
+
+// No backend model exists for standalone NFC cards yet (the per-visit
+// NFC code lives on Appointment.nfcCode) — DataContext seeds this as an
+// always-empty array, but NFCCardsScreen is written against this shape
+// so it's ready once/if a real NfcCard endpoint exists.
+export type NfcCardStatus = 'active' | 'revoked';
+export type NfcHolderType = 'employee' | 'visitor';
+
+export interface NfcCard {
+  id: string;
+  holderId: string;
+  holderType: NfcHolderType;
+  tokenHash: string;
+  issuedAt: string;
+  expiresAt: string;
+  status: NfcCardStatus;
 }
 
 export interface AuthResult {

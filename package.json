@@ -2,7 +2,7 @@
   "name": "visilog",
   "version": "1.0.0",
   "description": "Full React Native (Expo SDK 54) frontend for VisiLog: a visitor management & reception app for the VRA team.",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
