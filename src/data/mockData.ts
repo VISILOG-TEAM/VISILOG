@@ -25,7 +25,7 @@ export const callTypes = ['Incoming', 'Outgoing', 'Missed'];
 // pattern the backend itself generates (CodeGenerator.nextBadgeId) —
 // used here only for the read-only preview on RegisterVisitorScreen
 // before the real badge is assigned server-side.
-export const nextBadgeId = (existing = []) => {
+export const nextBadgeId = (existing: Array<{ badgeId?: string | null }> = []): string => {
   const year = new Date().getFullYear();
   const nums = existing
     .map((v) => v.badgeId || '')

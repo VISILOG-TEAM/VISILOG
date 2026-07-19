@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
@@ -6,6 +6,19 @@ import Avatar from './Avatar';
 import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
+import type { IoniconName } from '../types';
+
+interface ListItemProps {
+  avatarName?: string;
+  leftIcon?: IoniconName;
+  left?: ReactNode;
+  title: string;
+  subtitle?: string;
+  meta?: string;
+  right?: ReactNode;
+  chevron?: boolean;
+  onPress?: () => void;
+}
 
 // Used by every list screen (visitors, employees, calls, NFC cards, etc.).
 // Pass either `avatarName` for initials, a `leftIcon`, or a custom `left`
@@ -21,7 +34,7 @@ export default function ListItem({
   right,
   chevron = false,
   onPress,
-}) {
+}: ListItemProps) {
   const { colors } = useTheme();
   const content = (
     <>

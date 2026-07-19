@@ -2,48 +2,35 @@ import React, { useState } from 'react';
 import { View, Modal, Pressable, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import Button from './Button';
 import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
+import type { IoniconName, Option } from '../types';
 
-// Like Select, but lets the user tick more than one option before
-// closing the sheet — used for picking meeting attendees from the
-// whole staff directory (not just a single host).
-//
-// Props:
-//   label, placeholder
-//   values                  — array of selected option values
-//   options                 — [{ label, value, sublabel? }]
-//   onChange(values)        — fired with the full updated array
-//   icon
-export default function MultiSelect({
+interface SelectProps<T> {
+  label?: string;
+  placeholder?: string;
+  value?: T | null;
+  options?: Option<T>[];
+  onChange?: (value: T) => void;
+  icon?: IoniconName;
+  error?: string;
+}
+
+// A labelled "select"-style field. Tapping it opens a modal list of
+// options. Use for: purpose of visit, host employee, call type, etc.
+export default function Select<T>({
   label,
   placeholder = 'Select…',
-  values = [],
+  value,
   options = [],
   onChange,
   icon,
-}) {
+  error,
+}: SelectProps<T>) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
-  const selectedLabels = options
-    .filter((o) => values.includes(o.value))
-    .map((o) => o.label);
-
-  const toggle = (value) => {
-    if (values.includes(value)) {
-      onChange?.(values.filter((v) => v !== value));
-    } else {
-      onChange?.([...values, value]);
-    }
-  };
-
-  const summary = selectedLabels.length === 0
-    ? placeholder
-    : selectedLabels.length <= 2
-      ? selectedLabels.join(', ')
-      : `${selectedLabels.length} people selected`;
+  const selected = options.find((o) => o.value === value);
 
   return (
     <View style={{ marginBottom: spacing.md }}>
@@ -53,20 +40,29 @@ export default function MultiSelect({
         </Text>
       ) : null}
 
-      <Pressable onPress={() => setOpen(true)} style={styles.field}>
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={[styles.field, error && styles.errored]}
+      >
         {icon ? (
           <Ionicons name={icon} size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
         ) : null}
         <Text
           variant="body"
-          color={selectedLabels.length ? colors.textPrimary : colors.textMuted}
+          color={selected ? colors.textPrimary : colors.textMuted}
           style={{ flex: 1 }}
           numberOfLines={1}
         >
-          {summary}
+          {selected ? selected.label : placeholder}
         </Text>
         <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
       </Pressable>
+
+      {error ? (
+        <Text variant="caption" color={colors.status.error.solid} style={{ marginTop: 4 }}>
+          {error}
+        </Text>
+      ) : null}
 
       <Modal
         visible={open}
@@ -88,13 +84,16 @@ export default function MultiSelect({
               keyExtractor={(item) => String(item.value)}
               ItemSeparatorComponent={() => <View style={styles.sep} />}
               renderItem={({ item }) => {
-                const active = values.includes(item.value);
+                const active = item.value === value;
                 return (
-                  <Pressable onPress={() => toggle(item.value)} style={styles.row}>
-                    <View style={[styles.checkbox, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-                      {active ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
-                    </View>
-                    <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                  <Pressable
+                    onPress={() => {
+                      onChange?.(item.value);
+                      setOpen(false);
+                    }}
+                    style={styles.row}
+                  >
+                    <View style={{ flex: 1 }}>
                       <Text variant="bodySemibold">{item.label}</Text>
                       {item.sublabel ? (
                         <Text variant="caption" color={colors.textSecondary}>
@@ -102,12 +101,13 @@ export default function MultiSelect({
                         </Text>
                       ) : null}
                     </View>
+                    {active ? (
+                      <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+                    ) : null}
                   </Pressable>
                 );
               }}
             />
-
-            <Button label="Done" onPress={() => setOpen(false)} style={{ marginTop: spacing.sm }} />
           </Pressable>
         </Pressable>
       </Modal>
@@ -126,6 +126,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     height: 48,
   },
+  errored: { borderColor: staticColors.status.error.solid },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(14, 27, 44, 0.45)',
@@ -149,11 +150,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: spacing.sm,
-  },
-  checkbox: {
-    width: 20, height: 20, borderRadius: 6,
-    borderWidth: 1.5, borderColor: staticColors.borderStrong,
-    alignItems: 'center', justifyContent: 'center',
   },
   sep: { height: 1, backgroundColor: staticColors.border },
 });

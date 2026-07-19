@@ -1,8 +1,19 @@
-import React from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { type ReactNode } from 'react';
+import {
+  View, ScrollView, StyleSheet, KeyboardAvoidingView, type StyleProp, type ViewStyle,
+} from 'react-native';
+import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+
+interface ScreenProps {
+  children?: ReactNode;
+  scroll?: boolean;
+  padded?: boolean;
+  style?: StyleProp<ViewStyle>;
+  contentStyle?: StyleProp<ViewStyle>;
+  edges?: Edge[];
+}
 
 // Standard page shell: respects the notch/home-indicator, paints the app
 // background, and gives you a scroll view by default. Set scroll={false}
@@ -19,7 +30,7 @@ export default function Screen({
   style,
   contentStyle,
   edges = ['top'],
-}) {
+}: ScreenProps) {
   if (scroll) {
     return (
       <SafeAreaView style={[styles.safe, style]} edges={edges}>

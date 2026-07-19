@@ -1,11 +1,30 @@
 import React from 'react';
-import { Pressable, ActivityIndicator, View, StyleSheet } from 'react-native';
+import {
+  Pressable, ActivityIndicator, View, StyleSheet, type StyleProp, type ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { IoniconName } from '../types';
 import Text from './Text';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
 const HEIGHTS = { sm: 40, md: 48, lg: 56 };
+
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonSize = keyof typeof HEIGHTS;
+
+interface ButtonProps {
+  label: string;
+  onPress?: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  icon?: IoniconName;
+  iconPosition?: 'left' | 'right';
+  loading?: boolean;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  style?: StyleProp<ViewStyle>;
+}
 
 // Active-voice labels please: "Register visitor", not "Submit".
 export default function Button({
@@ -19,7 +38,7 @@ export default function Button({
   disabled = false,
   fullWidth = true,
   style,
-}) {
+}: ButtonProps) {
   const { colors } = useTheme();
   // Built per-render (cheap, a handful of keys) so a signed-in org's
   // brand color flows straight into every button without a reload.

@@ -7,14 +7,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // reads via getToken().
 const STORAGE_KEY = 'visilog.authToken';
 
-let currentToken = null;
+let currentToken: string | null = null;
 
-export const getToken = () => currentToken;
+export const getToken = (): string | null => currentToken;
 
 // `persist` false (LoginScreen's "Remember me" unchecked) keeps the
 // token in memory only — the app works normally for this launch, but
 // won't restore the session on the next cold start.
-export const setToken = async (token, persist = true) => {
+export const setToken = async (token: string | null, persist = true): Promise<void> => {
   currentToken = token;
   if (!persist) {
     await AsyncStorage.removeItem(STORAGE_KEY);
@@ -27,13 +27,13 @@ export const setToken = async (token, persist = true) => {
   }
 };
 
-export const clearToken = async () => {
+export const clearToken = async (): Promise<void> => {
   await setToken(null);
 };
 
 // Called once on app boot (see AuthContext) to restore a session from
 // a previous app launch, before the first render that needs it.
-export const loadStoredToken = async () => {
+export const loadStoredToken = async (): Promise<string | null> => {
   currentToken = await AsyncStorage.getItem(STORAGE_KEY);
   return currentToken;
 };

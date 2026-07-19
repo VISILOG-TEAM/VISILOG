@@ -1,29 +1,68 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { apiClient, ApiError } from '../api/client';
 import { setToken, clearToken, loadStoredToken } from '../api/tokenStore';
 import { useTheme } from '../theme/ThemeContext';
+import type { AuthResult, Organization, Role, User } from '../types';
 
 // AuthContext talks to the real VisiLog backend (see server/). Role is
 // decided once, server-side, at signup time (by matching the signing-up
 // email against the company's staff roster) — there is no more
 // role-picker or employee-ID-verify step on the frontend.
-const AuthContext = createContext(null);
+
+interface UserDto {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  employeeId: string | null;
+  organizationId: string;
+  organizationName: string;
+}
+
+interface AuthResponse {
+  token: string;
+  user: UserDto;
+  organization: Organization;
+}
+
+interface OrganizationPatch {
+  name?: string;
+  logoUrl?: string | null;
+  theme?: Organization['theme'];
+}
+
+interface AuthContextValue {
+  user: User | null;
+  organization: Organization | null;
+  initializing: boolean;
+  login: (email: string, password: string, companyCode: string, remember?: boolean) => Promise<AuthResult>;
+  signup: (companyCode: string, email: string, password: string, name: string) => Promise<AuthResult>;
+  registerCompany: (
+    companyName: string, adminName: string, adminEmail: string, adminPassword: string
+  ) => Promise<AuthResult>;
+  logout: () => Promise<void>;
+  verifyPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
+  updateOrganization: (patch: OrganizationPatch) => Promise<AuthResult>;
+  updateOfficeLocation: (latitude: number, longitude: number, radiusMeters: number) => Promise<AuthResult>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 // Backend roles are uppercase enum names (VISITOR/RECEPTIONIST/EMPLOYEE/
 // MANAGER); every screen in this app was built against lowercase.
-const mapUser = (userDto) => ({
+const mapUser = (userDto: UserDto): User => ({
   id: userDto.id,
   email: userDto.email,
   name: userDto.name,
-  role: userDto.role.toLowerCase(),
+  role: userDto.role.toLowerCase() as Role,
   employeeId: userDto.employeeId,
   organizationId: userDto.organizationId,
   organizationName: userDto.organizationName,
 });
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // null = signed out
-  const [organization, setOrganization] = useState(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null); // null = signed out
+  const [organization, setOrganization] = useState<Organization | null>(null);
   // True until a previously-stored session (if any) has been checked
   // against the backend, so RootNavigator can hold the splash screen
   // rather than flash the login screen for a signed-in user.
@@ -46,8 +85,8 @@ export function AuthProvider({ children }) {
       }
       try {
         const [userDto, org] = await Promise.all([
-          apiClient.get('/api/v1/auth/me'),
-          apiClient.get('/api/v1/org'),
+          apiClient.get<UserDto>('/api/v1/auth/me'),
+          apiClient.get<Organization>('/api/v1/org'),
         ]);
         setUser(mapUser(userDto));
         setOrganization(org);
@@ -64,7 +103,7 @@ export function AuthProvider({ children }) {
   // AsyncStorage — LoginScreen's "Remember me" toggles this. false
   // keeps the token in memory only, so the session doesn't survive an
   // app restart even though it works normally until then.
-  const applyAuthResponse = async (res, persist = true) => {
+  const applyAuthResponse = async (res: AuthResponse, persist = true) => {
     await setToken(res.token, persist);
     setUser(mapUser(res.user));
     setOrganization(res.organization);
@@ -73,12 +112,14 @@ export function AuthProvider({ children }) {
   // `companyCode` resolves which paying organization (tenant) this
   // login belongs to — required since VisiLog serves several
   // companies, each with their own data and brand colors.
-  const login = async (email, password, companyCode, remember = true) => {
+  const login = async (
+    email: string, password: string, companyCode: string, remember = true
+  ): Promise<AuthResult> => {
     if (!email || !password || !companyCode) {
       return { ok: false, error: 'Enter your company code, email and password.' };
     }
     try {
-      const res = await apiClient.post('/api/v1/auth/login', {
+      const res = await apiClient.post<AuthResponse>('/api/v1/auth/login', {
         companyCode: companyCode.trim(),
         email: email.trim(),
         password,
@@ -93,12 +134,14 @@ export function AuthProvider({ children }) {
   // Creates a login account under an existing company. Role is decided
   // server-side: matches `email` against the company's staff roster
   // (that role) or falls back to visitor if there's no match.
-  const signup = async (companyCode, email, password, name) => {
+  const signup = async (
+    companyCode: string, email: string, password: string, name: string
+  ): Promise<AuthResult> => {
     if (!companyCode || !email || !password || !name) {
       return { ok: false, error: 'Please fill in every field above.' };
     }
     try {
-      const res = await apiClient.post('/api/v1/auth/signup', {
+      const res = await apiClient.post<AuthResponse>('/api/v1/auth/signup', {
         companyCode: companyCode.trim(),
         email: email.trim(),
         password,
@@ -114,12 +157,14 @@ export function AuthProvider({ children }) {
   // Self-serve "sign your company up" — creates the Organization, its
   // first Administrator (Manager) account, and hands back a company
   // code the admin can then share with their staff/visitors.
-  const registerCompany = async (companyName, adminName, adminEmail, adminPassword) => {
+  const registerCompany = async (
+    companyName: string, adminName: string, adminEmail: string, adminPassword: string
+  ): Promise<AuthResult> => {
     if (!companyName || !adminName || !adminEmail || !adminPassword) {
       return { ok: false, error: 'Please fill in every field above.' };
     }
     try {
-      const res = await apiClient.post('/api/v1/companies/register', {
+      const res = await apiClient.post<AuthResponse>('/api/v1/companies/register', {
         companyName: companyName.trim(),
         adminName: adminName.trim(),
         adminEmail: adminEmail.trim(),
@@ -135,7 +180,7 @@ export function AuthProvider({ children }) {
   // Step-up confirmation before a sensitive action on the *current*
   // session — currently just clock-in (see ClockCard). Re-checks the
   // signed-in user's own password without touching the stored token.
-  const verifyPassword = async (password) => {
+  const verifyPassword = async (password: string): Promise<{ ok: boolean; error?: string }> => {
     try {
       await apiClient.post('/api/v1/auth/verify-password', { password });
       return { ok: true };
@@ -144,7 +189,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     await clearToken();
     setUser(null);
     setOrganization(null);
@@ -152,9 +197,9 @@ export function AuthProvider({ children }) {
 
   // Company Setup > branding (manager only). `theme`, if present, is
   // sent as a whole object — see UpdateOrgRequest on the backend.
-  const updateOrganization = async (patch) => {
+  const updateOrganization = async (patch: OrganizationPatch): Promise<AuthResult> => {
     try {
-      const org = await apiClient.patch('/api/v1/org', patch);
+      const org = await apiClient.patch<Organization>('/api/v1/org', patch);
       setOrganization(org);
       return { ok: true, organization: org };
     } catch (err) {
@@ -163,10 +208,14 @@ export function AuthProvider({ children }) {
   };
 
   // Company Setup > office location (manager only) — backs the
-  // clock-in geofence check (src/data/locationCheck.js).
-  const updateOfficeLocation = async (latitude, longitude, radiusMeters) => {
+  // clock-in geofence check (src/data/locationCheck.ts).
+  const updateOfficeLocation = async (
+    latitude: number, longitude: number, radiusMeters: number
+  ): Promise<AuthResult> => {
     try {
-      const org = await apiClient.patch('/api/v1/org/office-location', { latitude, longitude, radiusMeters });
+      const org = await apiClient.patch<Organization>('/api/v1/org/office-location', {
+        latitude, longitude, radiusMeters,
+      });
       setOrganization(org);
       return { ok: true, organization: org };
     } catch (err) {
@@ -187,4 +236,8 @@ export function AuthProvider({ children }) {
   );
 }
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = (): AuthContextValue => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
+};

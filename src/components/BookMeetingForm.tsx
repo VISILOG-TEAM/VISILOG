@@ -8,6 +8,13 @@ import MultiSelect from './MultiSelect';
 import Segmented from './Segmented';
 import { spacing } from '../theme/spacing';
 import { useData } from '../context/DataContext';
+import { ApiError } from '../api/client';
+
+type LocationType = 'room' | 'outside';
+
+interface BookMeetingFormProps {
+  onDone?: () => void;
+}
 
 // BookMeetingForm — self-service internal meeting booking. Shared by
 // Employee, Manager (EmployeeBookScreen) and Receptionist (the
@@ -18,14 +25,14 @@ import { useData } from '../context/DataContext';
 // a restaurant, etc.) for meetings that don't happen on-site. The
 // organiser is derived server-side from the signed-in user's own
 // employee record — see RoomBookingController.
-export default function BookMeetingForm({ onDone }) {
+export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
   const { employees, meetingRooms, bookRoom } = useData();
 
   const [title, setTitle] = useState('');
-  const [locationType, setLocationType] = useState('room'); // 'room' | 'outside'
-  const [roomId, setRoomId] = useState(null);
+  const [locationType, setLocationType] = useState<LocationType>('room');
+  const [roomId, setRoomId] = useState<string | null>(null);
   const [outsideLocation, setOutsideLocation] = useState('');
-  const [attendeeIds, setAttendeeIds] = useState([]);
+  const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
   const [externalGuests, setExternalGuests] = useState('');
   const [date, setDate] = useState(formatDate(new Date()));
   const [startTime, setStartTime] = useState('10:00');
@@ -58,7 +65,7 @@ export default function BookMeetingForm({ onDone }) {
         { text: 'Done', onPress: onDone },
       ]);
     } catch (err) {
-      Alert.alert('Could not book meeting', err.message);
+      Alert.alert('Could not book meeting', err instanceof ApiError ? err.message : 'Something went wrong.');
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -157,7 +164,7 @@ export default function BookMeetingForm({ onDone }) {
   );
 }
 
-function formatDate(d) {
+function formatDate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -169,7 +176,7 @@ function formatDate(d) {
 // failing every booking with a generic "Something went wrong" error.
 // Routing through a real Date and toISOString() also correctly
 // converts from the device's local time to UTC.
-function toInstant(dateStr, timeStr) {
+function toInstant(dateStr: string, timeStr: string): string {
   return new Date(`${dateStr}T${timeStr}:00`).toISOString();
 }
 

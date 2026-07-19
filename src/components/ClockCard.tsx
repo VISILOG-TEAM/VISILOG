@@ -15,6 +15,7 @@ import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
 import { isOnWifi } from '../data/wifiCheck';
 import { isAtOffice } from '../data/locationCheck';
+import { ApiError } from '../api/client';
 
 // ClockCard — the personal "on the clock" card shared by every role's
 // home screen. Backed by DataContext's shared clock ledger (not local
@@ -35,7 +36,7 @@ export default function ClockCard() {
   const [password, setPassword] = useState('');
   const [confirming, setConfirming] = useState(false);
 
-  const employeeId = user?.employeeId || user?.id;
+  const employeeId = (user?.employeeId || user?.id) as string;
   const clockedIn = isClockedIn(employeeId);
   const lastRecord = clockRecords.find((c) => c.employeeId === employeeId);
   const doneForToday = !clockedIn && hasClockedInToday(employeeId);
@@ -64,10 +65,10 @@ export default function ClockCard() {
       setConfirmVisible(true);
     } else {
       try {
-        const r = await clockOut(employeeId, user.name);
+        const r = await clockOut(employeeId, user!.name);
         Alert.alert('Checked out', `See you next time. Clocked out at ${fmtTime(r.timestamp)}.`);
       } catch (err) {
-        Alert.alert('Could not clock out', err.message);
+        Alert.alert('Could not clock out', err instanceof ApiError ? err.message : 'Something went wrong.');
       }
     }
   };
@@ -82,12 +83,12 @@ export default function ClockCard() {
       return;
     }
     try {
-      const r = await clockIn(employeeId, user.name);
+      const r = await clockIn(employeeId, user!.name);
       setConfirmVisible(false);
       setPassword('');
       Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
     } catch (err) {
-      Alert.alert('Could not clock in', err.message);
+      Alert.alert('Could not clock in', err instanceof ApiError ? err.message : 'Something went wrong.');
     } finally {
       setConfirming(false);
     }
@@ -130,9 +131,20 @@ export default function ClockCard() {
   );
 }
 
+interface ConfirmClockInModalProps {
+  visible: boolean;
+  password: string;
+  onChangePassword: (password: string) => void;
+  confirming: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}
+
 // A quick re-entry of your own password before a clock-in actually
 // records — see the note on ClockCard above for why.
-function ConfirmClockInModal({ visible, password, onChangePassword, confirming, onCancel, onConfirm }) {
+function ConfirmClockInModal({
+  visible, password, onChangePassword, confirming, onCancel, onConfirm,
+}: ConfirmClockInModalProps) {
   const { colors: themeColors } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>

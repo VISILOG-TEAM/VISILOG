@@ -2,7 +2,7 @@ import { Platform } from 'react-native';
 
 // React Native handles shadows differently on iOS (shadow*) and Android
 // (elevation), so we express each level once and let Platform.select pick.
-const make = (height, blur, opacity, elevation) =>
+const make = (height: number, blur: number, opacity: number, elevation: number) =>
   Platform.select({
     ios: {
       shadowColor: '#0E1B2C',

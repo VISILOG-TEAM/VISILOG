@@ -1,8 +1,16 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { colors, type StatusKey } from '../theme/colors';
 import { radius } from '../theme/spacing';
+
+interface BadgeProps {
+  label: string;
+  status?: StatusKey;
+  solid?: boolean;
+  dot?: boolean;
+  size?: 'sm' | 'md';
+}
 
 // Status pill. `status` selects the colour family; `solid` fills it for
 // high-emphasis cases. The leading dot reinforces the state for quick
@@ -13,7 +21,7 @@ export default function Badge({
   solid = false,
   dot = true,
   size = 'md',
-}) {
+}: BadgeProps) {
   const s = colors.status[status] || colors.status.neutral;
   const small = size === 'sm';
   const textVariant = small ? 'caption' : 'label';

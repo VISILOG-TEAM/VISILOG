@@ -6,21 +6,26 @@ import { getToken } from './tokenStore';
 // the server) — screens show err.message directly in an Alert, same
 // convention as every mock-data error string before this rewrite.
 export class ApiError extends Error {
-  constructor(status, message, code) {
+  status: number;
+  code?: string;
+
+  constructor(status: number, message: string, code?: string) {
     super(message);
     this.status = status;
     this.code = code;
   }
 }
 
-async function request(method, path, body) {
+type HttpMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE';
+
+async function request<T = unknown>(method: HttpMethod, path: string, body?: unknown): Promise<T> {
   const token = getToken();
-  const headers = { 'Content-Type': 'application/json' };
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  let response;
+  let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method,
@@ -32,7 +37,7 @@ async function request(method, path, body) {
   }
 
   if (response.status === 204) {
-    return null;
+    return null as T;
   }
 
   const text = await response.text();
@@ -41,12 +46,12 @@ async function request(method, path, body) {
   if (!response.ok) {
     throw new ApiError(response.status, data?.message || 'Something went wrong.', data?.error);
   }
-  return data;
+  return data as T;
 }
 
 export const apiClient = {
-  get: (path) => request('GET', path),
-  post: (path, body) => request('POST', path, body ?? {}),
-  patch: (path, body) => request('PATCH', path, body ?? {}),
-  delete: (path) => request('DELETE', path),
+  get: <T = unknown>(path: string) => request<T>('GET', path),
+  post: <T = unknown>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
+  patch: <T = unknown>(path: string, body?: unknown) => request<T>('PATCH', path, body ?? {}),
+  delete: <T = unknown>(path: string) => request<T>('DELETE', path),
 };

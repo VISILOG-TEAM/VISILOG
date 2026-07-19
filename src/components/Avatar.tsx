@@ -9,20 +9,26 @@ import { fonts } from '../theme/typography';
 // hue across the app.
 const TINTS = ['#0E9F8E', '#2563EB', '#7C3AED', '#DB2777', '#D97706', '#0891B2', '#4F46E5', '#059669'];
 
-function initials(name = '') {
+function initials(name = ''): string {
   const parts = name.trim().split(/\s+/);
   const first = parts[0]?.[0] || '';
   const second = parts[1]?.[0] || '';
   return (first + second).toUpperCase() || '?';
 }
 
-function tintFor(name = '') {
+function tintFor(name = ''): string {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   return TINTS[hash % TINTS.length];
 }
 
-export default function Avatar({ name = '', uri, size = 44 }) {
+interface AvatarProps {
+  name?: string;
+  uri?: string | null;
+  size?: number;
+}
+
+export default function Avatar({ name = '', uri, size = 44 }: AvatarProps) {
   const dim = { width: size, height: size, borderRadius: size / 2 };
 
   if (uri) {

@@ -5,6 +5,15 @@ import Text from './Text';
 import Button from './Button';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
+import type { IoniconName } from '../types';
+
+interface EmptyStateProps {
+  icon?: IoniconName;
+  title: string;
+  message?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
 
 // An empty screen is an invitation to act, not a dead end. Give it a clear
 // title, a sentence of direction, and (optionally) the next action.
@@ -14,7 +23,7 @@ export default function EmptyState({
   message,
   actionLabel,
   onAction,
-}) {
+}: EmptyStateProps) {
   const { colors } = useTheme();
   return (
     <View style={styles.wrap}>

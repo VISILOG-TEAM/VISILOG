@@ -10,10 +10,24 @@ import * as Location from 'expo-location';
 // Geolocation API), so unlike expo-network there's no separate web
 // shim to work around here.
 
+interface LatLng {
+  latitude: number;
+  longitude: number;
+}
+
+export interface OfficeLocation extends LatLng {
+  radiusMeters: number;
+}
+
+export interface LocationCheckResult {
+  ok: boolean;
+  error?: string;
+}
+
 // Haversine distance between two lat/lng points, in meters.
-function distanceMeters(a, b) {
+function distanceMeters(a: LatLng, b: LatLng): number {
   const R = 6371000;
-  const toRad = (d) => (d * Math.PI) / 180;
+  const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(b.latitude - a.latitude);
   const dLon = toRad(b.longitude - a.longitude);
   const lat1 = toRad(a.latitude);
@@ -22,9 +36,8 @@ function distanceMeters(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-// Returns { ok, error? }. `officeLocation` is an org's
-// { latitude, longitude, radiusMeters } from mockData.js.
-export const isAtOffice = async (officeLocation) => {
+// `officeLocation` is an org's { latitude, longitude, radiusMeters } from mockData.js.
+export const isAtOffice = async (officeLocation?: OfficeLocation | null): Promise<LocationCheckResult> => {
   if (!officeLocation) return { ok: true };
 
   try {

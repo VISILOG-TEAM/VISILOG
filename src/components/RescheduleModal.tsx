@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, StyleSheet, Modal, TextInput, Pressable, Alert,
-  KeyboardAvoidingView,
+  KeyboardAvoidingView, type TextInputProps,
 } from 'react-native';
 import Text from './Text';
 import { colors as staticColors } from '../theme/colors';
@@ -9,11 +9,19 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
 import { useData } from '../context/DataContext';
+import { ApiError } from '../api/client';
+import type { Appointment } from '../types';
+
+interface RescheduleModalProps {
+  appointment: Appointment | null;
+  visible: boolean;
+  onClose: () => void;
+}
 
 // RescheduleModal — lets an Employee or Visitor move an appointment's
 // time, but only with a reason on record (per spec). Shared between
 // AppointmentsScreen (Employee tab) and VisitorVisitsScreen.
-export default function RescheduleModal({ appointment, visible, onClose }) {
+export default function RescheduleModal({ appointment, visible, onClose }: RescheduleModalProps) {
   const { colors } = useTheme();
   const { rescheduleAppointment } = useData();
   const [date, setDate] = useState('');
@@ -21,6 +29,7 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
   const [reason, setReason] = useState('');
 
   const onSave = async () => {
+    if (!appointment) return;
     if (!date.trim() || !time.trim() || !reason.trim()) {
       Alert.alert('Almost there', 'New date, time and a reason are all required.');
       return;
@@ -30,7 +39,7 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
       setDate(''); setTime(''); setReason('');
       onClose();
     } catch (err) {
-      Alert.alert('Could not reschedule', err.message);
+      Alert.alert('Could not reschedule', err instanceof ApiError ? err.message : 'Something went wrong.');
     }
   };
 
@@ -66,11 +75,11 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
 
 // The backend expects a full ISO instant (with seconds + timezone);
 // "YYYY-MM-DDTHH:MM" alone isn't parseable as one.
-function toInstant(dateStr, timeStr) {
+function toInstant(dateStr: string, timeStr: string): string {
   return new Date(`${dateStr}T${timeStr}:00`).toISOString();
 }
 
-function Field({ label, ...inputProps }) {
+function Field({ label, ...inputProps }: TextInputProps & { label: string }) {
   return (
     <View style={{ marginBottom: spacing.sm }}>
       <Text variant="caption" color={staticColors.textSecondary} style={{ marginBottom: 4 }}>{label}</Text>

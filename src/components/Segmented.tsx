@@ -1,14 +1,22 @@
 import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Text from './Text';
 import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/spacing';
+import type { Option } from '../types';
+
+interface SegmentedProps<T extends string> {
+  options: Option<T>[];
+  value: T;
+  onChange: (value: T) => void;
+  style?: StyleProp<ViewStyle>;
+}
 
 // Pill-style filter group used at the top of list screens (e.g. Visitors:
 // All · On-site · Completed). Pass an array of { label, value } options
 // and the selected value; emits the new value on press.
-export default function Segmented({ options, value, onChange, style }) {
+export default function Segmented<T extends string>({ options, value, onChange, style }: SegmentedProps<T>) {
   const { colors } = useTheme();
   return (
     <View style={[styles.wrap, style]}>

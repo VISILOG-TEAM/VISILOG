@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { type ReactNode } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
+import type { IoniconName } from '../types';
+
+interface HeaderProps {
+  title: string;
+  subtitle?: string;
+  eyebrow?: string;
+  rightIcon?: IoniconName;
+  onRightPress?: () => void;
+  right?: ReactNode;
+  onBackPress?: () => void;
+}
 
 // Consistent page header. Pass `rightIcon` (+ onRightPress) for a quick
 // action button, or `right` to drop in a fully custom element. Pass
@@ -19,7 +30,7 @@ export default function Header({
   onRightPress,
   right,
   onBackPress,
-}) {
+}: HeaderProps) {
   const { colors } = useTheme();
   return (
     <View style={styles.row}>

@@ -1,9 +1,18 @@
-import React from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
-import { colors as staticColors } from '../theme/colors';
+import React, { type ReactNode } from 'react';
+import { View, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { colors as staticColors, type StatusKey } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { shadows } from '../theme/shadows';
+
+interface CardProps {
+  children?: ReactNode;
+  accent?: StatusKey;
+  onPress?: () => void;
+  padded?: boolean;
+  elevated?: boolean;
+  style?: StyleProp<ViewStyle>;
+}
 
 // Signature element: an optional coloured edge stripe that echoes the
 // coloured border of a visitor pass. A visitor's status is information,
@@ -16,7 +25,7 @@ export default function Card({
   padded = true,
   elevated = true,
   style,
-}) {
+}: CardProps) {
   const { colors } = useTheme();
   const accentColor = accent ? colors.status[accent]?.solid || colors.primary : null;
 

@@ -7,6 +7,17 @@ import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
+import type { IoniconName } from '../types';
+
+interface MapLocation {
+  id: string;
+  name: string;
+  floor: string;
+  icon: IoniconName;
+  directions: string[];
+  capacity?: number | null;
+  photoUrl?: string | null;
+}
 
 // A simplified "tour" map: a stylized floor-plan grid with tappable
 // pins for reception + each meeting room. There's no real indoor
@@ -18,9 +29,9 @@ import { useData } from '../context/DataContext';
 export default function CompanyMapSection() {
   const { colors } = useTheme();
   const { meetingRooms } = useData();
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState<MapLocation | null>(null);
 
-  const LOCATIONS = useMemo(() => [
+  const LOCATIONS = useMemo<MapLocation[]>(() => [
     {
       id: 'reception', name: 'Reception', floor: 'Ground Floor', icon: 'desktop-outline',
       directions: ['Enter through the main doors.', 'Reception desk is straight ahead.'],
@@ -30,7 +41,7 @@ export default function CompanyMapSection() {
       name: r.name,
       floor: r.floor,
       capacity: r.capacity,
-      icon: 'business-outline',
+      icon: 'business-outline' as IoniconName,
       photoUrl: r.photoUrl,
       directions: [
         'From reception, take the lift or stairs up.',

@@ -1,11 +1,30 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, Pressable } from 'react-native';
+import {
+  View, TextInput, StyleSheet, Pressable,
+  type KeyboardTypeOptions, type StyleProp, type ViewStyle,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
+import type { IoniconName } from '../types';
+
+interface InputProps {
+  label?: string;
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  icon?: IoniconName;
+  error?: string;
+  hint?: string;
+  keyboardType?: KeyboardTypeOptions;
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  multiline?: boolean;
+  style?: StyleProp<ViewStyle>;
+}
 
 // Form field with a label, optional leading icon, focus highlight and an
 // inline error message. Errors are specific and actionable, never vague.
@@ -22,7 +41,7 @@ export default function Input({
   autoCapitalize = 'sentences',
   multiline = false,
   style,
-}) {
+}: InputProps) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   // Password fields get their own reveal toggle instead of the caller

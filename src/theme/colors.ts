@@ -7,10 +7,49 @@
 // — kept distinct from any brand colour so the two don't get confused.
 //
 // buildColors(brandTheme) makes this multi-tenant: each Organization
-// in mockData.js carries its own {brand, primary, ...} shades, and
-// ThemeContext calls this factory with the signed-in user's org to
-// produce that org's full colors object. Neutrals/surfaces/status
-// colors don't vary per org, only brand + primary do.
+// carries its own {brand, primary, ...} shades, and ThemeContext calls
+// this factory with the signed-in user's org to produce that org's
+// full colors object. Neutrals/surfaces/status colors don't vary per
+// org, only brand + primary do.
+
+// An organization's brand shades, as returned by the backend's
+// OrganizationDto.theme (see AuthContext) or one of Company Setup's
+// preset palettes.
+export interface BrandTheme {
+  brand: string;
+  brandDark: string;
+  brandTint: string;
+  primary: string;
+  primaryPressed: string;
+  primarySurface: string;
+  primarySurfaceStrong: string;
+}
+
+export interface StatusColorSet {
+  solid: string;
+  bg: string;
+  fg: string;
+}
+
+export type StatusKey = 'onsite' | 'success' | 'pending' | 'rejected' | 'error' | 'info' | 'neutral';
+
+export interface Colors extends BrandTheme {
+  background: string;
+  surface: string;
+  surfaceAlt: string;
+
+  textPrimary: string;
+  textSecondary: string;
+  textMuted: string;
+  textInverse: string;
+
+  border: string;
+  borderStrong: string;
+
+  status: Record<StatusKey, StatusColorSet>;
+
+  palette: typeof palette;
+}
 
 const palette = {
   // Brand emerald green (VRA default)
@@ -47,7 +86,7 @@ const palette = {
 
 // VRA's own brand shades, used when no organization theme is supplied
 // (e.g. before login) or as the fallback for the default tenant.
-const DEFAULT_BRAND_THEME = {
+const DEFAULT_BRAND_THEME: BrandTheme = {
   brand: palette.emerald800,
   brandDark: palette.emerald900,
   brandTint: palette.emerald700,
@@ -57,7 +96,7 @@ const DEFAULT_BRAND_THEME = {
   primarySurfaceStrong: palette.gold100,
 };
 
-export const buildColors = (brandTheme) => {
+export const buildColors = (brandTheme?: BrandTheme | null): Colors => {
   const b = brandTheme || DEFAULT_BRAND_THEME;
   return {
     // Brand (varies per organization)
@@ -110,7 +149,7 @@ export const colors = buildColors();
 
 // "#RRGGBB" -> "r,g,b", for building rgba() strings from a org's brand
 // hex shades (e.g. AuthBackground's accent glow on post-login screens).
-export const hexToRgb = (hex) => {
+export const hexToRgb = (hex?: string | null): string => {
   const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
   if (!m) return '212,175,55';
   return [m[1], m[2], m[3]].map((h) => parseInt(h, 16)).join(',');

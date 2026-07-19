@@ -7,13 +7,21 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { shadows } from '../theme/shadows';
 import { fonts } from '../theme/typography';
+import type { IoniconName } from '../types';
+
+type StatTileTint = 'primary' | 'info' | 'success' | 'pending';
+
+interface StatTileProps {
+  icon?: IoniconName;
+  label: string;
+  value: number | string;
+  tint?: StatTileTint;
+}
 
 // One of the four big numbers on the Dashboard. A coloured icon chip on
 // the left and a big display number on the right. The `tint` prop selects
 // which status colour family the icon chip uses.
-//
-// Pass `tint` as one of: 'primary' | 'info' | 'success' | 'pending'
-export default function StatTile({ icon = 'people', label, value, tint = 'primary' }) {
+export default function StatTile({ icon = 'people', label, value, tint = 'primary' }: StatTileProps) {
   const { colors } = useTheme();
   // 'primary' pulls the signed-in org's brand accent; the rest are fixed
   // status colors that don't vary per organization.
