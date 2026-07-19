@@ -33,6 +33,10 @@ export default function SignupScreen({ navigation }) {
       Alert.alert('Almost there', 'Please fill in every field above.');
       return;
     }
+    if (password.length < 8) {
+      Alert.alert('Password too short', 'Your password must be at least 8 characters.');
+      return;
+    }
     if (password !== confirm) {
       Alert.alert('Passwords don’t match', 'Please re-enter the same password twice.');
       return;
@@ -97,6 +101,7 @@ export default function SignupScreen({ navigation }) {
                   autoCapitalize="none" keyboardType="email-address" />
                 <Field icon="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword}
                   secureTextEntry />
+                <Text style={styles.passwordHint}>Must be at least 8 characters.</Text>
                 <Field icon="shield-checkmark-outline" placeholder="Confirm password" value={confirm} onChangeText={setConfirm}
                   secureTextEntry />
 
@@ -130,15 +135,26 @@ export default function SignupScreen({ navigation }) {
 
 // Small internal field component to keep the JSX above readable. Local
 // because it's only used on this screen.
-function Field({ icon, ...inputProps }) {
+function Field({ icon, secureTextEntry, ...inputProps }) {
+  const [revealed, setRevealed] = useState(false);
   return (
     <View style={styles.fieldRow}>
       <Ionicons name={icon} size={18} color="rgba(255,255,255,0.85)" />
       <TextInput
         placeholderTextColor="rgba(255,255,255,0.65)"
         style={styles.input}
+        secureTextEntry={secureTextEntry && !revealed}
         {...inputProps}
       />
+      {secureTextEntry ? (
+        <Pressable onPress={() => setRevealed((r) => !r)} hitSlop={8}>
+          <Ionicons
+            name={revealed ? 'eye-outline' : 'eye-off-outline'}
+            size={18}
+            color="rgba(255,255,255,0.85)"
+          />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -175,6 +191,10 @@ const styles = StyleSheet.create({
   input: {
     flex: 1, fontFamily: fonts.regular, fontSize: 15, color: '#FFFFFF',
     marginHorizontal: 8, paddingVertical: 0,
+  },
+  passwordHint: {
+    fontFamily: fonts.regular, fontSize: 11, color: 'rgba(255,255,255,0.7)',
+    marginTop: -6, marginBottom: spacing.sm,
   },
 
   signupBtn: {

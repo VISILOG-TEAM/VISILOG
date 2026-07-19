@@ -8,6 +8,7 @@ import SplashScreen from '../screens/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import RegisterCompanyScreen from '../screens/RegisterCompanyScreen';
+import LegalAgreementScreen from '../screens/LegalAgreementScreen';
 
 // Per-role app shells (each is its own bottom-tab navigator)
 import TabNavigator from './TabNavigator';
@@ -54,6 +55,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
           <Stack.Screen name="RegisterCompany" component={RegisterCompanyScreen} />
+          <Stack.Screen name="LegalAgreement" component={LegalAgreementScreen} />
         </Stack.Group>
       ) : (
         // ---------- Signed-in, role-resolved stack ----------
@@ -92,6 +94,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Billing" component={BillingScreen} />
           <Stack.Screen name="CompanySetup" component={CompanySetupScreen} />
           <Stack.Screen name="MeetingRooms" component={MeetingRoomsScreen} />
+          <Stack.Screen name="LegalAgreement" component={LegalAgreementScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>

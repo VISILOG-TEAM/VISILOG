@@ -27,21 +27,32 @@ export default function VisitorBookingScreen({ navigation }) {
   const [visitorPhone, setVisitorPhone] = useState('');
   const [visitorCompany, setVisitorCompany] = useState('');
   const [purpose, setPurpose] = useState('Official Business');
+  const [otherPurpose, setOtherPurpose] = useState('');
   const [hostId, setHostId] = useState(null);
   const [date, setDate] = useState(formatDate(new Date()));
   const [time, setTime] = useState('10:00');
+  const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
+    if (submitting) {
+      Alert.alert('Already booking', 'This appointment is already being submitted.');
+      return;
+    }
     if (!visitorName.trim() || !visitorPhone.trim() || !hostId) {
       Alert.alert('Almost there', 'Name, phone and host are required.');
       return;
     }
+    if (purpose === 'Other' && !otherPurpose.trim()) {
+      Alert.alert('Almost there', 'Please describe the purpose of the visit.');
+      return;
+    }
+    setSubmitting(true);
     try {
       await bookVisit({
         visitorName: visitorName.trim(),
         visitorPhone: visitorPhone.trim(),
         visitorCompany: visitorCompany.trim(),
-        purpose,
+        purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
         hostId,
         scheduledAt: `${date}T${time}`,
       });
@@ -52,6 +63,8 @@ export default function VisitorBookingScreen({ navigation }) {
       );
     } catch (err) {
       Alert.alert('Could not request appointment', err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -120,6 +133,16 @@ export default function VisitorBookingScreen({ navigation }) {
           options={visitPurposes.map((p) => ({ label: p, value: p }))}
         />
 
+        {purpose === 'Other' ? (
+          <Input
+            label="Please specify"
+            value={otherPurpose}
+            onChangeText={setOtherPurpose}
+            placeholder="What's the purpose of the visit?"
+            icon="create-outline"
+          />
+        ) : null}
+
         <Select
           label="Who are you visiting?"
           placeholder="Pick a host..."
@@ -129,7 +152,7 @@ export default function VisitorBookingScreen({ navigation }) {
           options={employees.map((e) => ({
             label: e.name,
             value: e.id,
-            sublabel: `${e.department} - ${e.avaya}`,
+            sublabel: e.department,
           }))}
         />
 
@@ -160,6 +183,7 @@ export default function VisitorBookingScreen({ navigation }) {
         label="Request appointment"
         icon="checkmark-circle-outline"
         onPress={onSubmit}
+        loading={submitting}
         style={{ marginTop: spacing.md }}
       />
       </>

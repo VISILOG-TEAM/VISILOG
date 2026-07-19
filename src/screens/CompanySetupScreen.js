@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Pressable, Share } from 'react-native';
+import { View, Image, StyleSheet, Alert, Pressable, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Screen, Header, Text, Card, Button, Input,
 } from '../components';
@@ -43,6 +44,34 @@ export default function CompanySetupScreen({ navigation }) {
   const [name, setName] = useState(organization?.name || '');
   const [logoUrl, setLogoUrl] = useState(organization?.logoUrl || '');
   const [savingBrand, setSavingBrand] = useState(false);
+  const [pickingLogo, setPickingLogo] = useState(false);
+
+  const onPickLogo = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow photo library access to upload a logo.');
+      return;
+    }
+    setPickingLogo(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        Alert.alert('Could not read image', 'Please try a different photo.');
+        return;
+      }
+      setLogoUrl(`data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`);
+    } finally {
+      setPickingLogo(false);
+    }
+  };
 
   const [latitude, setLatitude] = useState(String(organization?.officeLocation?.latitude ?? ''));
   const [longitude, setLongitude] = useState(String(organization?.officeLocation?.longitude ?? ''));
@@ -116,8 +145,26 @@ export default function CompanySetupScreen({ navigation }) {
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>Branding</Text>
       <Card>
         <Input label="Company name" value={name} onChangeText={setName} icon="business-outline" />
-        <Input label="Logo URL (optional)" value={logoUrl} onChangeText={setLogoUrl}
-          placeholder="https://…" icon="image-outline" autoCapitalize="none" />
+
+        <Text variant="label" color={colors.textSecondary} style={styles.logoLabel}>Logo</Text>
+        <Pressable onPress={onPickLogo} disabled={pickingLogo} style={styles.logoRow}>
+          <View style={[styles.logoPreview, { borderColor: colors.border }]}>
+            {logoUrl ? (
+              <Image source={{ uri: logoUrl }} style={styles.logoImage} resizeMode="cover" />
+            ) : (
+              <Ionicons name="image-outline" size={22} color={colors.textMuted} />
+            )}
+          </View>
+          <View style={{ flex: 1, marginLeft: spacing.sm }}>
+            <Text variant="bodySemibold" color={themeColors.brand}>
+              {pickingLogo ? 'Opening photos…' : logoUrl ? 'Change logo' : 'Upload a logo'}
+            </Text>
+            <Text variant="caption" color={colors.textMuted}>From your device's photo library</Text>
+          </View>
+        </Pressable>
+
+        <Input label="…or paste a logo URL" value={logoUrl} onChangeText={setLogoUrl}
+          placeholder="https://…" icon="link-outline" autoCapitalize="none" />
         <Button label={savingBrand ? 'Saving…' : 'Save'} onPress={onSaveBrand} disabled={savingBrand} />
       </Card>
 
@@ -163,6 +210,9 @@ export default function CompanySetupScreen({ navigation }) {
         <View style={styles.divider} />
         <LinkRow icon="business-outline" title="Meeting rooms" sub="Add or remove bookable rooms"
           onPress={() => navigation.navigate('MeetingRooms')} />
+        <View style={styles.divider} />
+        <LinkRow icon="document-text-outline" title="Legal agreement" sub="The subscription terms your company agreed to"
+          onPress={() => navigation.navigate('LegalAgreement')} />
       </Card>
     </Screen>
   );
@@ -186,6 +236,14 @@ function LinkRow({ icon, title, sub, onPress }) {
 
 const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
+  logoLabel: { marginBottom: 6 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
+  logoPreview: {
+    width: 56, height: 56, borderRadius: radius.md,
+    borderWidth: 1, alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', backgroundColor: colors.surfaceAlt,
+  },
+  logoImage: { width: '100%', height: '100%' },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 4 },
   code: { fontSize: 22, fontWeight: '700', letterSpacing: 1 },
   shareBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.pill },

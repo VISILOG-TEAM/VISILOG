@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable, Modal } from 'react-native';
+import { View, Image, StyleSheet, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Card from './Card';
@@ -11,8 +11,10 @@ import { useData } from '../context/DataContext';
 // A simplified "tour" map: a stylized floor-plan grid with tappable
 // pins for reception + each meeting room. There's no real indoor
 // positioning here (that needs BLE beacons / indoor GPS infrastructure
-// this demo doesn't have) — tapping a pin shows a photo placeholder and
-// short walking directions instead, giving the tour feel without it.
+// this demo doesn't have) — tapping a pin shows the room's real photo
+// (if Company Setup added one) plus short walking directions, giving
+// the tour feel without it. Falls back to a stylized icon when no
+// photo has been uploaded for that room.
 export default function CompanyMapSection() {
   const { colors } = useTheme();
   const { meetingRooms } = useData();
@@ -29,6 +31,7 @@ export default function CompanyMapSection() {
       floor: r.floor,
       capacity: r.capacity,
       icon: 'business-outline',
+      photoUrl: r.photoUrl,
       directions: [
         'From reception, take the lift or stairs up.',
         `Follow signage to ${r.floor}.`,
@@ -65,7 +68,11 @@ export default function CompanyMapSection() {
         <View style={styles.modalWrap}>
           <View style={styles.modalCard}>
             <View style={[styles.modalPhoto, { backgroundColor: colors.primarySurface }]}>
-              <Ionicons name={selected?.icon || 'business-outline'} size={40} color={colors.primary} />
+              {selected?.photoUrl ? (
+                <Image source={{ uri: selected.photoUrl }} style={styles.modalPhotoImage} resizeMode="cover" />
+              ) : (
+                <Ionicons name={selected?.icon || 'business-outline'} size={40} color={colors.primary} />
+              )}
             </View>
             <Text variant="h3">{selected?.name}</Text>
             <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
@@ -135,10 +142,12 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   modalPhoto: {
-    height: 80, borderRadius: radius.md,
+    height: 140, borderRadius: radius.md,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: spacing.sm,
+    overflow: 'hidden',
   },
+  modalPhotoImage: { width: '100%', height: '100%' },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', marginTop: spacing.xs, gap: 8 },
   stepNum: {
     width: 20, height: 20, borderRadius: 10,

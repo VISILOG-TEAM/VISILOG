@@ -25,7 +25,6 @@ const mapEmployee = (d) => ({
   name: d.name,
   department: d.department || '',
   phone: d.phone || '',
-  avaya: d.avaya || '',
   email: d.email || '',
   role: d.role.toLowerCase(),
 });
@@ -188,7 +187,7 @@ export function DataProvider({ children }) {
   const addEmployee = async (input) => {
     const dto = await apiClient.post('/api/v1/employees', {
       employeeCode: input.employeeId, name: input.name, department: input.department,
-      phone: input.phone, avaya: input.avaya, email: input.email, role: input.role || 'employee',
+      phone: input.phone, email: input.email, role: input.role || 'employee',
     });
     const employee = mapEmployee(dto);
     setEmployees((es) => [...es, employee]);
@@ -198,7 +197,7 @@ export function DataProvider({ children }) {
   const updateEmployee = async (id, input) => {
     const dto = await apiClient.patch(`/api/v1/employees/${id}`, {
       employeeCode: input.employeeId, name: input.name, department: input.department,
-      phone: input.phone, avaya: input.avaya, email: input.email, role: input.role,
+      phone: input.phone, email: input.email, role: input.role,
     });
     const employee = mapEmployee(dto);
     setEmployees((es) => es.map((e) => (e.id === id ? employee : e)));
@@ -215,6 +214,7 @@ export function DataProvider({ children }) {
   const addMeetingRoom = async (input) => {
     const room = await apiClient.post('/api/v1/meeting-rooms', {
       name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
+      photoUrl: input.photoUrl || null,
     });
     setMeetingRooms((rs) => [...rs, room]);
     return room;
@@ -223,6 +223,7 @@ export function DataProvider({ children }) {
   const updateMeetingRoom = async (id, input) => {
     const room = await apiClient.patch(`/api/v1/meeting-rooms/${id}`, {
       name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
+      photoUrl: input.photoUrl || null,
     });
     setMeetingRooms((rs) => rs.map((r) => (r.id === id ? room : r)));
     return room;

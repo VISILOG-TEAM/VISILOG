@@ -23,7 +23,6 @@ export default function DirectoryScreen({ navigation }) {
       (e) =>
         e.name.toLowerCase().includes(q) ||
         e.department.toLowerCase().includes(q) ||
-        e.avaya.includes(q) ||
         e.phone.includes(q)
     );
   }, [employees, query]);
@@ -39,7 +38,7 @@ export default function DirectoryScreen({ navigation }) {
           onRightPress={() => navigation.navigate('AddEmployee')}
         />
         <Input
-          placeholder="Search name, department or avaya"
+          placeholder="Search name or department"
           value={query}
           onChangeText={setQuery}
           icon="search"
@@ -55,7 +54,7 @@ export default function DirectoryScreen({ navigation }) {
           <EmptyState
             icon="people-outline"
             title="No matches"
-            message="Try a different name, department, or avaya number."
+            message="Try a different name or department."
           />
         }
         renderItem={({ item }) => (
@@ -79,7 +78,7 @@ function DirectoryRow({ employee, onPress, onCall }) {
         <View style={{ flex: 1, marginLeft: spacing.sm }}>
           <Text variant="bodySemibold" numberOfLines={1}>{employee.name}</Text>
           <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
-            {employee.department} - Avaya {employee.avaya}
+            {employee.department}
           </Text>
         </View>
         <Pressable onPress={onCall} hitSlop={8} style={[styles.callBtn, { backgroundColor: themeColors.primarySurface }]}>

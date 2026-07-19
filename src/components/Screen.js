@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -7,6 +7,11 @@ import { spacing } from '../theme/spacing';
 // Standard page shell: respects the notch/home-indicator, paints the app
 // background, and gives you a scroll view by default. Set scroll={false}
 // for screens that manage their own list or need vertical centring.
+//
+// Wrapped in KeyboardAvoidingView so forms (Register visitor, Add
+// employee, Book a visit, etc.) don't get their lower fields hidden
+// behind the on-screen keyboard — every screen built on Screen gets
+// this for free instead of each one having to wire it up itself.
 export default function Screen({
   children,
   scroll = true,
@@ -18,19 +23,29 @@ export default function Screen({
   if (scroll) {
     return (
       <SafeAreaView style={[styles.safe, style]} edges={edges}>
-        <ScrollView
-          contentContainerStyle={[padded && styles.padded, contentStyle]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          style={styles.flex}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {children}
-        </ScrollView>
+          <ScrollView
+            contentContainerStyle={[padded && styles.padded, contentStyle]}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {children}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     );
   }
   return (
     <SafeAreaView style={[styles.safe, style]} edges={edges}>
-      <View style={[styles.flex, padded && styles.padded, contentStyle]}>{children}</View>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={[styles.flex, padded && styles.padded, contentStyle]}>{children}</View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

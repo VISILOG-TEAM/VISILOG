@@ -24,23 +24,36 @@ export default function VisitorBookScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [purpose, setPurpose] = useState('Official Business');
+  const [otherPurpose, setOtherPurpose] = useState('');
   const [hostId, setHostId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
+    if (submitting) {
+      Alert.alert('Already booking', 'Your booking is already being submitted.');
+      return;
+    }
     if (!name.trim() || !phone.trim() || !hostId) {
       Alert.alert('Almost there', 'Name, phone and host are required.');
       return;
     }
+    if (purpose === 'Other' && !otherPurpose.trim()) {
+      Alert.alert('Almost there', 'Please describe the purpose of your visit.');
+      return;
+    }
+    setSubmitting(true);
     try {
       const a = await bookVisit({
         visitorName: name, visitorPhone: phone, visitorCompany: company,
-        purpose, hostId,
+        purpose: purpose === 'Other' ? otherPurpose.trim() : purpose, hostId,
       });
       Alert.alert('Booked', `Your visit code is ${a.nfcCode}. Show it at reception.`, [
         { text: 'Done', onPress: () => navigation.navigate('Home') },
       ]);
     } catch (err) {
       Alert.alert('Could not book visit', err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -70,11 +83,15 @@ export default function VisitorBookScreen({ navigation }) {
         <Select label="Purpose" value={purpose} onChange={setPurpose}
           icon="briefcase-outline"
           options={visitPurposes.map((p) => ({ label: p, value: p }))} />
+        {purpose === 'Other' ? (
+          <Input label="Please specify" value={otherPurpose} onChangeText={setOtherPurpose}
+            placeholder="What's the purpose of your visit?" icon="create-outline" />
+        ) : null}
         <Select label="Who are you visiting?" value={hostId} onChange={setHostId}
           icon="people-outline" placeholder="Pick a host..."
           options={employees.map((e) => ({
             label: e.name, value: e.id,
-            sublabel: `${e.department} - ${e.avaya}`,
+            sublabel: e.department,
           }))} />
       </Card>
 
@@ -86,7 +103,7 @@ export default function VisitorBookScreen({ navigation }) {
       </View>
 
       <Button label="Submit booking" icon="checkmark-circle-outline"
-        onPress={onSubmit} style={{ marginTop: spacing.sm }} />
+        onPress={onSubmit} loading={submitting} style={{ marginTop: spacing.sm }} />
     </Screen>
   );
 }

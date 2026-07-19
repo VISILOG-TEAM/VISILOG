@@ -100,7 +100,7 @@ export default function VisitorDetailScreen({ route, navigation }) {
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>Visit details</Text>
       <Card>
         <DetailRow icon="people-outline" label="Host" value={host?.name || 'Not assigned'}
-          sub={host ? `${host.department} - ${host.avaya}` : undefined} />
+          sub={host ? host.department : undefined} />
         <Divider />
         <DetailRow icon="briefcase-outline" label="Purpose" value={visitor.purpose} />
         <Divider />
@@ -144,7 +144,7 @@ export default function VisitorDetailScreen({ route, navigation }) {
         <Button
           label="Check out visitor"
           icon="log-out-outline"
-          variant="danger"
+          variant="primary"
           onPress={onCheckOut}
           style={{ marginTop: spacing.md }}
         />

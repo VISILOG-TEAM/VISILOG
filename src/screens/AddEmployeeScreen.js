@@ -18,7 +18,6 @@ export default function AddEmployeeScreen({ navigation }) {
   const [name, setName] = useState('');
   const [department, setDepartment] = useState('');
   const [phone, setPhone] = useState('');
-  const [avaya, setAvaya] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('employee');
 
@@ -28,7 +27,7 @@ export default function AddEmployeeScreen({ navigation }) {
       return;
     }
     try {
-      const e = await addEmployee({ employeeId, name, department, phone, avaya, email, role });
+      const e = await addEmployee({ employeeId, name, department, phone, email, role });
       Alert.alert('Added', `${e.name} is now in the directory.`, [
         { text: 'Done', onPress: () => navigation.goBack() },
       ]);
@@ -56,8 +55,6 @@ export default function AddEmployeeScreen({ navigation }) {
           placeholder="e.g. IT" icon="business-outline" />
         <Input label="Personal phone" value={phone} onChangeText={setPhone}
           placeholder="+233 ..." icon="call-outline" keyboardType="phone-pad" />
-        <Input label="Avaya extension" value={avaya} onChangeText={setAvaya}
-          placeholder="e.g. 3403" icon="grid-outline" keyboardType="number-pad" />
         <Input label="Email" value={email} onChangeText={setEmail}
           placeholder="name@vra.com" icon="mail-outline"
           autoCapitalize="none" keyboardType="email-address" />

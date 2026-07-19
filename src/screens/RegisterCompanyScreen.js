@@ -9,44 +9,42 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../components';
-import { useAuth } from '../context/AuthContext';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 
 // RegisterCompanyScreen — the self-serve "sign your company up" entry
-// point. Creates the Organization plus its first Administrator account
-// in one step and hands back a company code; the admin shares that
-// code with their staff and visitors afterwards (see Company Setup).
+// point. Only *collects* the form here — a company can't actually use
+// VisiLog (and doesn't get a company code) until the admin has agreed
+// to the legal terms and gone through the subscription step on
+// LegalAgreementScreen, which is what actually calls registerCompany().
 export default function RegisterCompanyScreen({ navigation }) {
   const [companyName, setCompanyName] = useState('');
   const [adminName, setAdminName] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const { registerCompany } = useAuth();
 
-  const onSubmit = async () => {
+  const onSubmit = () => {
     if (!companyName.trim() || !adminName.trim() || !adminEmail.trim() || !password) {
       Alert.alert('Almost there', 'Please fill in every field above.');
+      return;
+    }
+    if (password.length < 8) {
+      Alert.alert('Password too short', 'Your password must be at least 8 characters.');
       return;
     }
     if (password !== confirm) {
       Alert.alert('Passwords don’t match', 'Please re-enter the same password twice.');
       return;
     }
-    setSubmitting(true);
-    const result = await registerCompany(companyName, adminName, adminEmail, password);
-    setSubmitting(false);
-    if (!result.ok) {
-      Alert.alert('Could not register your company', result.error);
-      return;
-    }
-    Alert.alert(
-      'You’re all set',
-      `${result.organization.name} is registered. Your company code is ${result.organization.code} — share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`
-    );
-    // On success the root navigator will swap to the manager tab shell.
+    navigation.navigate('LegalAgreement', {
+      pending: {
+        companyName: companyName.trim(),
+        adminName: adminName.trim(),
+        adminEmail: adminEmail.trim(),
+        password,
+      },
+    });
   };
 
   return (
@@ -87,19 +85,18 @@ export default function RegisterCompanyScreen({ navigation }) {
                   autoCapitalize="none" keyboardType="email-address" />
                 <Field icon="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword}
                   secureTextEntry />
+                <Text style={styles.passwordHint}>Must be at least 8 characters.</Text>
                 <Field icon="shield-checkmark-outline" placeholder="Confirm password" value={confirm} onChangeText={setConfirm}
                   secureTextEntry />
 
-                <Pressable onPress={onSubmit} disabled={submitting} style={({ pressed }) => [{ opacity: pressed || submitting ? 0.85 : 1 }]}>
+                <Pressable onPress={onSubmit} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
                   <LinearGradient
                     colors={['#F0D998', '#D4AF37', '#A9791B']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.submitBtn}
                   >
-                    <Text style={styles.submitBtnText}>
-                      {submitting ? 'Registering…' : 'Register company'}
-                    </Text>
+                    <Text style={styles.submitBtnText}>Continue</Text>
                   </LinearGradient>
                 </Pressable>
 
@@ -118,15 +115,26 @@ export default function RegisterCompanyScreen({ navigation }) {
   );
 }
 
-function Field({ icon, ...inputProps }) {
+function Field({ icon, secureTextEntry, ...inputProps }) {
+  const [revealed, setRevealed] = useState(false);
   return (
     <View style={styles.fieldRow}>
       <Ionicons name={icon} size={18} color="rgba(255,255,255,0.85)" />
       <TextInput
         placeholderTextColor="rgba(255,255,255,0.65)"
         style={styles.input}
+        secureTextEntry={secureTextEntry && !revealed}
         {...inputProps}
       />
+      {secureTextEntry ? (
+        <Pressable onPress={() => setRevealed((r) => !r)} hitSlop={8}>
+          <Ionicons
+            name={revealed ? 'eye-outline' : 'eye-off-outline'}
+            size={18}
+            color="rgba(255,255,255,0.85)"
+          />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -163,6 +171,10 @@ const styles = StyleSheet.create({
   input: {
     flex: 1, fontFamily: fonts.regular, fontSize: 15, color: '#FFFFFF',
     marginHorizontal: 8, paddingVertical: 0,
+  },
+  passwordHint: {
+    fontFamily: fonts.regular, fontSize: 11, color: 'rgba(255,255,255,0.7)',
+    marginTop: -6, marginBottom: spacing.sm,
   },
 
   submitBtn: {

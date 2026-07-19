@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet, Alert, Pressable } from 'react-native';
+import { View, Image, FlatList, StyleSheet, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import {
   Screen, Header, Text, Card, Button, Input, EmptyState,
 } from '../components';
@@ -19,7 +20,36 @@ export default function MeetingRoomsScreen({ navigation }) {
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState('');
   const [floor, setFloor] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [pickingPhoto, setPickingPhoto] = useState(false);
   const [adding, setAdding] = useState(false);
+
+  const onPickPhoto = async () => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert('Permission needed', 'Allow photo library access to add a room photo.');
+      return;
+    }
+    setPickingPhoto(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.6,
+        base64: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        Alert.alert('Could not read image', 'Please try a different photo.');
+        return;
+      }
+      setPhotoUrl(`data:${asset.mimeType || 'image/jpeg'};base64,${asset.base64}`);
+    } finally {
+      setPickingPhoto(false);
+    }
+  };
 
   const onAdd = async () => {
     if (!name.trim()) {
@@ -28,8 +58,8 @@ export default function MeetingRoomsScreen({ navigation }) {
     }
     setAdding(true);
     try {
-      await addMeetingRoom({ name: name.trim(), capacity, floor: floor.trim() });
-      setName(''); setCapacity(''); setFloor('');
+      await addMeetingRoom({ name: name.trim(), capacity, floor: floor.trim(), photoUrl: photoUrl || null });
+      setName(''); setCapacity(''); setFloor(''); setPhotoUrl('');
     } catch (err) {
       Alert.alert('Could not add room', err.message);
     } finally {
@@ -70,6 +100,18 @@ export default function MeetingRoomsScreen({ navigation }) {
                 placeholder="e.g. 3rd Floor" icon="layers-outline" />
             </View>
           </View>
+          <Pressable onPress={onPickPhoto} disabled={pickingPhoto} style={styles.photoRow}>
+            <View style={[styles.photoPreview, { borderColor: colors.border }]}>
+              {photoUrl ? (
+                <Image source={{ uri: photoUrl }} style={styles.photoImage} resizeMode="cover" />
+              ) : (
+                <Ionicons name="camera-outline" size={20} color={colors.textMuted} />
+              )}
+            </View>
+            <Text variant="bodySemibold" color={themeColors.brand} style={{ marginLeft: spacing.sm }}>
+              {pickingPhoto ? 'Opening photos…' : photoUrl ? 'Change photo' : 'Add a room photo (optional)'}
+            </Text>
+          </Pressable>
           <Button label={adding ? 'Adding…' : 'Add room'} onPress={onAdd} disabled={adding} />
         </Card>
       </View>
@@ -86,7 +128,11 @@ export default function MeetingRoomsScreen({ navigation }) {
           <Card style={{ marginHorizontal: spacing.md }}>
             <View style={styles.roomRow}>
               <View style={[styles.roomIcon, { backgroundColor: themeColors.primarySurface }]}>
-                <Ionicons name="business" size={20} color={themeColors.primary} />
+                {item.photoUrl ? (
+                  <Image source={{ uri: item.photoUrl }} style={styles.roomIconImage} resizeMode="cover" />
+                ) : (
+                  <Ionicons name="business" size={20} color={themeColors.primary} />
+                )}
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text variant="bodySemibold">{item.name}</Text>
@@ -113,5 +159,14 @@ const styles = StyleSheet.create({
   roomIcon: {
     width: 44, height: 44, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden',
   },
+  roomIconImage: { width: '100%', height: '100%' },
+  photoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
+  photoPreview: {
+    width: 44, height: 44, borderRadius: radius.md,
+    borderWidth: 1, alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', backgroundColor: colors.surfaceAlt,
+  },
+  photoImage: { width: '100%', height: '100%' },
 });

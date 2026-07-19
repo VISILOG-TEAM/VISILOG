@@ -75,8 +75,6 @@ export default function EmployeeDetailScreen({ route, navigation }) {
       <Card>
         <Row icon="call-outline" label="Personal phone" value={employee.phone} />
         <Divider />
-        <Row icon="business-outline" label="Avaya extension" value={employee.avaya} />
-        <Divider />
         <Row icon="mail-outline" label="Email" value={employee.email} />
         <Divider />
         <Row icon="briefcase-outline" label="Department" value={employee.department} />

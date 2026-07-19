@@ -104,7 +104,7 @@ export default function BookMeetingForm({ onDone }) {
           onChange={setAttendeeIds}
           icon="people-outline"
           options={employees.map((e) => ({
-            label: e.name, value: e.id, sublabel: `${e.department} · ${e.avaya}`,
+            label: e.name, value: e.id, sublabel: e.department,
           }))}
         />
 

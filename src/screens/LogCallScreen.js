@@ -90,7 +90,7 @@ export default function LogCallScreen({ navigation }) {
           options={employees.map((emp) => ({
             label: emp.name,
             value: emp.id,
-            sublabel: `${emp.department} - ${emp.avaya}`,
+            sublabel: emp.department,
           }))}
         />
 

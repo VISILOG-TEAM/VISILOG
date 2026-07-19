@@ -26,29 +26,38 @@ export default function RegisterVisitorScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [company, setCompany] = useState('');
   const [purpose, setPurpose] = useState('Official Business');
+  const [otherPurpose, setOtherPurpose] = useState('');
   const [hostId, setHostId] = useState(null);
   const [consent, setConsent] = useState(true);
   const [photoAdded, setPhotoAdded] = useState(false);
 
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
 
   // Preview of the badge ID that will be assigned. Recomputed every render
   // so it stays accurate if the visitor list changes underneath.
   const previewBadge = nextBadgeId(visitors);
 
   const onSubmit = async () => {
+    if (submitting) return;
     const nextErrors = {};
     if (!firstName.trim()) nextErrors.firstName = 'Enter the visitor\u2019s first name.';
     if (!lastName.trim()) nextErrors.lastName = 'Enter the visitor\u2019s last name.';
     if (!phone.trim()) nextErrors.phone = 'A phone number is required.';
     if (!hostId) nextErrors.hostId = 'Pick a host employee.';
     if (!consent) nextErrors.consent = 'Visitor consent is required to check in.';
+    if (purpose === 'Other' && !otherPurpose.trim()) {
+      nextErrors.otherPurpose = 'Describe the purpose of the visit.';
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
+    setSubmitting(true);
     try {
       const visitor = await registerAndCheckIn({
-        firstName, lastName, phone, company, purpose, hostId,
+        firstName, lastName, phone, company,
+        purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
+        hostId,
       });
       Alert.alert(
         'Checked in',
@@ -57,6 +66,8 @@ export default function RegisterVisitorScreen({ navigation }) {
       );
     } catch (err) {
       Alert.alert('Could not check in visitor', err.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -135,6 +146,17 @@ export default function RegisterVisitorScreen({ navigation }) {
           options={visitPurposes.map((p) => ({ label: p, value: p }))}
         />
 
+        {purpose === 'Other' ? (
+          <Input
+            label="Please specify"
+            value={otherPurpose}
+            onChangeText={setOtherPurpose}
+            placeholder="What's the purpose of the visit?"
+            icon="create-outline"
+            error={errors.otherPurpose}
+          />
+        ) : null}
+
         <Select
           label="Host employee"
           placeholder="Search staff directory..."
@@ -145,7 +167,7 @@ export default function RegisterVisitorScreen({ navigation }) {
           options={employees.map((e) => ({
             label: e.name,
             value: e.id,
-            sublabel: `${e.department} - ${e.avaya}`,
+            sublabel: e.department,
           }))}
         />
 
@@ -187,6 +209,7 @@ export default function RegisterVisitorScreen({ navigation }) {
         label="Check in visitor"
         icon="checkmark-circle-outline"
         onPress={onSubmit}
+        loading={submitting}
         style={{ marginTop: spacing.md }}
       />
       <Button

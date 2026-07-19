@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import { colors as staticColors } from '../theme/colors';
@@ -16,6 +16,7 @@ export default function Input({
   placeholder,
   icon,
   error,
+  hint,
   keyboardType,
   secureTextEntry,
   autoCapitalize = 'sentences',
@@ -24,6 +25,11 @@ export default function Input({
 }) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
+  // Password fields get their own reveal toggle instead of the caller
+  // having to wire one up on every screen — this is a bit of state per
+  // field, so it only kicks in when secureTextEntry is actually passed.
+  const [revealed, setRevealed] = useState(false);
+  const isPassword = !!secureTextEntry;
 
   return (
     <View style={[styles.wrap, style]}>
@@ -56,18 +62,31 @@ export default function Input({
           placeholder={placeholder}
           placeholderTextColor={colors.textMuted}
           keyboardType={keyboardType}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={isPassword && !revealed}
           autoCapitalize={autoCapitalize}
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'center'}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
         />
+        {isPassword ? (
+          <Pressable onPress={() => setRevealed((r) => !r)} hitSlop={8} style={styles.eyeIcon}>
+            <Ionicons
+              name={revealed ? 'eye-outline' : 'eye-off-outline'}
+              size={18}
+              color={colors.textMuted}
+            />
+          </Pressable>
+        ) : null}
       </View>
 
       {error ? (
         <Text variant="caption" color={colors.status.error.solid} style={styles.error}>
           {error}
+        </Text>
+      ) : hint ? (
+        <Text variant="caption" color={colors.textMuted} style={styles.error}>
+          {hint}
         </Text>
       ) : null}
     </View>
@@ -90,6 +109,7 @@ const styles = StyleSheet.create({
   multiline: { height: 100, alignItems: 'flex-start', paddingTop: 12 },
   errored: { borderColor: staticColors.status.error.solid },
   icon: { marginRight: 8 },
+  eyeIcon: { marginLeft: 8 },
   input: {
     flex: 1,
     fontFamily: fonts.regular,

@@ -30,6 +30,10 @@ export default function SettingsScreen({ navigation }) {
       Alert.alert('Missing fields', 'Fill in all three password fields.');
       return;
     }
+    if (newPw.length < 8) {
+      Alert.alert('Too short', 'New password must be at least 8 characters.');
+      return;
+    }
     if (newPw !== confirmPw) {
       Alert.alert('Mismatch', 'New passwords don\u2019t match.');
       return;
@@ -81,7 +85,8 @@ export default function SettingsScreen({ navigation }) {
             <Input label="Current password" value={currentPw} onChangeText={setCurrentPw}
               placeholder="Current password" icon="lock-closed-outline" secureTextEntry />
             <Input label="New password" value={newPw} onChangeText={setNewPw}
-              placeholder="New password" icon="key-outline" secureTextEntry />
+              placeholder="New password" icon="key-outline" secureTextEntry
+              hint="Must be at least 8 characters." />
             <Input label="Confirm new password" value={confirmPw} onChangeText={setConfirmPw}
               placeholder="Repeat new password" icon="shield-checkmark-outline" secureTextEntry />
             <View style={{ flexDirection: 'row' }}>
@@ -107,29 +112,36 @@ export default function SettingsScreen({ navigation }) {
         )}
       </Card>
 
-      {/* Notifications */}
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Notifications
-      </Text>
-      <Card padded={false}>
-        <ToggleRow
-          label="New appointment alerts"
-          sub="Notify me when a visitor pre-books."
-          value={notifyAppts} onChange={setNotifyAppts}
-        />
-        <Divider />
-        <ToggleRow
-          label="Missed call alerts"
-          sub="Push a reminder for unreturned calls."
-          value={notifyCalls} onChange={setNotifyCalls}
-        />
-        <Divider />
-        <ToggleRow
-          label="NFC access events"
-          sub="Notify on revoked or denied card taps."
-          value={notifyNfc} onChange={setNotifyNfc}
-        />
-      </Card>
+      {/* Notifications — these toggles are about staff workflow (someone
+          else pre-booking, missing a call, a card being tapped), which
+          means nothing to a visitor account, so this whole section is
+          staff-only. */}
+      {user?.role !== 'visitor' ? (
+        <>
+          <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+            Notifications
+          </Text>
+          <Card padded={false}>
+            <ToggleRow
+              label="New appointment alerts"
+              sub="Notify me when a visitor pre-books."
+              value={notifyAppts} onChange={setNotifyAppts}
+            />
+            <Divider />
+            <ToggleRow
+              label="Missed call alerts"
+              sub="Push a reminder for unreturned calls."
+              value={notifyCalls} onChange={setNotifyCalls}
+            />
+            <Divider />
+            <ToggleRow
+              label="NFC access events"
+              sub="Notify on revoked or denied card taps."
+              value={notifyNfc} onChange={setNotifyNfc}
+            />
+          </Card>
+        </>
+      ) : null}
 
       {/* Organisation — administration for the whole tenant, so only the
           Manager/Administrator who owns that org sees it. Everyone else's
@@ -171,7 +183,7 @@ export default function SettingsScreen({ navigation }) {
 
       <Button
         label="Sign out"
-        variant="danger"
+        variant="secondary"
         icon="log-out-outline"
         onPress={onLogout}
         style={{ marginTop: spacing.xl }}
