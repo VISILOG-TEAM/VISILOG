@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { View, FlatList, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -26,21 +26,21 @@ export default function AppointmentsScreen({ navigation }) {
     <Screen scroll={false} padded={false}>
       <View style={styles.head}>
         <Header
-          title={view === 'appointments' ? 'Appointments' : 'Meeting Rooms'}
-          subtitle={view === 'appointments' ? 'Pre-booked visits & approvals' : 'Availability & NFC access'}
+          title={view === 'appointments' ? 'Appointments' : 'Meetings'}
+          subtitle={view === 'appointments' ? 'Pre-booked visits & approvals' : 'Everything booked, on-site or outside'}
         />
         <Segmented
           value={view}
           onChange={setView}
           options={[
             { label: 'Appointments', value: 'appointments' },
-            { label: 'Meeting Rooms', value: 'rooms' },
+            { label: 'Meetings', value: 'rooms' },
           ]}
           style={{ marginBottom: spacing.sm }}
         />
       </View>
 
-      {view === 'appointments' ? <AppointmentsList /> : <RoomsList />}
+      {view === 'appointments' ? <AppointmentsList /> : <MeetingsView />}
     </Screen>
   );
 }
@@ -53,6 +53,12 @@ function AppointmentsList() {
   // Only Employees (and Visitors, on their own Visits screen) can edit
   // an appointment's time — Receptionist/Manager use Admit/Reject instead.
   const canReschedule = user?.role === 'employee';
+  // Tapping "Admit" twice before the first request finishes used to
+  // check the same visitor in twice — the row doesn't leave the
+  // pending list until the response comes back, so a second tap in
+  // that window fired a second, real admit. Track in-flight ids
+  // synchronously (a ref, not state) so the second tap is ignored.
+  const admittingRef = useRef(new Set());
 
   const filtered = useMemo(
     () => appointments
@@ -62,6 +68,7 @@ function AppointmentsList() {
   );
 
   const onAdmit = (appt) => {
+    if (admittingRef.current.has(appt.id)) return;
     Alert.alert(
       'Admit visitor?',
       `${appt.visitorName} will be registered and checked in.`,
@@ -70,11 +77,15 @@ function AppointmentsList() {
         {
           text: 'Admit',
           onPress: async () => {
+            if (admittingRef.current.has(appt.id)) return;
+            admittingRef.current.add(appt.id);
             try {
               const v = await admitAppointment(appt);
               Alert.alert('Admitted', `${v.fullName} - ${v.badgeId}`);
             } catch (err) {
               Alert.alert('Could not admit visitor', err.message);
+            } finally {
+              admittingRef.current.delete(appt.id);
             }
           },
         },
@@ -250,47 +261,103 @@ const ROOM_STATUS_META = {
   inuse: { label: 'In use', badge: 'onsite' },
 };
 
-function RoomsList() {
+// A single FlatList drives the whole screen (every upcoming meeting,
+// room-based or an outside location — previously an outside-location
+// booking never showed up *anywhere* after you made it, and a room
+// with several bookings only ever showed the single soonest one). The
+// per-room availability cards sit in the header as a plain, short,
+// non-virtualized list — nesting a second FlatList in there would
+// trigger RN's "VirtualizedLists should never be nested" warning.
+function MeetingsView() {
   const { colors: themeColors } = useTheme();
-  const { roomBookings, meetingRooms, employeeById } = useData();
+  const { roomBookings, meetingRooms, employeeById, roomById } = useData();
+
   const rooms = useMemo(
     () => meetingRooms.map((r) => ({ room: r, ...roomStatus(r, roomBookings) })),
     [roomBookings, meetingRooms]
   );
 
+  const upcoming = useMemo(() => {
+    const now = Date.now();
+    return [...roomBookings]
+      .filter((b) => new Date(b.endTime).getTime() > now)
+      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+  }, [roomBookings]);
+
   return (
     <FlatList
-      data={rooms}
-      keyExtractor={(r) => r.room.id}
+      data={upcoming}
+      keyExtractor={(b) => b.id}
       contentContainerStyle={styles.list}
       ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+      ListHeaderComponent={
+        <>
+          {rooms.length > 0 ? (
+            <>
+              <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionLabel}>
+                Rooms
+              </Text>
+              {rooms.map(({ room, status, booking }) => {
+                const meta = ROOM_STATUS_META[status];
+                return (
+                  <Card key={room.id} style={{ marginBottom: spacing.sm }}>
+                    <View style={styles.headRow}>
+                      <View style={[styles.roomIcon, { backgroundColor: themeColors.primarySurface }]}>
+                        <Ionicons name="business" size={20} color={themeColors.primary} />
+                      </View>
+                      <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                        <Text variant="bodySemibold">{room.name}</Text>
+                        <Text variant="caption" color={colors.textSecondary}>
+                          {room.floor} · Capacity {room.capacity}
+                        </Text>
+                      </View>
+                      <Badge label={meta.label} status={meta.badge} size="sm" />
+                    </View>
+                    {booking && status !== 'available' ? (
+                      <MetaRow icon="time-outline"
+                        text={`Next: ${fmtTime(booking.startTime)} → ${fmtTime(booking.endTime)}`} />
+                    ) : null}
+                  </Card>
+                );
+              })}
+            </>
+          ) : null}
+          <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionLabel}>
+            All upcoming meetings
+          </Text>
+        </>
+      }
+      ListEmptyComponent={
+        <EmptyState
+          icon="calendar-outline"
+          title="No meetings booked"
+          message="Meetings booked from Book a meeting will show up here, whether they're in a room or an outside location."
+        />
+      }
       renderItem={({ item }) => {
-        const meta = ROOM_STATUS_META[item.status];
-        const organiser = item.booking ? employeeById(item.booking.organiserId) : null;
+        const organiser = employeeById(item.organiserId);
+        const room = item.roomId ? roomById(item.roomId) : null;
         return (
           <Card style={{ marginHorizontal: spacing.md }}>
             <View style={styles.headRow}>
-              <View style={[styles.roomIcon, { backgroundColor: themeColors.primarySurface }]}>
-                <Ionicons name="business" size={20} color={themeColors.primary} />
-              </View>
-              <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                <Text variant="bodySemibold">{item.room.name}</Text>
+              <View style={{ flex: 1 }}>
+                <Text variant="bodySemibold">{item.title}</Text>
                 <Text variant="caption" color={colors.textSecondary}>
-                  {item.room.floor} · Capacity {item.room.capacity}
+                  {room ? room.name : item.location || 'Outside location'}
                 </Text>
               </View>
-              <Badge label={meta.label} status={meta.badge} size="sm" />
             </View>
-            {item.booking && (
-              <View style={styles.metaList}>
-                <MetaRow icon="document-text-outline" text={item.booking.title} />
-                <MetaRow
-                  icon="time-outline"
-                  text={`${fmtTime(item.booking.startTime)} → ${fmtTime(item.booking.endTime)}`}
-                />
-                <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '—'}`} />
-              </View>
-            )}
+            <View style={styles.metaList}>
+              <MetaRow icon="time-outline"
+                text={`${fmtDate(item.startTime)} · ${fmtTime(item.startTime)} → ${fmtTime(item.endTime)}`} />
+              <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '—'}`} />
+              {item.participantIds?.length ? (
+                <MetaRow icon="people-outline" text={`${item.participantIds.length} staff invited`} />
+              ) : null}
+              {item.externalGuests ? (
+                <MetaRow icon="person-add-outline" text={`Guests: ${item.externalGuests}`} />
+              ) : null}
+            </View>
           </Card>
         );
       }}
@@ -310,4 +377,5 @@ const styles = StyleSheet.create({
     width: 44, height: 44, borderRadius: 12,
     alignItems: 'center', justifyContent: 'center',
   },
+  sectionLabel: { marginBottom: spacing.sm, marginTop: spacing.xs },
 });

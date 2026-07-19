@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, ScrollView, StyleSheet, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
@@ -25,7 +25,7 @@ export default function Screen({
       <SafeAreaView style={[styles.safe, style]} edges={edges}>
         <KeyboardAvoidingView
           style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior="padding"
         >
           <ScrollView
             contentContainerStyle={[padded && styles.padded, contentStyle]}
@@ -42,7 +42,7 @@ export default function Screen({
     <SafeAreaView style={[styles.safe, style]} edges={edges}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
       >
         <View style={[styles.flex, padded && styles.padded, contentStyle]}>{children}</View>
       </KeyboardAvoidingView>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, StyleSheet, Alert, Modal, TextInput, Pressable,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import Text from './Text';
 import Card from './Card';
@@ -138,7 +138,7 @@ function ConfirmClockInModal({ visible, password, onChangePassword, confirming, 
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <KeyboardAvoidingView
         style={styles.modalWrap}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
       >
         <View style={styles.modalCard}>
           <Text variant="h3">Confirm it's you</Text>

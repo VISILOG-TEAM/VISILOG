@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, StyleSheet, Modal, TextInput, Pressable, Alert,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import Text from './Text';
 import { colors as staticColors } from '../theme/colors';
@@ -38,7 +38,7 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.wrap}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
       >
         <View style={styles.card}>
           <Text variant="h3">Reschedule visit</Text>
