@@ -1,25 +1,26 @@
 package com.visilog.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-/** Request body for POST /api/auth/login. */
 public class LoginRequest {
 
-    @NotBlank(message = "Username is required")
-    private String username;
+    @NotBlank(message = "Email is required.")
+    @Email(message = "Please enter a valid email address.")
+    private String email;
 
-    @NotBlank(message = "Password is required")
+    @NotBlank(message = "Password is required.")
     private String password;
 
     public LoginRequest() {
     }
 
-    public String getUsername() {
-        return username;
+    public String getEmail() {
+        return email;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {

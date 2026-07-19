@@ -1,92 +1,209 @@
 package com.visilog.service;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-/**
- * Handles user registration and login.
- *
- * NOTE: still in-memory (HashMap), same as the original Swing version.
- * This means all registered users are lost every time the app restarts.
- * That's fine for now while you build out the REST layer - once the
- * database is wired up, this class swaps its HashMaps for a
- * UserRepository (JPA) without the controller layer needing to change.
- *
- * Because this class is annotated @Service, Spring creates exactly ONE
- * instance of it and hands that same instance to anything that needs it
- * (like AuthController) via constructor injection. That's what replaces
- * the "pass the same UserService/EmailService instance between Swing
- * screens" pattern you had before.
- */
+import com.visilog.enums.Role;
+import com.visilog.enums.StaffRole;
+import com.visilog.model.UserAccount;
+import com.visilog.repository.UserAccountRepository;
+
 @Service
 public class UserService {
 
-    // username -> hashed password
-    private final Map<String, String> users = new HashMap<>();
-    // username -> email
-    private final Map<String, String> emails = new HashMap<>();
+    private final UserAccountRepository userAccountRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Registers a new user.
-     *
-     * @return true if registration succeeded, false if the username already exists
-     */
-    public boolean register(String username, String password, String email) {
-        if (userExists(username)) {
-            return false;
+    public UserService(
+        UserAccountRepository userAccountRepository,
+        PasswordEncoder passwordEncoder
+    ) {
+    this.userAccountRepository = userAccountRepository;
+    this.passwordEncoder = passwordEncoder;
+       }
+
+    public UserAccount register(
+            String companyCode,
+            String fullName,
+            String email,
+            String password,
+            String confirmPassword,
+            String role,
+            String staffRole
+    ) {
+
+        if (companyCode == null || companyCode.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Company code is required."
+            );
         }
-        String hashed = hashPassword(password);
-        users.put(username, hashed);
-        emails.put(username, email);
-        return true;
-    }
 
-    /**
-     * Attempts to log a user in.
-     *
-     * @return true if the username exists and the password matches
-     */
-    public boolean login(String username, String password) {
-        if (!userExists(username)) {
-            return false;
+        if (fullName == null || fullName.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Full name is required."
+            );
         }
-        String hashed = hashPassword(password);
-        return users.get(username).equals(hashed);
-    }
 
-    public boolean userExists(String username) {
-        return users.containsKey(username);
-    }
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Email is required."
+            );
+        }
 
-    public String getEmail(String username) {
-        return emails.get(username);
-    }
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Password is required."
+            );
+        }
 
-    /**
-     * Hashes a password using SHA-256.
-     * Note: for production use, a salted hash (e.g. BCrypt) is stronger than
-     * plain SHA-256, but SHA-256 is a solid improvement over plain text for now.
-     */
-    private String hashPassword(String password) {
+        if (confirmPassword == null || confirmPassword.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Confirm password is required."
+            );
+        }
+
+        if (!password.equals(confirmPassword)) {
+            throw new IllegalArgumentException(
+                    "Password and confirm password do not match."
+            );
+        }
+
+        String normalizedEmail = email.trim().toLowerCase();
+
+        if (userAccountRepository.existsByEmail(normalizedEmail)) {
+            throw new IllegalArgumentException(
+                    "Email is already registered."
+            );
+        }
+
+        Role selectedRole;
+
         try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashBytes = digest.digest(password.getBytes(StandardCharsets.UTF_8));
-
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-
-        } catch (NoSuchAlgorithmException e) {
-            // SHA-256 is guaranteed to exist on any standard JVM, so this
-            // should never actually happen.
-            throw new RuntimeException("Failed to hash password", e);
+            selectedRole = Role.valueOf(
+                    role.trim().toUpperCase()
+            );
+        } catch (Exception exception) {
+            throw new IllegalArgumentException(
+                    "Invalid role. Role must be EMPLOYEE or VISITOR."
+            );
         }
+
+        StaffRole selectedStaffRole = null;
+
+        if (selectedRole == Role.EMPLOYEE) {
+
+            if (staffRole == null || staffRole.isBlank()) {
+                throw new IllegalArgumentException(
+                        "Staff role is required for employees."
+                );
+            }
+
+            try {
+                selectedStaffRole = StaffRole.valueOf(
+                        staffRole.trim().toUpperCase()
+                );
+            } catch (IllegalArgumentException exception) {
+                throw new IllegalArgumentException(
+                        "Invalid staff role. Staff role must be STAFF or RECEPTIONIST."
+                );
+            }
+
+        } else if (selectedRole == Role.VISITOR) {
+            selectedStaffRole = null;
+        }
+
+        UserAccount userAccount = new UserAccount();
+
+        userAccount.setCompanyCode(
+                companyCode.trim().toUpperCase()
+        );
+
+        userAccount.setFullName(
+                fullName.trim()
+        );
+
+        userAccount.setEmail(
+                normalizedEmail
+        );
+
+        userAccount.setPassword(
+                passwordEncoder.encode(password)
+        );
+
+        userAccount.setRole(
+                selectedRole
+        );
+
+        userAccount.setStaffRole(
+                selectedStaffRole
+        );
+
+        userAccount.setActive(true);
+
+        return userAccountRepository.save(userAccount);
+    }
+
+    public UserAccount login(
+            String email,
+            String password
+    ) {
+
+        String normalizedEmail = email.trim().toLowerCase();
+
+        UserAccount userAccount = userAccountRepository
+                .findByEmail(normalizedEmail)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Invalid email or password."
+                        )
+                );
+
+        if (!passwordEncoder.matches(
+                password,
+                userAccount.getPassword()
+        )) {
+            throw new IllegalArgumentException(
+                    "Invalid email or password."
+            );
+        }
+
+        if (!userAccount.isActive()) {
+            throw new IllegalArgumentException(
+                    "This account is inactive."
+            );
+        }
+
+        return userAccount;
+    }
+
+    public boolean emailExists(String email) {
+        return userAccountRepository.existsByEmail(
+                email.trim().toLowerCase()
+        );
+    }
+
+    public String determineDashboard(
+            UserAccount userAccount
+    ) {
+
+        if (userAccount.getRole() == Role.VISITOR) {
+            return "VISITOR_DASHBOARD";
+        }
+
+        if (userAccount.getRole() == Role.EMPLOYEE
+                && userAccount.getStaffRole()
+                == StaffRole.RECEPTIONIST) {
+
+            return "RECEPTIONIST_DASHBOARD";
+        }
+
+        if (userAccount.getRole() == Role.EMPLOYEE
+                && userAccount.getStaffRole()
+                == StaffRole.STAFF) {
+
+            return "EMPLOYEE_DASHBOARD";
+        }
+
+        return "UNKNOWN_DASHBOARD";
     }
 }
