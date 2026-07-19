@@ -70,9 +70,21 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
     }
     Alert.alert(
       'You’re all set',
-      `${result.organization!.name} is registered and active for the next ${TERM_YEARS} years. Your company code is ${result.organization!.code} — share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`
+      `${result.organization!.name} is registered and active for the next ${TERM_YEARS} years. Your company code is ${result.organization!.code} — share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`,
+      [{
+        text: 'Continue',
+        onPress: () => {
+          // The root navigator swaps to the signed-in stack once `user` is
+          // set, but "LegalAgreement" is a valid screen name in *both*
+          // stacks (it's also reachable from Company Setup post-login), so
+          // React Navigation has no reason to redirect on its own — it just
+          // keeps rendering the same screen name across the swap. Reset
+          // explicitly to the new stack's actual landing screen instead of
+          // relying on that swap to also navigate.
+          navigation.reset({ index: 0, routes: [{ name: 'ManagerTabs' }] });
+        },
+      }]
     );
-    // On success the root navigator will swap to the manager tab shell.
   };
 
   return (

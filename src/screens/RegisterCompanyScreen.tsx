@@ -64,7 +64,7 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior="padding"
         >
           <ScrollView
             contentContainerStyle={styles.scroll}
