@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 
 // SplashScreen — shown for a fixed window on cold start (see App.js,
 // which owns the 7s timer). Uses the exact same background photo as
-// Login/Signup/RegisterCompany (see assets/login-bg.jpg) so onboarding
+// Login/Signup/RegisterCompany (see assets/login-bg-plum.webp) so onboarding
 // reads as one continuous, matching experience instead of a splash that
 // looks like a different app. assets/logo.png already bakes in the
 // icon, "VisiLog" wordmark, and tagline as one image, so there's no
@@ -12,7 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 export default function SplashScreen() {
   return (
     <ImageBackground
-      source={require('../../assets/login-bg.jpg')}
+      source={require('../../assets/login-bg-plum.webp')}
       style={styles.bg}
       resizeMode="cover"
     >
