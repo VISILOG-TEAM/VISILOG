@@ -22,10 +22,13 @@ export default function VisitorBookScreen({ navigation }) {
 
   const [name, setName] = useState(user.name || '');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState(user.email || '');
   const [company, setCompany] = useState('');
   const [purpose, setPurpose] = useState('Official Business');
   const [otherPurpose, setOtherPurpose] = useState('');
   const [hostId, setHostId] = useState(null);
+  const [date, setDate] = useState(formatDate(new Date()));
+  const [time, setTime] = useState('10:00');
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
 
@@ -42,12 +45,17 @@ export default function VisitorBookScreen({ navigation }) {
       Alert.alert('Almost there', 'Please describe the purpose of your visit.');
       return;
     }
+    if (!date.trim() || !time.trim()) {
+      Alert.alert('Almost there', 'Pick a date and time for your visit.');
+      return;
+    }
     submittingRef.current = true;
     setSubmitting(true);
     try {
       const a = await bookVisit({
-        visitorName: name, visitorPhone: phone, visitorCompany: company,
+        visitorName: name, visitorPhone: phone, visitorEmail: email, visitorCompany: company,
         purpose: purpose === 'Other' ? otherPurpose.trim() : purpose, hostId,
+        scheduledAt: toInstant(date, time),
       });
       Alert.alert('Booked', `Your visit code is ${a.nfcCode}. Show it at reception.`, [
         { text: 'Done', onPress: () => navigation.navigate('Home') },
@@ -75,6 +83,8 @@ export default function VisitorBookScreen({ navigation }) {
         <Input label="Full name" value={name} onChangeText={setName} icon="person-outline" />
         <Input label="Phone" value={phone} onChangeText={setPhone}
           icon="call-outline" keyboardType="phone-pad" />
+        <Input label="Email (optional)" value={email} onChangeText={setEmail}
+          icon="mail-outline" autoCapitalize="none" keyboardType="email-address" />
         <Input label="Company (optional)" value={company} onChangeText={setCompany}
           icon="business-outline" />
       </Card>
@@ -98,6 +108,23 @@ export default function VisitorBookScreen({ navigation }) {
           }))} />
       </Card>
 
+      <Text variant="label" color={themeColors.brand} style={styles.sectionLabel}>
+        3 · When
+      </Text>
+      <Card>
+        <View style={styles.dateRow}>
+          <View style={{ flex: 1 }}>
+            <Input label="Date" value={date} onChangeText={setDate}
+              placeholder="YYYY-MM-DD" icon="calendar-outline" />
+          </View>
+          <View style={{ width: spacing.sm }} />
+          <View style={{ flex: 1 }}>
+            <Input label="Time" value={time} onChangeText={setTime}
+              placeholder="HH:MM" icon="time-outline" />
+          </View>
+        </View>
+      </Card>
+
       <View style={[styles.notice, { backgroundColor: themeColors.primarySurface }]}>
         <Ionicons name="information-circle" size={18} color={themeColors.primary} />
         <Text variant="caption" color={themeColors.brand} style={{ marginLeft: 8, flex: 1 }}>
@@ -111,8 +138,22 @@ export default function VisitorBookScreen({ navigation }) {
   );
 }
 
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// The backend expects a full ISO instant (with seconds + timezone);
+// "YYYY-MM-DDTHH:MM" alone isn't parseable as one.
+function toInstant(dateStr, timeStr) {
+  return new Date(`${dateStr}T${timeStr}:00`).toISOString();
+}
+
 const styles = StyleSheet.create({
   sectionLabel: { marginTop: spacing.lg, marginBottom: spacing.xs, textTransform: 'uppercase' },
+  dateRow: { flexDirection: 'row' },
   notice: {
     flexDirection: 'row',
     alignItems: 'flex-start',

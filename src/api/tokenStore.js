@@ -11,8 +11,15 @@ let currentToken = null;
 
 export const getToken = () => currentToken;
 
-export const setToken = async (token) => {
+// `persist` false (LoginScreen's "Remember me" unchecked) keeps the
+// token in memory only — the app works normally for this launch, but
+// won't restore the session on the next cold start.
+export const setToken = async (token, persist = true) => {
   currentToken = token;
+  if (!persist) {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    return;
+  }
   if (token) {
     await AsyncStorage.setItem(STORAGE_KEY, token);
   } else {

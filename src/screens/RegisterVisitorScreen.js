@@ -24,6 +24,7 @@ export default function RegisterVisitorScreen({ navigation }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [company, setCompany] = useState('');
   const [purpose, setPurpose] = useState('Official Business');
   const [otherPurpose, setOtherPurpose] = useState('');
@@ -61,7 +62,7 @@ export default function RegisterVisitorScreen({ navigation }) {
     setSubmitting(true);
     try {
       const visitor = await registerAndCheckIn({
-        firstName, lastName, phone, company,
+        firstName, lastName, phone, email, company,
         purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
         hostId,
       });
@@ -135,6 +136,16 @@ export default function RegisterVisitorScreen({ navigation }) {
           icon="call-outline"
           keyboardType="phone-pad"
           error={errors.phone}
+        />
+
+        <Input
+          label="Email (optional)"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="name@example.com"
+          icon="mail-outline"
+          autoCapitalize="none"
+          keyboardType="email-address"
         />
 
         <Input

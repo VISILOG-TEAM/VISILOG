@@ -25,6 +25,7 @@ export default function VisitorBookingScreen({ navigation }) {
 
   const [visitorName, setVisitorName] = useState('');
   const [visitorPhone, setVisitorPhone] = useState('');
+  const [visitorEmail, setVisitorEmail] = useState('');
   const [visitorCompany, setVisitorCompany] = useState('');
   const [purpose, setPurpose] = useState('Official Business');
   const [otherPurpose, setOtherPurpose] = useState('');
@@ -53,6 +54,7 @@ export default function VisitorBookingScreen({ navigation }) {
       await bookVisit({
         visitorName: visitorName.trim(),
         visitorPhone: visitorPhone.trim(),
+        visitorEmail: visitorEmail.trim(),
         visitorCompany: visitorCompany.trim(),
         purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
         hostId,
@@ -118,6 +120,16 @@ export default function VisitorBookingScreen({ navigation }) {
           placeholder="+233 ..."
           icon="call-outline"
           keyboardType="phone-pad"
+        />
+
+        <Input
+          label="Email (optional)"
+          value={visitorEmail}
+          onChangeText={setVisitorEmail}
+          placeholder="name@example.com"
+          icon="mail-outline"
+          autoCapitalize="none"
+          keyboardType="email-address"
         />
 
         <Input

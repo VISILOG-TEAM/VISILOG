@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, FlatList, StyleSheet, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Button, Segmented, EmptyState, Avatar, RescheduleModal,
@@ -270,23 +271,33 @@ const ROOM_STATUS_META = {
 // trigger RN's "VirtualizedLists should never be nested" warning.
 function MeetingsView() {
   const { colors: themeColors } = useTheme();
-  const { roomBookings, meetingRooms, employeeById, roomById } = useData();
+  const { roomBookings, meetingRooms, employeeById, roomById, refreshRoomBookings } = useData();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshRoomBookings().catch(() => {});
+    }, [])
+  );
 
   const rooms = useMemo(
     () => meetingRooms.map((r) => ({ room: r, ...roomStatus(r, roomBookings) })),
     [roomBookings, meetingRooms]
   );
 
-  const upcoming = useMemo(() => {
-    const now = Date.now();
-    return [...roomBookings]
-      .filter((b) => new Date(b.endTime).getTime() > now)
-      .sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-  }, [roomBookings]);
+  // Not filtered by time at all — BookMeetingForm defaults to today's
+  // date with a fixed 10:00-11:00 window, so a meeting booked later in
+  // the day is technically "in the past" the instant it's created; an
+  // "upcoming only" filter made it vanish immediately with no way to
+  // find it. Newest-booked first, so whatever you just booked is right
+  // at the top regardless of what time you picked.
+  const sortedMeetings = useMemo(
+    () => [...roomBookings].sort((a, b) => new Date(b.startTime) - new Date(a.startTime)),
+    [roomBookings]
+  );
 
   return (
     <FlatList
-      data={upcoming}
+      data={sortedMeetings}
       keyExtractor={(b) => b.id}
       contentContainerStyle={styles.list}
       ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
@@ -323,7 +334,7 @@ function MeetingsView() {
             </>
           ) : null}
           <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionLabel}>
-            All upcoming meetings
+            All meetings
           </Text>
         </>
       }

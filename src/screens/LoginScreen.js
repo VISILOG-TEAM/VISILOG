@@ -35,7 +35,7 @@ export default function LoginScreen({ navigation }) {
 
   const onSubmit = async () => {
     setSubmitting(true);
-    const result = await login(email, password, companyCode);
+    const result = await login(email, password, companyCode, remember);
     setSubmitting(false);
     if (!result.ok) {
       Alert.alert('Login failed', result.error);

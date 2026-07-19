@@ -109,7 +109,7 @@ export function DataProvider({ children }) {
 
   const registerAndCheckIn = async (input) => {
     const dto = await apiClient.post('/api/v1/visitors', {
-      firstName: input.firstName, lastName: input.lastName, phone: input.phone,
+      firstName: input.firstName, lastName: input.lastName, phone: input.phone, email: input.email,
       company: input.company, purpose: input.purpose, hostId: input.hostId, notes: input.notes,
     });
     const visitor = mapVisitor(dto);
@@ -128,7 +128,7 @@ export function DataProvider({ children }) {
 
   const bookVisit = async (input) => {
     const dto = await apiClient.post('/api/v1/appointments', {
-      visitorName: input.visitorName, visitorPhone: input.visitorPhone,
+      visitorName: input.visitorName, visitorPhone: input.visitorPhone, visitorEmail: input.visitorEmail,
       visitorCompany: input.visitorCompany, purpose: input.purpose, hostId: input.hostId,
       scheduledAt: input.scheduledAt,
     });
@@ -294,6 +294,16 @@ export function DataProvider({ children }) {
     return booking;
   };
 
+  // Same cross-session staleness issue as clock records: roomBookings
+  // is only loaded once at login, so a meeting booked in a different
+  // signed-in session (e.g. Manager books on their phone, Receptionist
+  // is already looking at the Meetings tab on theirs) wouldn't appear
+  // without this. AppointmentsScreen calls it on focus.
+  const refreshRoomBookings = async () => {
+    const rb = await apiClient.get('/api/v1/room-bookings');
+    setRoomBookings(rb.map(mapRoomBooking));
+  };
+
   // ---- appointment rescheduling (Employee & Visitor only) ----
 
   const rescheduleAppointment = async (id, newScheduledAt, reason) => {
@@ -357,7 +367,7 @@ export function DataProvider({ children }) {
         // work attendance (clock in/out) + appointment rescheduling
         clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, refreshClockRecords, rescheduleAppointment,
         // self-service room booking
-        bookRoom,
+        bookRoom, refreshRoomBookings,
         // billing / subscriptions
         plans, billing, invoices, changePlan,
         // derived

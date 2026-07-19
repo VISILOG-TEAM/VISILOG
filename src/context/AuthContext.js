@@ -60,8 +60,12 @@ export function AuthProvider({ children }) {
     })();
   }, []);
 
-  const applyAuthResponse = async (res) => {
-    await setToken(res.token);
+  // `persist` (default true) controls whether the token is written to
+  // AsyncStorage — LoginScreen's "Remember me" toggles this. false
+  // keeps the token in memory only, so the session doesn't survive an
+  // app restart even though it works normally until then.
+  const applyAuthResponse = async (res, persist = true) => {
+    await setToken(res.token, persist);
     setUser(mapUser(res.user));
     setOrganization(res.organization);
   };
@@ -69,7 +73,7 @@ export function AuthProvider({ children }) {
   // `companyCode` resolves which paying organization (tenant) this
   // login belongs to — required since VisiLog serves several
   // companies, each with their own data and brand colors.
-  const login = async (email, password, companyCode) => {
+  const login = async (email, password, companyCode, remember = true) => {
     if (!email || !password || !companyCode) {
       return { ok: false, error: 'Enter your company code, email and password.' };
     }
@@ -79,7 +83,7 @@ export function AuthProvider({ children }) {
         email: email.trim(),
         password,
       });
-      await applyAuthResponse(res);
+      await applyAuthResponse(res, remember);
       return { ok: true, organization: res.organization };
     } catch (err) {
       return { ok: false, error: err instanceof ApiError ? err.message : 'Login failed.' };
