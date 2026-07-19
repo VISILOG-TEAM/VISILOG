@@ -51,7 +51,7 @@ export default function RegisterCompanyScreen({ navigation }) {
 
   return (
     <ImageBackground
-      source={require('../../assets/login-bg.jpg')}
+      source={require('../../assets/login-bg-plum.webp')}
       style={styles.bg}
       resizeMode="cover"
     >
