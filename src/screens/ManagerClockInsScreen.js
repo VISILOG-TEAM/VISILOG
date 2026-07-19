@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile,
 } from '../components';
@@ -11,9 +12,18 @@ import { fmtTime, fmtDate } from '../data/format';
 // ManagerClockInsScreen — every clock-in/out record, for record
 // keeping. Sourced from DataContext's shared `clockRecords` ledger —
 // the same one the Employee/Receptionist "on the clock" cards write
-// to — so this always reflects real actions taken elsewhere in the app.
+// to. That ledger is only loaded once at login though, so it won't
+// pick up a *different* signed-in session's clock-ins on its own (no
+// websockets/polling in this build) — refetch on focus so re-opening
+// this tab always shows what everyone else has actually done.
 export default function ManagerClockInsScreen() {
-  const { clockRecords } = useData();
+  const { clockRecords, refreshClockRecords } = useData();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshClockRecords().catch(() => {});
+    }, [])
+  );
 
   const sorted = useMemo(
     () => [...clockRecords].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)),

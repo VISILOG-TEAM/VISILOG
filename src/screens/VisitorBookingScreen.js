@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -32,9 +32,10 @@ export default function VisitorBookingScreen({ navigation }) {
   const [date, setDate] = useState(formatDate(new Date()));
   const [time, setTime] = useState('10:00');
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const onSubmit = async () => {
-    if (submitting) {
+    if (submittingRef.current) {
       Alert.alert('Already booking', 'This appointment is already being submitted.');
       return;
     }
@@ -46,6 +47,7 @@ export default function VisitorBookingScreen({ navigation }) {
       Alert.alert('Almost there', 'Please describe the purpose of the visit.');
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       await bookVisit({
@@ -54,7 +56,7 @@ export default function VisitorBookingScreen({ navigation }) {
         visitorCompany: visitorCompany.trim(),
         purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
         hostId,
-        scheduledAt: `${date}T${time}`,
+        scheduledAt: toInstant(date, time),
       });
       Alert.alert(
         'Appointment requested',
@@ -64,6 +66,7 @@ export default function VisitorBookingScreen({ navigation }) {
     } catch (err) {
       Alert.alert('Could not request appointment', err.message);
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -197,6 +200,13 @@ function formatDate(d) {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+// The backend expects a full ISO instant (with seconds + timezone);
+// "YYYY-MM-DDTHH:MM" alone isn't parseable as one and was silently
+// failing every appointment request with a generic error.
+function toInstant(dateStr, timeStr) {
+  return new Date(`${dateStr}T${timeStr}:00`).toISOString();
 }
 
 const styles = StyleSheet.create({

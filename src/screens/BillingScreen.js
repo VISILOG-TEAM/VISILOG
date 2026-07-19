@@ -38,7 +38,7 @@ export default function BillingScreen({ navigation }) {
     if (plan.id === currentPlan?.id) return;
     try {
       await changePlan(plan.id);
-      Alert.alert('Plan updated', `You're now on the ${plan.name} plan ($${plan.pricePerMonth}/mo).`);
+      Alert.alert('Plan updated', `You're now on the ${plan.name} plan (GHS ${plan.price} / 2 years).`);
     } catch (err) {
       Alert.alert('Could not switch plan', err.message);
     }
@@ -65,8 +65,8 @@ export default function BillingScreen({ navigation }) {
         </View>
 
         <Text style={[styles.price, { color: themeColors.brand }]}>
-          ${currentPlan?.pricePerMonth}
-          <Text variant="body" color={colors.textSecondary}> / month</Text>
+          GHS {currentPlan?.price}
+          <Text variant="body" color={colors.textSecondary}> / 2 years</Text>
         </Text>
 
         <View style={styles.metaRow}>
@@ -89,7 +89,7 @@ export default function BillingScreen({ navigation }) {
               <View style={{ flex: 1 }}>
                 <Text variant="h3">{plan.name}</Text>
                 <Text variant="bodySemibold" style={{ color: themeColors.brand }}>
-                  ${plan.pricePerMonth}<Text variant="caption" color={colors.textSecondary}> /mo</Text>
+                  GHS {plan.price}<Text variant="caption" color={colors.textSecondary}> / 2yr</Text>
                 </Text>
               </View>
               {isCurrent ? <Badge label="Current plan" status="info" size="sm" dot={false} /> : null}
@@ -127,7 +127,7 @@ export default function BillingScreen({ navigation }) {
           </View>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <Text variant="bodySemibold">Card ending in {billing?.paymentLast4 || '••••'}</Text>
-            <Text variant="caption" color={colors.textSecondary}>Billed monthly</Text>
+            <Text variant="caption" color={colors.textSecondary}>Billed once every 2 years</Text>
           </View>
           <Button
             label="Update"
@@ -155,11 +155,11 @@ export default function BillingScreen({ navigation }) {
                 <View style={{ flex: 1 }}>
                   <Text variant="bodySemibold">{fmtDate(inv.date)}</Text>
                   <Text variant="caption" color={colors.textSecondary}>
-                    Monthly subscription
+                    2-year subscription
                   </Text>
                 </View>
                 <Text variant="bodySemibold" style={{ marginRight: spacing.sm }}>
-                  ${inv.amount}
+                  GHS {inv.amount}
                 </Text>
                 <Badge
                   label={inv.status === 'paid' ? 'Paid' : 'Failed'}

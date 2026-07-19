@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Modal, TextInput, Pressable, Alert } from 'react-native';
+import {
+  View, StyleSheet, Modal, TextInput, Pressable, Alert,
+  KeyboardAvoidingView, Platform,
+} from 'react-native';
 import Text from './Text';
 import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -23,7 +26,7 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
       return;
     }
     try {
-      await rescheduleAppointment(appointment.id, `${date}T${time}`, reason.trim());
+      await rescheduleAppointment(appointment.id, toInstant(date, time), reason.trim());
       setDate(''); setTime(''); setReason('');
       onClose();
     } catch (err) {
@@ -33,7 +36,10 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.wrap}>
+      <KeyboardAvoidingView
+        style={styles.wrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <View style={styles.card}>
           <Text variant="h3">Reschedule visit</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
@@ -53,9 +59,15 @@ export default function RescheduleModal({ appointment, visible, onClose }) {
             </Pressable>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
+}
+
+// The backend expects a full ISO instant (with seconds + timezone);
+// "YYYY-MM-DDTHH:MM" alone isn't parseable as one.
+function toInstant(dateStr, timeStr) {
+  return new Date(`${dateStr}T${timeStr}:00`).toISOString();
 }
 
 function Field({ label, ...inputProps }) {

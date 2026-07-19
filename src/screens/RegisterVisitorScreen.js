@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -33,13 +33,18 @@ export default function RegisterVisitorScreen({ navigation }) {
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  // useState's `submitting` only updates on the next render, so two taps
+  // in the same event-loop tick (a fast double-tap) can both read it as
+  // false and both fire. A ref updates synchronously, so it actually
+  // blocks the second tap.
+  const submittingRef = useRef(false);
 
   // Preview of the badge ID that will be assigned. Recomputed every render
   // so it stays accurate if the visitor list changes underneath.
   const previewBadge = nextBadgeId(visitors);
 
   const onSubmit = async () => {
-    if (submitting) return;
+    if (submittingRef.current) return;
     const nextErrors = {};
     if (!firstName.trim()) nextErrors.firstName = 'Enter the visitor\u2019s first name.';
     if (!lastName.trim()) nextErrors.lastName = 'Enter the visitor\u2019s last name.';
@@ -52,6 +57,7 @@ export default function RegisterVisitorScreen({ navigation }) {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const visitor = await registerAndCheckIn({
@@ -67,6 +73,7 @@ export default function RegisterVisitorScreen({ navigation }) {
     } catch (err) {
       Alert.alert('Could not check in visitor', err.message);
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

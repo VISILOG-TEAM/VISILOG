@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -27,9 +27,10 @@ export default function VisitorBookScreen({ navigation }) {
   const [otherPurpose, setOtherPurpose] = useState('');
   const [hostId, setHostId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const onSubmit = async () => {
-    if (submitting) {
+    if (submittingRef.current) {
       Alert.alert('Already booking', 'Your booking is already being submitted.');
       return;
     }
@@ -41,6 +42,7 @@ export default function VisitorBookScreen({ navigation }) {
       Alert.alert('Almost there', 'Please describe the purpose of your visit.');
       return;
     }
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const a = await bookVisit({
@@ -53,6 +55,7 @@ export default function VisitorBookScreen({ navigation }) {
     } catch (err) {
       Alert.alert('Could not book visit', err.message);
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };

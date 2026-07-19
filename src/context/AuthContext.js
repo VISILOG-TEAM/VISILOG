@@ -128,6 +128,18 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Step-up confirmation before a sensitive action on the *current*
+  // session — currently just clock-in (see ClockCard). Re-checks the
+  // signed-in user's own password without touching the stored token.
+  const verifyPassword = async (password) => {
+    try {
+      await apiClient.post('/api/v1/auth/verify-password', { password });
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not verify your password.' };
+    }
+  };
+
   const logout = async () => {
     await clearToken();
     setUser(null);
@@ -162,7 +174,7 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{
         user, organization, initializing,
-        login, signup, registerCompany, logout,
+        login, signup, registerCompany, logout, verifyPassword,
         updateOrganization, updateOfficeLocation,
       }}
     >

@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import {
+  View, StyleSheet, Alert, Modal, TextInput, Pressable,
+  KeyboardAvoidingView, Platform,
+} from 'react-native';
 import Text from './Text';
 import Card from './Card';
 import Button from './Button';
 import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
+import { spacing, radius } from '../theme/spacing';
+import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
@@ -15,14 +21,19 @@ import { isAtOffice } from '../data/locationCheck';
 // state) so the Manager's Clock-ins screen sees the same records.
 //
 // Clocking IN requires: (1) a best-effort WiFi check, (2) a best-effort
-// GPS geofence check against the signed-in org's office location — see
-// src/data/wifiCheck.js and src/data/locationCheck.js — and (3) not
-// having already clocked in once today (one in/out cycle per day).
+// GPS geofence check against the signed-in org's office location, (3)
+// re-entering your own password — this doesn't stop someone who
+// genuinely knows a coworker's password, but blocks the far more
+// common case of clocking in from a phone someone else left signed in
+// and unattended — and (4) not having already clocked in once today.
 // Clocking OUT never blocks.
 export default function ClockCard() {
-  const { user, organization } = useAuth();
+  const { user, organization, verifyPassword } = useAuth();
   const { clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday } = useData();
   const [checking, setChecking] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
   const employeeId = user?.employeeId || user?.id;
   const clockedIn = isClockedIn(employeeId);
@@ -48,14 +59,9 @@ export default function ClockCard() {
         Alert.alert('Location check failed', locationResult.error);
         return;
       }
-      try {
-        const r = await clockIn(employeeId, user.name);
-        Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
-      } catch (err) {
-        Alert.alert('Could not clock in', err.message);
-      } finally {
-        setChecking(false);
-      }
+      setChecking(false);
+      setPassword('');
+      setConfirmVisible(true);
     } else {
       try {
         const r = await clockOut(employeeId, user.name);
@@ -63,6 +69,27 @@ export default function ClockCard() {
       } catch (err) {
         Alert.alert('Could not clock out', err.message);
       }
+    }
+  };
+
+  const onConfirmClockIn = async () => {
+    if (!password) return;
+    setConfirming(true);
+    const result = await verifyPassword(password);
+    if (!result.ok) {
+      setConfirming(false);
+      Alert.alert('Could not verify you', result.error);
+      return;
+    }
+    try {
+      const r = await clockIn(employeeId, user.name);
+      setConfirmVisible(false);
+      setPassword('');
+      Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
+    } catch (err) {
+      Alert.alert('Could not clock in', err.message);
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -90,10 +117,85 @@ export default function ClockCard() {
           disabled={checking || doneForToday}
         />
       </View>
+
+      <ConfirmClockInModal
+        visible={confirmVisible}
+        password={password}
+        onChangePassword={setPassword}
+        confirming={confirming}
+        onCancel={() => { setConfirmVisible(false); setPassword(''); }}
+        onConfirm={onConfirmClockIn}
+      />
     </Card>
+  );
+}
+
+// A quick re-entry of your own password before a clock-in actually
+// records — see the note on ClockCard above for why.
+function ConfirmClockInModal({ visible, password, onChangePassword, confirming, onCancel, onConfirm }) {
+  const { colors: themeColors } = useTheme();
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <KeyboardAvoidingView
+        style={styles.modalWrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.modalCard}>
+          <Text variant="h3">Confirm it's you</Text>
+          <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
+            Re-enter your password to clock in.
+          </Text>
+          <TextInput
+            value={password}
+            onChangeText={onChangePassword}
+            placeholder="Password"
+            placeholderTextColor={colors.textMuted}
+            secureTextEntry
+            autoFocus
+            style={styles.modalInput}
+          />
+          <View style={styles.modalRow}>
+            <Pressable onPress={onCancel} style={[styles.modalBtn, styles.modalBtnGhost]}>
+              <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
+            </Pressable>
+            <Pressable
+              onPress={onConfirm}
+              disabled={!password || confirming}
+              style={[
+                styles.modalBtn,
+                { backgroundColor: themeColors.primary, opacity: !password || confirming ? 0.6 : 1 },
+              ]}
+            >
+              <Text variant="bodySemibold" color={colors.textInverse}>
+                {confirming ? 'Checking…' : 'Clock in'}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
+  modalWrap: {
+    flex: 1, backgroundColor: 'rgba(10,42,29,0.55)',
+    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+  },
+  modalCard: {
+    width: '100%', maxWidth: 360,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+  },
+  modalInput: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    paddingHorizontal: spacing.sm, paddingVertical: 10,
+    fontFamily: fonts.regular, fontSize: 14, color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  modalRow: { flexDirection: 'row', marginTop: spacing.xs, gap: spacing.sm },
+  modalBtn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  modalBtnGhost: { backgroundColor: colors.surfaceAlt },
 });

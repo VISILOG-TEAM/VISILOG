@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import Card from './Card';
 import Button from './Button';
@@ -26,11 +26,15 @@ export default function BookMeetingForm({ onDone }) {
   const [roomId, setRoomId] = useState(null);
   const [outsideLocation, setOutsideLocation] = useState('');
   const [attendeeIds, setAttendeeIds] = useState([]);
+  const [externalGuests, setExternalGuests] = useState('');
   const [date, setDate] = useState(formatDate(new Date()));
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
+  const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const onSubmit = async () => {
+    if (submittingRef.current) return;
     const hasPlace = locationType === 'room' ? !!roomId : !!outsideLocation.trim();
     if (!title.trim() || !hasPlace) {
       Alert.alert('Almost there', locationType === 'room'
@@ -38,20 +42,26 @@ export default function BookMeetingForm({ onDone }) {
         : 'Give the meeting a title and enter a location.');
       return;
     }
+    submittingRef.current = true;
+    setSubmitting(true);
     try {
       await bookRoom({
         title: title.trim(),
         roomId: locationType === 'room' ? roomId : null,
         location: locationType === 'outside' ? outsideLocation.trim() : '',
-        startTime: `${date}T${startTime}`,
-        endTime: `${date}T${endTime}`,
+        startTime: toInstant(date, startTime),
+        endTime: toInstant(date, endTime),
         participantIds: attendeeIds,
+        externalGuests: externalGuests.trim(),
       });
       Alert.alert('Booked', `${title} is on the calendar.`, [
         { text: 'Done', onPress: onDone },
       ]);
     } catch (err) {
       Alert.alert('Could not book meeting', err.message);
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   };
 
@@ -98,7 +108,7 @@ export default function BookMeetingForm({ onDone }) {
         )}
 
         <MultiSelect
-          label="Invite attendees (optional)"
+          label="Invite staff (optional)"
           placeholder="Anyone from the staff directory..."
           values={attendeeIds}
           onChange={setAttendeeIds}
@@ -106,6 +116,14 @@ export default function BookMeetingForm({ onDone }) {
           options={employees.map((e) => ({
             label: e.name, value: e.id, sublabel: e.department,
           }))}
+        />
+
+        <Input
+          label="Outside guests (optional)"
+          value={externalGuests}
+          onChangeText={setExternalGuests}
+          placeholder="e.g. Kwame Mensah (client), Ama Boateng"
+          icon="person-add-outline"
         />
 
         <Input
@@ -132,6 +150,7 @@ export default function BookMeetingForm({ onDone }) {
         label="Book meeting"
         icon="checkmark-circle-outline"
         onPress={onSubmit}
+        loading={submitting}
         style={{ marginTop: spacing.md }}
       />
     </>
@@ -143,6 +162,15 @@ function formatDate(d) {
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+// The backend expects a full ISO instant (with seconds + timezone);
+// "YYYY-MM-DDTHH:MM" alone isn't parseable as one and was silently
+// failing every booking with a generic "Something went wrong" error.
+// Routing through a real Date and toISOString() also correctly
+// converts from the device's local time to UTC.
+function toInstant(dateStr, timeStr) {
+  return new Date(`${dateStr}T${timeStr}:00`).toISOString();
 }
 
 const styles = StyleSheet.create({

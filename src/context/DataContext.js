@@ -30,7 +30,7 @@ const mapEmployee = (d) => ({
 });
 const mapClockRecord = (d) => ({ ...d, type: d.type.toLowerCase() });
 const mapRoomBooking = (d) => ({ ...d, location: d.location || '', participantIds: d.participantIds || [] });
-const mapPlan = (d) => ({ ...d, pricePerMonth: Number(d.pricePerMonth) });
+const mapPlan = (d) => ({ ...d, price: Number(d.price) });
 const mapBilling = (d) => ({
   planId: d.plan.id,
   status: d.status.toLowerCase(),
@@ -250,6 +250,17 @@ export function DataProvider({ children }) {
     return record;
   };
 
+  // Everything above only reflects actions taken in *this* signed-in
+  // session — a receptionist clocking in on their own phone doesn't
+  // push anything to a manager's already-open app (no websockets/
+  // polling in this build). ManagerClockInsScreen calls this whenever
+  // it comes into focus so it actually picks up everyone else's
+  // clock-ins/outs instead of showing whatever was loaded at login.
+  const refreshClockRecords = async () => {
+    const cr = await apiClient.get('/api/v1/clock-records');
+    setClockRecords(cr.map(mapClockRecord));
+  };
+
   // Records are newest-first — these stay synchronous, derived from the
   // locally-held ledger, so ClockCard's render logic doesn't change.
   const isClockedIn = (employeeId) => {
@@ -276,6 +287,7 @@ export function DataProvider({ children }) {
       startTime: input.startTime,
       endTime: input.endTime,
       participantIds: input.participantIds || [],
+      externalGuests: input.externalGuests || null,
     });
     const booking = mapRoomBooking(dto);
     setRoomBookings((rs) => [booking, ...rs]);
@@ -343,7 +355,7 @@ export function DataProvider({ children }) {
         addMeetingRoom, updateMeetingRoom, removeMeetingRoom,
         bookVisit, findAppointmentByCode,
         // work attendance (clock in/out) + appointment rescheduling
-        clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, rescheduleAppointment,
+        clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, refreshClockRecords, rescheduleAppointment,
         // self-service room booking
         bookRoom,
         // billing / subscriptions

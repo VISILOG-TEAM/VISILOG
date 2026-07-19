@@ -172,13 +172,28 @@ export default function SettingsScreen({ navigation }) {
       </Text>
       <Card padded={false}>
         <LinkRow icon="information-circle-outline" title="VisiLog"
-          sub="Build 1.0.0 - Reception + NFC" />
+          sub="Build 1.0.0 - Reception + NFC"
+          onPress={() => Alert.alert(
+            'VisiLog',
+            'Build 1.0.0 — Reception + NFC\n\nVisitor management, staff attendance, and meeting-room booking for ' +
+            (user?.organizationName || 'your organization') + '.'
+          )} />
         <Divider />
         <LinkRow icon="help-circle-outline" title="Help & support"
-          sub="Contact your VisiLog administrator" />
+          sub="Contact your VisiLog administrator"
+          onPress={() => Alert.alert(
+            'Help & support',
+            'For access issues, incorrect roster entries, or anything else you need changed, contact your organization’s Administrator — they manage your staff roster and company settings in Company Setup.'
+          )} />
         <Divider />
         <LinkRow icon="document-text-outline" title="Privacy policy"
-          sub="How visitor data is collected & stored" />
+          sub="How visitor data is collected & stored"
+          onPress={() => Alert.alert(
+            'Privacy policy',
+            'Visitor and staff data you enter (name, phone, purpose of visit, badge/NFC activity) is stored for ' +
+            (user?.organizationName || 'your organization') + ' only, and is never shared with other companies using VisiLog. ' +
+            'It’s used solely to run reception, attendance, and meeting-room booking for your organization.'
+          )} />
       </Card>
 
       <Button

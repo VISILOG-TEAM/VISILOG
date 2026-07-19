@@ -20,8 +20,13 @@ import { useAuth } from '../context/AuthContext';
 //   - Review flow: reachable anytime afterwards from Company Setup (the
 //     paying manager's own screen), with no `pending` data — read-only,
 //     no checkbox or payment section, just the terms.
-const ANNUAL_PRICE = 480;
+// Every self-serve signup lands on the Starter plan (see
+// AuthService.registerCompany) — match its real price so this isn't a
+// disconnected placeholder figure. Administrators can switch plans
+// afterwards from Billing & subscription.
+const STARTER_PRICE = 400;
 const TERM_YEARS = 2;
+const CURRENCY = 'GHS';
 
 const TERMS_TEXT = `VisiLog Subscription Agreement
 
@@ -97,7 +102,7 @@ export default function LegalAgreementScreen({ navigation, route }) {
                 </Text>
               </View>
               <Text variant="h2" color={themeColors.brand}>
-                ${ANNUAL_PRICE * TERM_YEARS}
+                {CURRENCY} {STARTER_PRICE}
               </Text>
             </View>
             <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
