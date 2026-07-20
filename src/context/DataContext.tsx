@@ -3,9 +3,9 @@ import { apiClient } from '../api/client';
 import { useAuth } from './AuthContext';
 import type {
   Appointment, AppointmentStatus, AppNotification, Billing, BookRoomInput, BookVisitInput, Call,
-  ClockRecord, ClockType, Employee, EmployeeInput, Invoice, LogCallInput, MeetingRoom,
-  MeetingRoomInput, NfcCard, NotificationType, Plan, RegisterVisitorInput, Role, RoomBooking,
-  Visitor, VisitorStatus,
+  ClockRecord, ClockType, Employee, EmployeeInput, Invoice, LogCallInput, MeetingPriority,
+  MeetingResponseStatus, MeetingRoom, MeetingRoomInput, NfcCard, NotificationType, Plan,
+  RegisterVisitorInput, Role, RoomBooking, RoomBookingResponse, Visitor, VisitorStatus,
 } from '../types';
 
 // DataContext talks to the real VisiLog backend (see server/). Every
@@ -29,8 +29,10 @@ interface EmployeeDto {
   department?: string | null; phone?: string | null; email?: string | null; role: string;
 }
 interface ClockRecordDto extends Omit<ClockRecord, 'type'> { type: string; }
-interface RoomBookingDto extends Omit<RoomBooking, 'location' | 'participantIds'> {
-  location?: string | null; participantIds?: string[] | null;
+interface RoomBookingResponseDto extends Omit<RoomBookingResponse, 'status'> { status: string; }
+interface RoomBookingDto extends Omit<RoomBooking, 'location' | 'participantIds' | 'priority' | 'responses'> {
+  location?: string | null; participantIds?: string[] | null; priority?: string | null;
+  responses?: RoomBookingResponseDto[] | null;
 }
 interface PlanDto extends Omit<Plan, 'price'> { price: string | number; }
 interface NotificationDto extends Omit<AppNotification, 'type'> { type: string; }
@@ -56,9 +58,16 @@ const mapEmployee = (d: EmployeeDto): Employee => ({
   role: d.role.toLowerCase() as Role,
 });
 const mapClockRecord = (d: ClockRecordDto): ClockRecord => ({ ...d, type: d.type.toLowerCase() as ClockType });
-const mapRoomBooking = (d: RoomBookingDto): RoomBooking => (
-  { ...d, location: d.location || '', participantIds: d.participantIds || [] }
+const mapRoomBookingResponse = (d: RoomBookingResponseDto): RoomBookingResponse => (
+  { ...d, status: d.status.toLowerCase() as MeetingResponseStatus }
 );
+const mapRoomBooking = (d: RoomBookingDto): RoomBooking => ({
+  ...d,
+  location: d.location || '',
+  participantIds: d.participantIds || [],
+  priority: (d.priority || 'normal').toLowerCase() as MeetingPriority,
+  responses: (d.responses || []).map(mapRoomBookingResponse),
+});
 const mapPlan = (d: PlanDto): Plan => ({ ...d, price: Number(d.price) });
 const mapBilling = (d: BillingDto): Billing => ({
   planId: d.plan.id,
@@ -111,6 +120,7 @@ interface DataContextValue {
   // self-service room booking
   bookRoom: (input: BookRoomInput) => Promise<RoomBooking>;
   refreshRoomBookings: () => Promise<void>;
+  respondToMeeting: (bookingId: string, status: 'acknowledged' | 'declined', reason?: string) => Promise<void>;
   // billing / subscriptions
   plans: Plan[];
   billing: Billing | null;
@@ -389,10 +399,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
       endTime: input.endTime,
       participantIds: input.participantIds || [],
       externalGuests: input.externalGuests || null,
+      priority: input.priority || 'normal',
     });
     const booking = mapRoomBooking(dto);
     setRoomBookings((rs) => [booking, ...rs]);
     return booking;
+  };
+
+  // A participant acknowledging ("seen it") or declining (with a
+  // reason) their invite to someone else's meeting.
+  const respondToMeeting = async (
+    bookingId: string, status: 'acknowledged' | 'declined', reason?: string
+  ): Promise<void> => {
+    const dto = await apiClient.patch<RoomBookingDto>(`/api/v1/room-bookings/${bookingId}/respond`, {
+      status, reason,
+    });
+    const updated = mapRoomBooking(dto);
+    setRoomBookings((rs) => rs.map((b) => (b.id === bookingId ? updated : b)));
   };
 
   // Same cross-session staleness issue as clock records: roomBookings
@@ -485,7 +508,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // work attendance (clock in/out) + appointment rescheduling
         clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, refreshClockRecords, rescheduleAppointment,
         // self-service room booking
-        bookRoom, refreshRoomBookings,
+        bookRoom, refreshRoomBookings, respondToMeeting,
         // billing / subscriptions
         plans, billing, invoices, changePlan,
         // in-app notifications

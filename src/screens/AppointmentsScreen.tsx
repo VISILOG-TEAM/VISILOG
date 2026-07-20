@@ -297,6 +297,20 @@ const ROOM_STATUS_META: Record<RoomStatus, { label: string; badge: StatusKey }> 
 // per-room availability cards sit in the header as a plain, short,
 // non-virtualized list — nesting a second FlatList in there would
 // trigger RN's "VirtualizedLists should never be nested" warning.
+// Lets the organiser tell at a glance who's seen the invite and who's
+// declined (and see the reason via the row itself is enough detail for
+// now — a full per-person breakdown wasn't asked for).
+function responseSummary(responses: RoomBooking['responses']): string {
+  const acknowledged = responses.filter((r) => r.status === 'acknowledged').length;
+  const declined = responses.filter((r) => r.status === 'declined').length;
+  const pending = responses.length - acknowledged - declined;
+  const parts: string[] = [];
+  if (acknowledged) parts.push(`${acknowledged} seen`);
+  if (declined) parts.push(`${declined} declined`);
+  if (pending) parts.push(`${pending} pending`);
+  return parts.join(' · ') || 'No responses yet';
+}
+
 function MeetingsView() {
   const { colors: themeColors } = useTheme();
   const { roomBookings, meetingRooms, employeeById, roomById, refreshRoomBookings } = useData();
@@ -385,6 +399,14 @@ function MeetingsView() {
                   {room ? room.name : item.location || 'Outside location'}
                 </Text>
               </View>
+              {item.priority !== 'normal' ? (
+                <Badge
+                  label={item.priority === 'urgent' ? 'Urgent' : 'Important'}
+                  status={item.priority === 'urgent' ? 'rejected' : 'pending'}
+                  size="sm"
+                  dot={false}
+                />
+              ) : null}
             </View>
             <View style={styles.metaList}>
               <MetaRow icon="time-outline"
@@ -395,6 +417,9 @@ function MeetingsView() {
               ) : null}
               {item.externalGuests ? (
                 <MetaRow icon="person-add-outline" text={`Guests: ${item.externalGuests}`} />
+              ) : null}
+              {item.responses?.length ? (
+                <MetaRow icon="checkmark-done-outline" text={responseSummary(item.responses)} />
               ) : null}
             </View>
           </Card>

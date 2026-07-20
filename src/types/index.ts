@@ -124,6 +124,16 @@ export interface ClockRecord {
   timestamp: string;
 }
 
+export type MeetingPriority = 'normal' | 'important' | 'urgent';
+export type MeetingResponseStatus = 'pending' | 'acknowledged' | 'declined';
+
+export interface RoomBookingResponse {
+  employeeId: string;
+  status: MeetingResponseStatus;
+  declineReason: string | null;
+  respondedAt: string | null;
+}
+
 export interface RoomBooking {
   id: string;
   roomId: string | null;
@@ -134,9 +144,11 @@ export interface RoomBooking {
   endTime: string;
   participantIds: string[];
   externalGuests: string | null;
+  priority: MeetingPriority;
+  responses: RoomBookingResponse[];
 }
 
-export type NotificationType = 'meeting_invite';
+export type NotificationType = 'meeting_invite' | 'meeting_declined';
 
 export interface AppNotification {
   id: string;
@@ -232,6 +244,7 @@ export interface BookRoomInput {
   endTime: string;
   participantIds?: string[];
   externalGuests?: string | null;
+  priority?: MeetingPriority;
 }
 
 // No backend model exists for standalone NFC cards yet (the per-visit

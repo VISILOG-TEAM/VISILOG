@@ -11,6 +11,7 @@ import { useData } from '../context/DataContext';
 import { ApiError } from '../api/client';
 
 type LocationType = 'room' | 'outside';
+type Priority = 'normal' | 'important' | 'urgent';
 
 interface BookMeetingFormProps {
   onDone?: () => void;
@@ -34,6 +35,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
   const [outsideLocation, setOutsideLocation] = useState('');
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
   const [externalGuests, setExternalGuests] = useState('');
+  const [priority, setPriority] = useState<Priority>('normal');
   const [date, setDate] = useState(formatDate(new Date()));
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
@@ -60,6 +62,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
         endTime: toInstant(date, endTime),
         participantIds: attendeeIds,
         externalGuests: externalGuests.trim(),
+        priority,
       });
       Alert.alert('Booked', `${title} is on the calendar.`, [
         { text: 'Done', onPress: onDone },
@@ -89,6 +92,17 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
           options={[
             { label: 'Meeting room', value: 'room' },
             { label: 'Outside location', value: 'outside' },
+          ]}
+          style={{ marginBottom: spacing.md }}
+        />
+
+        <Segmented
+          value={priority}
+          onChange={setPriority}
+          options={[
+            { label: 'Normal', value: 'normal' },
+            { label: 'Important', value: 'important' },
+            { label: 'Urgent', value: 'urgent' },
           ]}
           style={{ marginBottom: spacing.md }}
         />
