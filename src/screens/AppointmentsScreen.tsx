@@ -158,6 +158,7 @@ function AppointmentsList() {
         renderItem={({ item }) => (
           <AppointmentRow
             appointment={item}
+            canAct={!!user?.employeeId && user.employeeId === item.hostId}
             onAdmit={() => onAdmit(item)}
             onReject={() => onReject(item)}
             onReschedule={canReschedule ? () => setRescheduling(item) : null}
@@ -176,12 +177,13 @@ function AppointmentsList() {
 
 interface AppointmentRowProps {
   appointment: Appointment;
+  canAct: boolean;
   onAdmit: () => void;
   onReject: () => void;
   onReschedule: (() => void) | null;
 }
 
-function AppointmentRow({ appointment, onAdmit, onReject, onReschedule }: AppointmentRowProps) {
+function AppointmentRow({ appointment, canAct, onAdmit, onReject, onReschedule }: AppointmentRowProps) {
   const { employeeById } = useData();
   const host = employeeById(appointment.hostId);
   const accent: StatusKey =
@@ -230,7 +232,7 @@ function AppointmentRow({ appointment, onAdmit, onReject, onReschedule }: Appoin
         />
       )}
 
-      {appointment.status === 'pending' && (
+      {appointment.status === 'pending' && canAct && (
         <View style={styles.actionRow}>
           <Button
             label="Reject"
