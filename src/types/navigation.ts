@@ -56,6 +56,7 @@ export type RootStackParamList = {
   Billing: undefined;
   CompanySetup: undefined;
   MeetingRooms: undefined;
+  Notifications: undefined;
 };
 
 export type RootStackScreenName = keyof RootStackParamList;

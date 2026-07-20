@@ -2,9 +2,10 @@ import React, { createContext, useContext, useEffect, useMemo, useState, type Re
 import { apiClient } from '../api/client';
 import { useAuth } from './AuthContext';
 import type {
-  Appointment, AppointmentStatus, Billing, BookRoomInput, BookVisitInput, Call, ClockRecord,
-  ClockType, Employee, EmployeeInput, Invoice, LogCallInput, MeetingRoom, MeetingRoomInput,
-  NfcCard, Plan, RegisterVisitorInput, Role, RoomBooking, Visitor, VisitorStatus,
+  Appointment, AppointmentStatus, AppNotification, Billing, BookRoomInput, BookVisitInput, Call,
+  ClockRecord, ClockType, Employee, EmployeeInput, Invoice, LogCallInput, MeetingRoom,
+  MeetingRoomInput, NfcCard, NotificationType, Plan, RegisterVisitorInput, Role, RoomBooking,
+  Visitor, VisitorStatus,
 } from '../types';
 
 // DataContext talks to the real VisiLog backend (see server/). Every
@@ -32,6 +33,7 @@ interface RoomBookingDto extends Omit<RoomBooking, 'location' | 'participantIds'
   location?: string | null; participantIds?: string[] | null;
 }
 interface PlanDto extends Omit<Plan, 'price'> { price: string | number; }
+interface NotificationDto extends Omit<AppNotification, 'type'> { type: string; }
 interface BillingDto {
   plan: PlanDto; status: string; seatsUsed: number; renewalDate: string; paymentLast4: string | null;
 }
@@ -67,6 +69,9 @@ const mapBilling = (d: BillingDto): Billing => ({
 });
 const mapInvoice = (d: InvoiceDto): Invoice => (
   { ...d, amount: Number(d.amount), status: d.status.toLowerCase() as Invoice['status'] }
+);
+const mapNotification = (d: NotificationDto): AppNotification => (
+  { ...d, type: d.type.toLowerCase() as NotificationType }
 );
 
 interface DataContextValue {
@@ -111,6 +116,11 @@ interface DataContextValue {
   billing: Billing | null;
   invoices: Invoice[];
   changePlan: (planId: string) => Promise<Billing>;
+  // in-app notifications (meeting invites, etc.)
+  notifications: AppNotification[];
+  unreadNotificationCount: number;
+  refreshNotifications: () => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
   // derived
   stats: {
     visitorsToday: number;
@@ -139,6 +149,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [billing, setBilling] = useState<Billing | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // Load every collection once a user is signed in. Billing/invoices
   // are manager-only on the backend, so non-managers skip those calls
@@ -147,7 +158,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setVisitors([]); setAppointments([]); setCalls([]); setEmployees([]);
       setMeetingRooms([]); setClockRecords([]); setRoomBookings([]);
-      setBilling(null); setInvoices([]); setPlans([]);
+      setBilling(null); setInvoices([]); setPlans([]); setNotifications([]);
       return;
     }
     const isManager = user.role === 'manager';
@@ -180,6 +191,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         ]);
         setBilling(mapBilling(b));
         setInvoices(inv.map(mapInvoice));
+      }
+
+      // Visitors have no employeeId, so there's nothing for them to be
+      // notified about (meeting invites only ever target staff).
+      if (user.employeeId) {
+        const n = await apiClient.get<NotificationDto[]>('/api/v1/notifications');
+        setNotifications(n.map(mapNotification));
       }
     })();
   }, [user?.id]);
@@ -409,6 +427,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return next;
   };
 
+  // ---- in-app notifications ----
+
+  const refreshNotifications = async (): Promise<void> => {
+    const n = await apiClient.get<NotificationDto[]>('/api/v1/notifications');
+    setNotifications(n.map(mapNotification));
+  };
+
+  const markNotificationRead = async (id: string): Promise<void> => {
+    const dto = await apiClient.patch<NotificationDto>(`/api/v1/notifications/${id}/read`);
+    const updated = mapNotification(dto);
+    setNotifications((ns) => ns.map((n) => (n.id === id ? updated : n)));
+  };
+
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
+
   // ---- derived stats for the dashboard ----
   const stats = useMemo(() => {
     const now = new Date();
@@ -455,6 +488,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         bookRoom, refreshRoomBookings,
         // billing / subscriptions
         plans, billing, invoices, changePlan,
+        // in-app notifications
+        notifications, unreadNotificationCount, refreshNotifications, markNotificationRead,
         // derived
         stats,
       }}

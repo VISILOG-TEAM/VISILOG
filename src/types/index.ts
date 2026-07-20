@@ -136,6 +136,18 @@ export interface RoomBooking {
   externalGuests: string | null;
 }
 
+export type NotificationType = 'meeting_invite';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  relatedId: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
 export interface Plan {
   id: string;
   name: string;

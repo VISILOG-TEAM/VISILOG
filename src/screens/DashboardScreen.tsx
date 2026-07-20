@@ -27,7 +27,7 @@ interface DashboardScreenProps {
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const { stats, visitors, appointments, employeeById } = useData();
+  const { stats, visitors, appointments, employeeById, unreadNotificationCount } = useData();
 
   // Personalise the greeting by time of day.
   const greeting = (() => {
@@ -51,7 +51,8 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
         title={`${greeting},`}
         subtitle={`${user?.name?.split(' ')[0] || 'there'} · Front desk`}
         rightIcon="notifications-outline"
-        onRightPress={() => {}}
+        onRightPress={() => navigation.navigate('Notifications')}
+        badge={unreadNotificationCount}
       />
 
       <ClockCard />

@@ -32,6 +32,7 @@ import AttendanceScreen from '../screens/AttendanceScreen';
 import BillingScreen from '../screens/BillingScreen';
 import CompanySetupScreen from '../screens/CompanySetupScreen';
 import MeetingRoomsScreen from '../screens/MeetingRoomsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import type { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -95,6 +96,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Billing" component={BillingScreen} />
           <Stack.Screen name="CompanySetup" component={CompanySetupScreen} />
           <Stack.Screen name="MeetingRooms" component={MeetingRoomsScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="LegalAgreement" component={LegalAgreementScreen} />
         </Stack.Group>
       )}

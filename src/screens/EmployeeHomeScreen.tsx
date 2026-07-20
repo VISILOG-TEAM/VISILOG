@@ -10,13 +10,20 @@ import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
+import type { RootStackNavigation } from '../types/navigation';
+
+interface EmployeeHomeScreenProps {
+  navigation: RootStackNavigation;
+}
 
 // Employee dashboard: check in/out for work, accept/decline visitors
 // who picked them as host, view incoming calls, see their NFC card.
-export default function EmployeeHomeScreen() {
+export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenProps) {
   const { colors: themeColors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
-  const { appointments, calls, updateAppointmentStatus, admitAppointment } = useData();
+  const {
+    appointments, calls, updateAppointmentStatus, admitAppointment, unreadNotificationCount,
+  } = useData();
   const onLogout = () => { logout(); setOrgTheme(null); };
 
   // The backend already scopes GET /appointments to only this employee's
@@ -31,8 +38,10 @@ export default function EmployeeHomeScreen() {
         eyebrow="Employee dashboard"
         title={`Hi, ${user!.name?.split(' ')[0]}`}
         subtitle={user!.email}
-        rightIcon="log-out-outline"
-        onRightPress={onLogout}
+        rightActions={[
+          { icon: 'notifications-outline', onPress: () => navigation.navigate('Notifications'), badge: unreadNotificationCount },
+          { icon: 'log-out-outline', onPress: onLogout },
+        ]}
       />
 
       <ClockCard />

@@ -7,27 +7,61 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import type { IoniconName } from '../types';
 
+interface HeaderAction {
+  icon: IoniconName;
+  onPress?: () => void;
+  badge?: number;
+}
+
 interface HeaderProps {
   title: string;
   subtitle?: string;
   eyebrow?: string;
   rightIcon?: IoniconName;
   onRightPress?: () => void;
+  /** Unread-count badge for the single rightIcon button. */
+  badge?: number;
+  /** A row of icon buttons (e.g. notifications bell + logout) — takes
+   * priority over rightIcon/right when given. */
+  rightActions?: HeaderAction[];
   right?: ReactNode;
   onBackPress?: () => void;
 }
 
-// Consistent page header. Pass `rightIcon` (+ onRightPress) for a quick
-// action button, or `right` to drop in a fully custom element. Pass
-// `onBackPress` for a leading back chevron on screens pushed onto the
-// stack (the app hides the native header, so this is the only back
-// affordance those screens get).
+function ActionButton({ icon, onPress, badge }: HeaderAction) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={8}
+      style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
+    >
+      <Ionicons name={icon} size={20} color={colors.brand} />
+      {badge ? (
+        <View style={styles.badge}>
+          <Text variant="caption" color={staticColors.surface} style={styles.badgeText}>
+            {badge > 9 ? '9+' : badge}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+// Consistent page header. Pass `rightIcon` (+ onRightPress, optionally
+// `badge`... via rightActions) for a quick action button, `rightActions`
+// for several buttons in a row, or `right` to drop in a fully custom
+// element. Pass `onBackPress` for a leading back chevron on screens
+// pushed onto the stack (the app hides the native header, so this is
+// the only back affordance those screens get).
 export default function Header({
   title,
   subtitle,
   eyebrow,
   rightIcon,
   onRightPress,
+  badge,
+  rightActions,
   right,
   onBackPress,
 }: HeaderProps) {
@@ -53,14 +87,16 @@ export default function Header({
         ) : null}
       </View>
 
-      {rightIcon ? (
-        <Pressable
-          onPress={onRightPress}
-          hitSlop={8}
-          style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
-        >
-          <Ionicons name={rightIcon} size={20} color={colors.brand} />
-        </Pressable>
+      {rightActions && rightActions.length > 0 ? (
+        <View style={styles.actionsRow}>
+          {rightActions.map((action, i) => (
+            <View key={action.icon + i} style={i > 0 ? styles.actionsGap : undefined}>
+              <ActionButton {...action} />
+            </View>
+          ))}
+        </View>
+      ) : rightIcon ? (
+        <ActionButton icon={rightIcon} onPress={onRightPress} badge={badge} />
       ) : (
         right || null
       )}
@@ -95,4 +131,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: staticColors.border,
   },
+  actionsRow: { flexDirection: 'row' },
+  actionsGap: { marginLeft: spacing.xs },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: staticColors.palette.red600,
+  },
+  badgeText: { fontSize: 10, lineHeight: 12 },
 });

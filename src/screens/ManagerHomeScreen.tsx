@@ -9,14 +9,21 @@ import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
+import type { RootStackNavigation } from '../types/navigation';
+
+interface ManagerHomeScreenProps {
+  navigation: RootStackNavigation;
+}
 
 // Manager dashboard: organisation-wide insight, plus the same
 // clock-in/out card every other role gets — an Administrator is staff
 // too, and shows up on their own Clock-ins screen like everyone else.
-export default function ManagerHomeScreen() {
+export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps) {
   const { setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
-  const { stats, visitors, calls, employees, employeeById } = useData();
+  const {
+    stats, visitors, calls, employees, employeeById, unreadNotificationCount,
+  } = useData();
   const onLogout = () => { logout(); setOrgTheme(null); };
 
   // Top hosts (employees with the most visitors).
@@ -35,8 +42,10 @@ export default function ManagerHomeScreen() {
         eyebrow="Manager view"
         title="Overview"
         subtitle="Insight & attendance across the organisation"
-        rightIcon="log-out-outline"
-        onRightPress={onLogout}
+        rightActions={[
+          { icon: 'notifications-outline', onPress: () => navigation.navigate('Notifications'), badge: unreadNotificationCount },
+          { icon: 'log-out-outline', onPress: onLogout },
+        ]}
       />
 
       <ClockCard />
