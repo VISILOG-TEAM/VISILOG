@@ -1,2 +1,17 @@
-target/
-*.class
+# Ignore Maven installation
+apache-maven-4.0.0-rc-5/
+
+# Ignore build folders
+**/target/
+
+# VS Code
+.vscode/
+
+# IntelliJ IDEA
+.idea/
+
+# Windows
+Thumbs.db
+
+# macOS
+.DS_Store
