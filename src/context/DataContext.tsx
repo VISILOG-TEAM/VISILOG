@@ -2,10 +2,10 @@ import React, { createContext, useContext, useEffect, useMemo, useState, type Re
 import { apiClient } from '../api/client';
 import { useAuth } from './AuthContext';
 import type {
-  Appointment, AppointmentStatus, AppNotification, Billing, BookRoomInput, BookVisitInput, Call,
-  ClockRecord, ClockType, Employee, EmployeeInput, Invoice, LogCallInput, MeetingPriority,
-  MeetingResponseStatus, MeetingRoom, MeetingRoomInput, NfcCard, NotificationType, Plan,
-  RegisterVisitorInput, Role, RoomBooking, RoomBookingResponse, Visitor, VisitorStatus,
+  Appointment, AppointmentStatus, AppNotification, Billing, BookRoomInput, BookVisitInput,
+  BulkImportResult, Call, ClockRecord, ClockType, Employee, EmployeeInput, Invoice, LogCallInput,
+  MeetingPriority, MeetingResponseStatus, MeetingRoom, MeetingRoomInput, NfcCard, NotificationType,
+  Plan, RegisterVisitorInput, Role, RoomBooking, RoomBookingResponse, Visitor, VisitorStatus,
 } from '../types';
 
 // DataContext talks to the real VisiLog backend (see server/). Every
@@ -103,9 +103,11 @@ interface DataContextValue {
   logCall: (input: LogCallInput) => Promise<Call>;
   addEmployee: (input: EmployeeInput) => Promise<Employee>;
   updateEmployee: (id: string, input: EmployeeInput) => Promise<Employee>;
+  bulkImportEmployees: (rows: EmployeeInput[]) => Promise<BulkImportResult<Employee>>;
   removeEmployee: (id: string) => Promise<void>;
   addMeetingRoom: (input: MeetingRoomInput) => Promise<MeetingRoom>;
   updateMeetingRoom: (id: string, input: MeetingRoomInput) => Promise<MeetingRoom>;
+  bulkImportMeetingRooms: (rows: MeetingRoomInput[]) => Promise<BulkImportResult<MeetingRoom>>;
   removeMeetingRoom: (id: string) => Promise<void>;
   bookVisit: (input: BookVisitInput) => Promise<Appointment>;
   findAppointmentByCode: (code: string) => Promise<Appointment | null>;
@@ -305,6 +307,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return employee;
   };
 
+  // CSV bulk import — parsed rows come in already shaped like
+  // EmployeeInput (see DirectoryScreen's mapRow); the backend still
+  // validates and reports back per-row, since a CSV can have typos a
+  // single-add form would never let through.
+  const bulkImportEmployees = async (rows: EmployeeInput[]): Promise<BulkImportResult<Employee>> => {
+    const res = await apiClient.post<{ created: EmployeeDto[]; errors: BulkImportResult<never>['errors'] }>(
+      '/api/v1/employees/bulk',
+      {
+        employees: rows.map((r) => ({
+          employeeCode: r.employeeId, name: r.name, department: r.department,
+          phone: r.phone, email: r.email, role: r.role || 'employee',
+        })),
+      }
+    );
+    const created = res.created.map(mapEmployee);
+    setEmployees((es) => [...es, ...created]);
+    return { created, errors: res.errors };
+  };
+
   const updateEmployee = async (id: string, input: EmployeeInput): Promise<Employee> => {
     const dto = await apiClient.patch<EmployeeDto>(`/api/v1/employees/${id}`, {
       employeeCode: input.employeeId, name: input.name, department: input.department,
@@ -329,6 +350,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     });
     setMeetingRooms((rs) => [...rs, room]);
     return room;
+  };
+
+  // CSV bulk import — see bulkImportEmployees above for the pattern.
+  const bulkImportMeetingRooms = async (rows: MeetingRoomInput[]): Promise<BulkImportResult<MeetingRoom>> => {
+    const res = await apiClient.post<{ created: MeetingRoom[]; errors: BulkImportResult<never>['errors'] }>(
+      '/api/v1/meeting-rooms/bulk',
+      {
+        rooms: rows.map((r) => ({
+          name: r.name, capacity: Number(r.capacity) || null, floor: r.floor, photoUrl: r.photoUrl || null,
+        })),
+      }
+    );
+    setMeetingRooms((rs) => [...rs, ...res.created]);
+    return res;
   };
 
   const updateMeetingRoom = async (id: string, input: MeetingRoomInput): Promise<MeetingRoom> => {
@@ -502,8 +537,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // operations
         registerAndCheckIn, checkOutVisitor,
         updateAppointmentStatus, admitAppointment,
-        logCall, addEmployee, updateEmployee, removeEmployee,
-        addMeetingRoom, updateMeetingRoom, removeMeetingRoom,
+        logCall, addEmployee, updateEmployee, bulkImportEmployees, removeEmployee,
+        addMeetingRoom, updateMeetingRoom, bulkImportMeetingRooms, removeMeetingRoom,
         bookVisit, findAppointmentByCode,
         // work attendance (clock in/out) + appointment rescheduling
         clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, refreshClockRecords, rescheduleAppointment,

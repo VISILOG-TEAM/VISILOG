@@ -3,7 +3,7 @@ import { View, Image, FlatList, StyleSheet, Alert, Pressable } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import {
-  Screen, Header, Text, Card, Button, Input, EmptyState,
+  Screen, Header, Text, Card, Button, Input, EmptyState, CsvImportModal,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -11,10 +11,19 @@ import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
-import type { MeetingRoom } from '../types';
+import type { MeetingRoom, MeetingRoomInput } from '../types';
 
 interface MeetingRoomsScreenProps {
   navigation: RootStackNavigation;
+}
+
+function mapCsvRow(record: Record<string, string>): MeetingRoomInput {
+  return {
+    name: record['name'] || '',
+    capacity: record['capacity'] || '',
+    floor: record['floor'] || '',
+    photoUrl: null,
+  };
 }
 
 // MeetingRoomsScreen — Company Setup > meeting rooms (manager only).
@@ -22,7 +31,7 @@ interface MeetingRoomsScreenProps {
 // AppointmentsScreen's "Meeting Rooms" tab draw from.
 export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenProps) {
   const { colors: themeColors } = useTheme();
-  const { meetingRooms, addMeetingRoom, removeMeetingRoom } = useData();
+  const { meetingRooms, addMeetingRoom, bulkImportMeetingRooms, removeMeetingRoom } = useData();
 
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState('');
@@ -30,6 +39,7 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
   const [photoUrl, setPhotoUrl] = useState('');
   const [pickingPhoto, setPickingPhoto] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [importVisible, setImportVisible] = useState(false);
 
   const onPickPhoto = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -93,8 +103,10 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
         <Header
           title="Meeting rooms"
           subtitle="Bookable spaces across the office"
-          rightIcon="close"
-          onRightPress={() => navigation.goBack()}
+          rightActions={[
+            { icon: 'document-attach-outline', onPress: () => setImportVisible(true) },
+            { icon: 'close', onPress: () => navigation.goBack() },
+          ]}
         />
         <Card>
           <Input label="Room name" value={name} onChangeText={setName}
@@ -156,6 +168,15 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
             </View>
           </Card>
         )}
+      />
+
+      <CsvImportModal
+        visible={importVisible}
+        onClose={() => setImportVisible(false)}
+        title="Import rooms"
+        columnsHint="Columns: name, capacity, floor"
+        mapRow={mapCsvRow}
+        onImport={bulkImportMeetingRooms}
       />
     </Screen>
   );

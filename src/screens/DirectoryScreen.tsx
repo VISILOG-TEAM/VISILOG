@@ -2,25 +2,40 @@ import React, { useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Input, Text, Card, EmptyState, Avatar,
+  Screen, Header, Input, Text, Card, EmptyState, Avatar, CsvImportModal,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import type { RootStackNavigation } from '../types/navigation';
-import type { Employee } from '../types';
+import type { Employee, EmployeeInput, Role } from '../types';
 
 interface DirectoryScreenProps {
   navigation: RootStackNavigation;
+}
+
+// Accepts a few common header spellings so a spreadsheet someone
+// already has (HR export, a previous system) doesn't need renaming
+// first — "code"/"employee code"/"staff id" all work for the id column.
+function mapCsvRow(record: Record<string, string>): EmployeeInput {
+  return {
+    employeeId: record['code'] || record['employee code'] || record['staff id'] || record['id'] || '',
+    name: record['name'] || '',
+    department: record['department'] || '',
+    phone: record['phone'] || '',
+    email: record['email'] || '',
+    role: (record['role'] || 'employee').toLowerCase() as Role,
+  };
 }
 
 // DirectoryScreen — the Phone Book.
 // Lists every staff member; tap a row to open their detail page; tap
 // the phone icon to dial straight from the device.
 export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
-  const { employees } = useData();
+  const { employees, bulkImportEmployees } = useData();
   const [query, setQuery] = useState('');
+  const [importVisible, setImportVisible] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -40,8 +55,10 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
           title="Directory"
           subtitle={`${employees.length} employees`}
           onBackPress={() => navigation.goBack()}
-          rightIcon="person-add-outline"
-          onRightPress={() => navigation.navigate('AddEmployee')}
+          rightActions={[
+            { icon: 'document-attach-outline', onPress: () => setImportVisible(true) },
+            { icon: 'person-add-outline', onPress: () => navigation.navigate('AddEmployee') },
+          ]}
         />
         <Input
           placeholder="Search name or department"
@@ -70,6 +87,15 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
             onCall={() => Linking.openURL(`tel:${item.phone}`)}
           />
         )}
+      />
+
+      <CsvImportModal
+        visible={importVisible}
+        onClose={() => setImportVisible(false)}
+        title="Import staff"
+        columnsHint="Columns: code, name, department, phone, email, role (employee/receptionist/manager)"
+        mapRow={mapCsvRow}
+        onImport={bulkImportEmployees}
       />
     </Screen>
   );

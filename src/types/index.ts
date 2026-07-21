@@ -229,6 +229,16 @@ export interface EmployeeInput {
   role?: Role;
 }
 
+export interface BulkImportRowError {
+  row: number;
+  message: string;
+}
+
+export interface BulkImportResult<T> {
+  created: T[];
+  errors: BulkImportRowError[];
+}
+
 export interface MeetingRoomInput {
   name: string;
   capacity?: number | string | null;
