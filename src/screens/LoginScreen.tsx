@@ -161,7 +161,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   { opacity: pressed || submitting ? 0.85 : 1 },
                 ]}>
                   <LinearGradient
-                    colors={['#F0D998', '#D4AF37', '#A9791B']}
+                    colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.loginBtn}
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginRight: 8,
   },
-  checkboxOn: { backgroundColor: '#D4AF37', borderColor: '#D4AF37' },
+  checkboxOn: { backgroundColor: '#2E9E96', borderColor: '#2E9E96' },
   rememberText: { fontFamily: fonts.medium, fontSize: 13, color: '#FFFFFF' },
 
   // Login button
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   loginBtnText: {
     fontFamily: fonts.bold,
     fontSize: 16,
-    color: '#1B3324',
+    color: '#FFFFFF',
     letterSpacing: 0.3,
   },
 

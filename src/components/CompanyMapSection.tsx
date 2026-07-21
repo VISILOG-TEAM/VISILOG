@@ -58,11 +58,11 @@ export default function CompanyMapSection() {
       </Text>
       <Card padded={false} style={styles.mapCard}>
         <View style={styles.floor}>
-          {LOCATIONS.map((loc, i) => (
+          {LOCATIONS.map((loc) => (
             <Pressable
               key={loc.id}
               onPress={() => setSelected(loc)}
-              style={[styles.room, ROOM_LAYOUT[i % ROOM_LAYOUT.length]]}
+              style={styles.room}
             >
               <View style={[styles.pin, { backgroundColor: colors.primarySurface }]}>
                 <Ionicons name={loc.icon} size={16} color={colors.brand} />
@@ -107,26 +107,23 @@ export default function CompanyMapSection() {
   );
 }
 
-// Simple 2x2-ish layout so the "floor" feels laid out rather than a
-// plain list, without needing a real building diagram.
-const ROOM_LAYOUT = [
-  { top: 12, left: 12 },
-  { top: 12, right: 12 },
-  { bottom: 12, left: 12 },
-  { bottom: 12, right: 12 },
-];
-
 const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   mapCard: { overflow: 'hidden' },
+  // A wrapping grid rather than fixed absolute slots — a fixed 4-slot
+  // layout silently stacked any 5th+ room directly on top of an
+  // earlier one (i % 4 reused the same position), which looked like
+  // "only 4 rooms show up" no matter how many Company Setup had.
   floor: {
-    height: 200,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    minHeight: 140,
     backgroundColor: staticColors.surfaceAlt,
-    position: 'relative',
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   room: {
-    position: 'absolute',
-    width: 120,
+    width: 110,
     alignItems: 'center',
     backgroundColor: staticColors.surface,
     borderRadius: radius.md,

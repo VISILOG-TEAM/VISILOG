@@ -97,7 +97,7 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
 
                 <Pressable onPress={onSubmit} style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
                   <LinearGradient
-                    colors={['#F0D998', '#D4AF37', '#A9791B']}
+                    colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.submitBtn}
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     height: 50, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
     marginTop: spacing.sm,
   },
-  submitBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#1B3324', letterSpacing: 0.3 },
+  submitBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFFFFF', letterSpacing: 0.3 },
 
   loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
   loginHint: { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)' },

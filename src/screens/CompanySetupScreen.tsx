@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Image, StyleSheet, Alert, Pressable, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import {
   Screen, Header, Text, Card, Button, Input,
 } from '../components';
@@ -83,6 +84,27 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
   const [longitude, setLongitude] = useState(String(organization?.officeLocation?.longitude ?? ''));
   const [radiusMeters, setRadiusMeters] = useState(String(organization?.officeLocation?.radiusMeters ?? '500'));
   const [savingLocation, setSavingLocation] = useState(false);
+  const [locating, setLocating] = useState(false);
+
+  // Fills lat/lng from the phone's own GPS instead of making someone
+  // look up coordinates manually — stand at the office and tap this.
+  const onUseCurrentLocation = async () => {
+    setLocating(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission needed', 'Allow location access to use your current position.');
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      setLatitude(String(position.coords.latitude));
+      setLongitude(String(position.coords.longitude));
+    } catch {
+      Alert.alert('Could not get location', 'Enable location services and try again.');
+    } finally {
+      setLocating(false);
+    }
+  };
 
   const onShareCode = () => {
     Share.share({
@@ -197,6 +219,14 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
         <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
           Staff must be within this radius to clock in. Leave blank to skip the location check.
         </Text>
+        <Button
+          label={locating ? 'Getting your location…' : 'Use my current location'}
+          icon="locate"
+          variant="secondary"
+          onPress={onUseCurrentLocation}
+          disabled={locating}
+          style={{ marginBottom: spacing.md }}
+        />
         <Input label="Latitude" value={latitude} onChangeText={setLatitude}
           placeholder="e.g. 5.6037" icon="locate-outline" keyboardType="numbers-and-punctuation" />
         <Input label="Longitude" value={longitude} onChangeText={setLongitude}

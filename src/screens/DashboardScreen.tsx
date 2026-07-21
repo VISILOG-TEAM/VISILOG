@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard,
+  Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard, OrgLogo,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -46,6 +46,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
   return (
     <Screen>
+      <OrgLogo />
       <Header
         eyebrow="VisiLog · Reception"
         title={`${greeting},`}

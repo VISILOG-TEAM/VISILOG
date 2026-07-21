@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Button, Avatar, StatTile, ClockCard,
+  Screen, Header, Text, Card, Button, Avatar, StatTile, ClockCard, OrgLogo,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -34,6 +34,7 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
 
   return (
     <Screen>
+      <OrgLogo />
       <Header
         eyebrow="Employee dashboard"
         title={`Hi, ${user!.name?.split(' ')[0]}`}
