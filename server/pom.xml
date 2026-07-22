@@ -15,7 +15,7 @@
   <artifactId>visilog-api</artifactId>
   <version>0.1.0</version>
   <name>visilog-api</name>
-  <description>VisiLog backend — single Spring Boot API serving the visipro app</description>
+  <description>VisiLog backend -- single Spring Boot API serving the visipro app</description>
 
   <properties>
     <java.version>21</java.version>
@@ -42,6 +42,10 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
     <dependency>
       <groupId>org.postgresql</groupId>
