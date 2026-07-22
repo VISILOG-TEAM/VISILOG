@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import EmployeeHomeScreen from '../screens/EmployeeHomeScreen';
 import EmployeeBookScreen from '../screens/EmployeeBookScreen';
@@ -14,9 +15,13 @@ import type { IoniconName } from '../types';
 const Tab = createBottomTabNavigator();
 
 // Four-tab bottom bar for Employee: Home | Book | Appointments | Settings
-// — same shape as Receptionist's, per the brief ("similar to receptionist").
+// -- same shape as Receptionist's, per the brief ("similar to receptionist").
 export default function EmployeeTabNavigator() {
   const { colors } = useTheme();
+  // A fixed height/padding left the bar sitting under phones' on-screen
+  // gesture/button bar -- insets.bottom is 0 on devices without one, so
+  // this only adds space where it's actually needed.
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -27,8 +32,8 @@ export default function EmployeeTabNavigator() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 64,
-          paddingBottom: 8,
+          height: 56 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
           paddingTop: 6,
         },
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },

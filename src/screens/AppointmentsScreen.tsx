@@ -81,7 +81,7 @@ function AppointmentsList() {
   const filtered = useMemo(
     () => appointments
       .filter((a) => filter === 'all' || a.status === filter)
-      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()),
+      .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
     [appointments, filter]
   );
 
@@ -450,7 +450,7 @@ function MeetingsView() {
                     </View>
                     {booking && status !== 'available' ? (
                       <MetaRow icon="time-outline"
-                        text={`Next: ${fmtTime(booking.startTime)} → ${fmtTime(booking.endTime)}`} />
+                        text={`Next: ${fmtTime(booking.startTime)} -> ${fmtTime(booking.endTime)}`} />
                     ) : null}
                   </Card>
                 );
@@ -492,7 +492,7 @@ function MeetingsView() {
             </View>
             <View style={styles.metaList}>
               <MetaRow icon="time-outline"
-                text={`${fmtDate(item.startTime)} · ${fmtTime(item.startTime)} → ${fmtTime(item.endTime)}`} />
+                text={`${fmtDate(item.startTime)} · ${fmtTime(item.startTime)} -> ${fmtTime(item.endTime)}`} />
               <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
               {item.participantIds?.length ? (
                 <MetaRow icon="people-outline" text={`${item.participantIds.length} staff invited`} />

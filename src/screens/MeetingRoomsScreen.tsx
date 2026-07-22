@@ -17,17 +17,20 @@ interface MeetingRoomsScreenProps {
   navigation: RootStackNavigation;
 }
 
+// Same idea as DirectoryScreen's mapCsvRow -- a real spreadsheet export
+// rarely matches a fixed schema, so this accepts a range of common
+// header spellings instead of only the exact literal ones.
 function mapCsvRow(record: Record<string, string>): MeetingRoomInput {
   return {
-    name: record['name'] || '',
-    capacity: record['capacity'] || '',
-    floor: record['floor'] || '',
+    name: record['name'] || record['room name'] || record['roomname'] || record['room'] || '',
+    capacity: record['capacity'] || record['seats'] || record['size'] || '',
+    floor: record['floor'] || record['level'] || '',
     photoUrl: null,
-    description: record['description'] || record['directions'] || '',
+    description: record['description'] || record['directions'] || record['notes'] || '',
   };
 }
 
-// MeetingRoomsScreen — Company Setup > meeting rooms (manager only).
+// MeetingRoomsScreen -- Company Setup > meeting rooms (manager only).
 // The rooms managed here are exactly what BookMeetingForm and
 // AppointmentsScreen's "Meeting Rooms" tab draw from.
 export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenProps) {
@@ -138,10 +141,10 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
               )}
             </View>
             <Text variant="bodySemibold" color={themeColors.brand} style={{ marginLeft: spacing.sm }}>
-              {pickingPhoto ? 'Opening photos…' : photoUrl ? 'Change photo' : 'Add a room photo (optional)'}
+              {pickingPhoto ? 'Opening photos...' : photoUrl ? 'Change photo' : 'Add a room photo (optional)'}
             </Text>
           </Pressable>
-          <Button label={adding ? 'Adding…' : 'Add room'} onPress={onAdd} disabled={adding} />
+          <Button label={adding ? 'Adding...' : 'Add room'} onPress={onAdd} disabled={adding} />
         </Card>
       </View>
 

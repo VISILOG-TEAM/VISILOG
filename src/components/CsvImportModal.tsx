@@ -10,6 +10,7 @@ import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { parseCsv, csvRowsToRecords } from '../data/csv';
+import { ApiError } from '../api/client';
 import type { BulkImportResult } from '../types';
 
 interface CsvImportModalProps<T> {
@@ -21,10 +22,10 @@ interface CsvImportModalProps<T> {
   onImport: (rows: T[]) => Promise<BulkImportResult<unknown>>;
 }
 
-// CsvImportModal — bulk-add staff or meeting rooms from a spreadsheet
+// CsvImportModal -- bulk-add staff or meeting rooms from a spreadsheet
 // export instead of one-at-a-time. The backend still validates every
 // row and reports back what failed and why (see EmployeeService/
-// MeetingRoomService.bulkCreate) — a CSV can have typos a single-add
+// MeetingRoomService.bulkCreate) -- a CSV can have typos a single-add
 // form would never let through.
 export default function CsvImportModal<T>({
   visible, onClose, title, columnsHint, mapRow, onImport,
@@ -54,8 +55,9 @@ export default function CsvImportModal<T>({
       const rows = records.map(mapRow);
       const res = await onImport(rows);
       setResult(res);
-    } catch {
-      Alert.alert('Could not import', 'Check the file is a valid CSV and try again.');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Check the file is a valid CSV and try again.';
+      Alert.alert('Could not import', message);
     } finally {
       setBusy(false);
     }
