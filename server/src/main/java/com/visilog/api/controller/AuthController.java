@@ -1,6 +1,7 @@
 package com.visilog.api.controller;
 
 import com.visilog.api.dto.AuthResponse;
+import com.visilog.api.dto.GoogleAuthRequest;
 import com.visilog.api.dto.LoginRequest;
 import com.visilog.api.dto.SignupRequest;
 import com.visilog.api.dto.UserDto;
@@ -32,13 +33,18 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleAuthRequest request) {
+        return ResponseEntity.ok(authService.googleAuth(request));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<UserDto> me(@CurrentUser AuthPrincipal principal) {
         return ResponseEntity.ok(authService.me(principal));
     }
 
     // Step-up re-authentication for a sensitive action on the current
-    // session (see ClockCard on the frontend) — throws (401) on a wrong
+    // session (see ClockCard on the frontend) -- throws (401) on a wrong
     // password rather than returning an ok/not-ok body, same as login.
     @PostMapping("/verify-password")
     public ResponseEntity<Void> verifyPassword(

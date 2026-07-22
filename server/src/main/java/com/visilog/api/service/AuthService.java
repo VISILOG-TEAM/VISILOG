@@ -1,6 +1,7 @@
 package com.visilog.api.service;
 
 import com.visilog.api.dto.AuthResponse;
+import com.visilog.api.dto.GoogleAuthRequest;
 import com.visilog.api.dto.LoginRequest;
 import com.visilog.api.dto.OrganizationDto;
 import com.visilog.api.dto.RegisterCompanyRequest;
@@ -29,19 +30,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // The heart of the self-serve onboarding redesign:
-//   1. registerCompany — a company signs itself up, gets a unique code
+//   1. registerCompany -- a company signs itself up, gets a unique code
 //      and its first Administrator account, in one step.
-//   2. signup — a person joins an existing org with the company code +
+//   2. signup -- a person joins an existing org with the company code +
 //      their real email. Their role is decided HERE, once, by matching
-//      that email against the org's Employee roster (Company Setup) —
+//      that email against the org's Employee roster (Company Setup) --
 //      a match inherits that employee's role; no match becomes a
 //      Role.VISITOR. There is no free role-picker anywhere after this.
-//   3. login — an existing account's role is already fixed; just
+//   3. login -- an existing account's role is already fixed; just
 //      verify the password and hand back a token.
 @Service
 public class AuthService {
 
-    // VRA's own original green/gold shades — applied as the default
+    // VRA's own original green/gold shades -- applied as the default
     // theme for every newly registered org until the admin customizes
     // it in Company Setup, so a fresh org isn't visually blank.
     private static final String DEFAULT_BRAND = "#0F3D2A";
@@ -60,6 +61,7 @@ public class AuthService {
     private final OrgBillingRepository orgBillingRepository;
     private final PasswordEncoder passwordEncoder;
     private final com.visilog.api.security.JwtService jwtService;
+    private final GoogleTokenService googleTokenService;
 
     public AuthService(
             OrganizationRepository organizationRepository,
@@ -67,13 +69,15 @@ public class AuthService {
             EmployeeRepository employeeRepository,
             OrgBillingRepository orgBillingRepository,
             PasswordEncoder passwordEncoder,
-            com.visilog.api.security.JwtService jwtService) {
+            com.visilog.api.security.JwtService jwtService,
+            GoogleTokenService googleTokenService) {
         this.organizationRepository = organizationRepository;
         this.appUserRepository = appUserRepository;
         this.employeeRepository = employeeRepository;
         this.orgBillingRepository = orgBillingRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.googleTokenService = googleTokenService;
     }
 
     @Transactional
@@ -92,7 +96,7 @@ public class AuthService {
         org.setPrimarySurfaceStrong(DEFAULT_PRIMARY_SURFACE_STRONG);
         org = organizationRepository.save(org);
 
-        // The admin also appears in their own staff roster, as Manager —
+        // The admin also appears in their own staff roster, as Manager --
         // consistent with how every other staff member joins: through
         // an Employee record with a role attached.
         Employee adminEmployee = new Employee();
@@ -114,10 +118,10 @@ public class AuthService {
         user = appUserRepository.save(user);
 
         // The frontend only calls this endpoint after the admin has agreed
-        // to the legal terms and gone through the (placeholder — no real
+        // to the legal terms and gone through the (placeholder -- no real
         // payment processor in this build) subscription checkout, so by
         // the time we get here the company has already "paid" for a
-        // minimum 2-year term — reflected as ACTIVE with a ~730-day
+        // minimum 2-year term -- reflected as ACTIVE with a ~730-day
         // renewal instead of the old 30-day trial.
         OrgBilling billing = new OrgBilling();
         billing.setOrganizationId(org.getId());
@@ -136,7 +140,7 @@ public class AuthService {
         String email = req.email().trim().toLowerCase(Locale.ROOT);
 
         if (appUserRepository.existsByOrganizationIdAndEmailIgnoreCase(org.getId(), email)) {
-            throw ApiException.conflict("An account with this email already exists — try logging in instead.");
+            throw ApiException.conflict("An account with this email already exists -- try logging in instead.");
         }
 
         // The whole point of this flow: role is resolved automatically
@@ -149,6 +153,43 @@ public class AuthService {
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(req.password()));
         user.setName(req.name().trim());
+        user.setRole(role);
+        if (match.isPresent()) {
+            user.setEmployeeId(match.get().getId());
+        }
+        user = appUserRepository.save(user);
+
+        return buildAuthResponse(user, org);
+    }
+
+    // "Continue with Google" -- the frontend hands us the ID token it got
+    // from Google's own sign-in flow, we verify it ourselves (see
+    // GoogleTokenService) rather than trusting the client, then treat it
+    // exactly like signup/login: an existing account for this email in
+    // this org logs straight in, a new one gets created with a role
+    // resolved from the staff roster same as a normal signup. There's no
+    // real password on a Google-only account, so a random value neither
+    // this account nor anyone else will ever know just satisfies the
+    // column -- the only way in is a fresh Google check.
+    @Transactional
+    public AuthResponse googleAuth(GoogleAuthRequest req) {
+        Organization org = findOrgByCodeOrThrow(req.companyCode());
+        GoogleTokenService.GoogleUser googleUser = googleTokenService.verify(req.idToken());
+        String email = googleUser.email().trim().toLowerCase(Locale.ROOT);
+
+        Optional<AppUser> existing = appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), email);
+        if (existing.isPresent()) {
+            return buildAuthResponse(existing.get(), org);
+        }
+
+        Optional<Employee> match = employeeRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), email);
+        Role role = match.map(Employee::getRole).orElse(Role.VISITOR);
+
+        AppUser user = new AppUser();
+        user.setOrganizationId(org.getId());
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(randomUnusablePassword()));
+        user.setName(googleUser.name());
         user.setRole(role);
         if (match.isPresent()) {
             user.setEmployeeId(match.get().getId());
@@ -181,7 +222,7 @@ public class AuthService {
     }
 
     // Step-up confirmation for a sensitive action on an *already signed
-    // in* session (currently: clocking in) — re-checks the caller's own
+    // in* session (currently: clocking in) -- re-checks the caller's own
     // password without issuing a new token. Doesn't stop someone who
     // genuinely knows a coworker's password, but blocks the far more
     // common case of clocking in from a phone someone else left signed
@@ -205,7 +246,13 @@ public class AuthService {
         return new AuthResponse(token, UserDto.from(user, org), OrganizationDto.from(org));
     }
 
-    // "<NAMEPART><4 random digits>", e.g. "VRA2026"-shaped — retried
+    private String randomUnusablePassword() {
+        byte[] bytes = new byte[32];
+        RANDOM.nextBytes(bytes);
+        return java.util.Base64.getEncoder().encodeToString(bytes);
+    }
+
+    // "<NAMEPART><4 random digits>", e.g. "VRA2026"-shaped -- retried
     // until it doesn't collide (astronomically unlikely, but cheap to
     // guard against for a company code that gets printed on letters).
     private String generateUniqueCompanyCode(String companyName) {

@@ -29,11 +29,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 // Unit tests for the core business rule this whole rebuild is about:
 // role is resolved automatically at signup by matching the email
-// against the org's Employee roster — no free role-picker.
+// against the org's Employee roster -- no free role-picker.
 //
 // LENIENT: setUp() stubs a few things (password encoding, JWT issuing)
 // that only some tests actually exercise, since not every test reaches
-// buildAuthResponse() — e.g. the rejection-path tests return before that.
+// buildAuthResponse() -- e.g. the rejection-path tests return before that.
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class AuthServiceTest {
@@ -44,6 +44,7 @@ class AuthServiceTest {
     @Mock private OrgBillingRepository orgBillingRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
+    @Mock private GoogleTokenService googleTokenService;
 
     private AuthService authService;
     private Organization org;
@@ -52,7 +53,7 @@ class AuthServiceTest {
     void setUp() {
         authService = new AuthService(
                 organizationRepository, appUserRepository, employeeRepository,
-                orgBillingRepository, passwordEncoder, jwtService);
+                orgBillingRepository, passwordEncoder, jwtService, googleTokenService);
 
         org = new Organization();
         org.setId(UUID.randomUUID());

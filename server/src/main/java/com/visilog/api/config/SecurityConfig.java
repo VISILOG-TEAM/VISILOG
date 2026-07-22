@@ -37,7 +37,7 @@ public class SecurityConfig {
 
     // The app is served from a different origin than the API in local dev
     // (Expo web on :19000-ish, the API on :8080) and, once deployed, will
-    // be too (app store / web host vs. API host) — the browser blocks
+    // be too (app store / web host vs. API host) -- the browser blocks
     // cross-origin fetches without this. Auth is via a Bearer token, not
     // cookies, so credentials don't need to be allowed here.
     @Bean
@@ -59,9 +59,13 @@ public class SecurityConfig {
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
             .authorizeHttpRequests(auth -> auth
-                // No account exists yet at these three — that's the point of them.
-                .requestMatchers("/api/v1/companies/register", "/api/v1/auth/login", "/api/v1/auth/signup").permitAll()
+                // No account exists yet at these three -- that's the point of them.
+                .requestMatchers(
+                        "/api/v1/companies/register", "/api/v1/auth/login", "/api/v1/auth/signup",
+                        "/api/v1/auth/google")
+                        .permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/oauth/google/redirect").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
