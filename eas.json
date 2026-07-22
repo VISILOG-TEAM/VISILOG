@@ -10,13 +10,15 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://visilog-api.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://visilog-api.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "462972761490-7drfp4jkog8e3c87rje4vslg2bcr7031.apps.googleusercontent.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://visilog-api.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://visilog-api.onrender.com",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "462972761490-7drfp4jkog8e3c87rje4vslg2bcr7031.apps.googleusercontent.com"
       }
     }
   },

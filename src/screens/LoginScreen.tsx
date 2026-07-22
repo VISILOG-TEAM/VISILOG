@@ -8,11 +8,26 @@ import { StatusBar } from 'expo-status-bar';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
+import * as Crypto from 'expo-crypto';
 import { Text, Segmented } from '../components';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../api/config';
+import { GOOGLE_CLIENT_ID } from '../api/googleConfig';
 import type { RootStackNavigation } from '../types/navigation';
+
+// Closes the in-app browser tab automatically once Google redirects
+// back -- without this the tab can be left hanging open after a
+// successful sign-in.
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_DISCOVERY = {
+  authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+  tokenEndpoint: 'https://oauth2.googleapis.com/token',
+};
 
 interface LoginScreenProps {
   navigation: RootStackNavigation;
@@ -30,13 +45,37 @@ interface LoginScreenProps {
 // login belongs to -- VisiLog serves several companies, each with their
 // own data and brand colors, so this resolves both.
 export default function LoginScreen({ navigation }: LoginScreenProps) {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [companyCode, setCompanyCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [googleSubmitting, setGoogleSubmitting] = useState(false);
+  const [nonce] = useState(() => Crypto.randomUUID());
+
+  // Requesting an ID token directly (rather than an auth code) means no
+  // client secret is ever needed on the phone -- Google hands back a
+  // signed token in the redirect, and the backend is the one that
+  // actually verifies it (see GoogleTokenService), never the app itself.
+  //
+  // Google's OAuth client only accepts a real HTTPS domain as a
+  // redirect target, not a bare app scheme -- so this points at a tiny
+  // landing page hosted by our own backend (OAuthRedirectController),
+  // which immediately bounces the browser on to visilog://oauth-redirect
+  // carrying the result forward. expo-auth-session's redirect listener
+  // (registered via app.json's "scheme") catches that final hop.
+  const [request, , promptAsync] = AuthSession.useAuthRequest(
+    {
+      clientId: GOOGLE_CLIENT_ID,
+      scopes: ['openid', 'profile', 'email'],
+      redirectUri: `${API_BASE_URL}/oauth/google/redirect`,
+      responseType: AuthSession.ResponseType.IdToken,
+      extraParams: { nonce },
+    },
+    GOOGLE_DISCOVERY
+  );
 
   const onSubmit = async () => {
     setSubmitting(true);
@@ -49,11 +88,32 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
     // On success the root navigator will swap to the app stack.
   };
 
-  const onGoogleLogin = () => {
-    Alert.alert(
-      'Demo only',
-      "Google sign-in requires a live OAuth backend, which is outside this demo's scope."
-    );
+  const onGoogleLogin = async () => {
+    if (!GOOGLE_CLIENT_ID) {
+      Alert.alert('Not set up yet', 'Google sign-in has not been configured for this build.');
+      return;
+    }
+    if (!companyCode.trim()) {
+      Alert.alert('Almost there', 'Enter your company code first, then continue with Google.');
+      return;
+    }
+    setGoogleSubmitting(true);
+    try {
+      const result = await promptAsync();
+      if (result.type !== 'success' || !result.params.id_token) {
+        setGoogleSubmitting(false);
+        return;
+      }
+      const authResult = await loginWithGoogle(companyCode, result.params.id_token);
+      setGoogleSubmitting(false);
+      if (!authResult.ok) {
+        Alert.alert('Google sign-in failed', authResult.error);
+      }
+      // On success the root navigator will swap to the app stack.
+    } catch {
+      setGoogleSubmitting(false);
+      Alert.alert('Google sign-in failed', 'Something went wrong. Please try again.');
+    }
   };
 
   return (
@@ -172,10 +232,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   </LinearGradient>
                 </Pressable>
 
-                {/* Google sign-in -- UI only, no live OAuth backend in this demo */}
-                <Pressable onPress={onGoogleLogin} style={styles.googleBtn}>
+                {/* Google sign-in -- verified server-side, see GoogleTokenService */}
+                <Pressable
+                  onPress={onGoogleLogin}
+                  disabled={!request || googleSubmitting}
+                  style={({ pressed }) => [styles.googleBtn, { opacity: pressed || googleSubmitting ? 0.85 : 1 }]}
+                >
                   <Ionicons name="logo-google" size={18} color="#FFFFFF" />
-                  <Text style={styles.googleBtnText}>Continue with Google</Text>
+                  <Text style={styles.googleBtnText}>
+                    {googleSubmitting ? 'Signing in...' : 'Continue with Google'}
+                  </Text>
                 </Pressable>
 
                 {/* Signup */}

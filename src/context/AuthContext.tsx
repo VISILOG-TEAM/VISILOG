@@ -6,7 +6,7 @@ import type { AuthResult, Organization, Role, User } from '../types';
 
 // AuthContext talks to the real VisiLog backend (see server/). Role is
 // decided once, server-side, at signup time (by matching the signing-up
-// email against the company's staff roster) — there is no more
+// email against the company's staff roster) -- there is no more
 // role-picker or employee-ID-verify step on the frontend.
 
 interface UserDto {
@@ -38,6 +38,7 @@ interface AuthContextValue {
   initializing: boolean;
   login: (email: string, password: string, companyCode: string, remember?: boolean) => Promise<AuthResult>;
   signup: (companyCode: string, email: string, password: string, name: string) => Promise<AuthResult>;
+  loginWithGoogle: (companyCode: string, idToken: string) => Promise<AuthResult>;
   registerCompany: (
     companyName: string, adminName: string, adminEmail: string, adminPassword: string
   ) => Promise<AuthResult>;
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { setOrgTheme } = useTheme();
 
   // Keep the color palette in sync with whichever org is currently
-  // signed in — covers login/signup/registerCompany and boot-restore
+  // signed in -- covers login/signup/registerCompany and boot-restore
   // in one place instead of every screen calling setOrgTheme itself.
   useEffect(() => {
     setOrgTheme(organization ? organization.theme : null);
@@ -92,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(mapUser(userDto));
         setOrganization(org);
       } catch {
-        // Stored token is stale/invalid — sign out quietly.
+        // Stored token is stale/invalid -- sign out quietly.
         await clearToken();
       } finally {
         setInitializing(false);
@@ -101,7 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // `persist` (default true) controls whether the token is written to
-  // AsyncStorage — LoginScreen's "Remember me" toggles this. false
+  // AsyncStorage -- LoginScreen's "Remember me" toggles this. false
   // keeps the token in memory only, so the session doesn't survive an
   // app restart even though it works normally until then.
   const applyAuthResponse = async (res: AuthResponse, persist = true) => {
@@ -111,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // `companyCode` resolves which paying organization (tenant) this
-  // login belongs to — required since VisiLog serves several
+  // login belongs to -- required since VisiLog serves several
   // companies, each with their own data and brand colors.
   const login = async (
     email: string, password: string, companyCode: string, remember = true
@@ -155,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Self-serve "sign your company up" — creates the Organization, its
+  // Self-serve "sign your company up" -- creates the Organization, its
   // first Administrator (Manager) account, and hands back a company
   // code the admin can then share with their staff/visitors.
   const registerCompany = async (
@@ -178,8 +179,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Google sign-in. The frontend never sees or checks the ID token
+  // itself -- it hands the raw token Google issued straight to the
+  // backend, which verifies it against Google's own servers (see
+  // GoogleTokenService) before trusting anything in it. Same as
+  // signup, an existing account for that email logs straight in; a new
+  // one gets its role resolved from the staff roster.
+  const loginWithGoogle = async (companyCode: string, idToken: string): Promise<AuthResult> => {
+    if (!companyCode || !idToken) {
+      return { ok: false, error: 'Enter your company code first.' };
+    }
+    try {
+      const res = await apiClient.post<AuthResponse>('/api/v1/auth/google', {
+        companyCode: companyCode.trim(),
+        idToken,
+      });
+      await applyAuthResponse(res);
+      return { ok: true, organization: res.organization };
+    } catch (err) {
+      return { ok: false, error: err instanceof ApiError ? err.message : 'Google sign-in failed.' };
+    }
+  };
+
   // Step-up confirmation before a sensitive action on the *current*
-  // session — currently just clock-in (see ClockCard). Re-checks the
+  // session -- currently just clock-in (see ClockCard). Re-checks the
   // signed-in user's own password without touching the stored token.
   const verifyPassword = async (password: string): Promise<{ ok: boolean; error?: string }> => {
     try {
@@ -197,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // Company Setup > branding (manager only). `theme`, if present, is
-  // sent as a whole object — see UpdateOrgRequest on the backend.
+  // sent as a whole object -- see UpdateOrgRequest on the backend.
   const updateOrganization = async (patch: OrganizationPatch): Promise<AuthResult> => {
     try {
       const org = await apiClient.patch<Organization>('/api/v1/org', patch);
@@ -208,7 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Company Setup > office location (manager only) — backs the
+  // Company Setup > office location (manager only) -- backs the
   // clock-in geofence check (src/data/locationCheck.ts).
   const updateOfficeLocation = async (
     latitude: number, longitude: number, radiusMeters: number
@@ -228,7 +251,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user, organization, initializing,
-        login, signup, registerCompany, logout, verifyPassword,
+        login, signup, loginWithGoogle, registerCompany, logout, verifyPassword,
         updateOrganization, updateOfficeLocation,
       }}
     >
