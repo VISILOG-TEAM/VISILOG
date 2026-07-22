@@ -88,7 +88,9 @@ public class AppointmentService {
         a.setScheduledAt(scheduledAt);
         a.setStatus(AppointmentStatus.PENDING);
         a.setBookedByEmail(bookedByEmail);
-        return AppointmentDto.from(appointmentRepository.save(a));
+        Appointment saved = appointmentRepository.save(a);
+        notificationService.notifyAppointmentRequested(saved);
+        return AppointmentDto.from(saved);
     }
 
     // The reverse of RoomBookingService's clash check: booking a visit
@@ -173,7 +175,9 @@ public class AppointmentService {
         a.setScheduledAt(req.newScheduledAt());
         a.setRescheduleReason(req.reason());
         a.setRescheduledAt(Instant.now());
-        return AppointmentDto.from(appointmentRepository.save(a));
+        Appointment saved = appointmentRepository.save(a);
+        notificationService.notifyAppointmentRescheduled(saved);
+        return AppointmentDto.from(saved);
     }
 
     // No role is exempt: reception can see every appointment (for status

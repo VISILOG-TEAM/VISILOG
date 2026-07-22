@@ -233,6 +233,9 @@ public class RoomBookingService {
 
         response.setAbsent(req.absent());
         roomBookingResponseRepository.save(response);
+        if (req.absent()) {
+            notificationService.notifyParticipantAbsent(booking, employeeId);
+        }
 
         return RoomBookingDto.from(booking, responsesFor(roomBookingId));
     }

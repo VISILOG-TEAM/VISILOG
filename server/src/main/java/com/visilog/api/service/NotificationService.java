@@ -2,15 +2,18 @@ package com.visilog.api.service;
 
 import com.visilog.api.dto.NotificationDto;
 import com.visilog.api.entity.Appointment;
+import com.visilog.api.entity.Call;
 import com.visilog.api.entity.Notification;
 import com.visilog.api.entity.NotificationType;
 import com.visilog.api.entity.RoomBooking;
+import com.visilog.api.entity.Visitor;
 import com.visilog.api.exception.ApiException;
 import com.visilog.api.repository.NotificationRepository;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,7 +57,7 @@ public class NotificationService {
         return NotificationDto.from(notificationRepository.save(n));
     }
 
-    // One notification per invited participant — the organiser doesn't
+    // One notification per invited participant -- the organiser doesn't
     // need telling about their own meeting.
     @Transactional
     public void notifyMeetingInvite(RoomBooking booking, String organiserName, String placeLabel) {
@@ -110,6 +113,100 @@ public class NotificationService {
                         ? "Reason: " + appointment.getRejectReason()
                         : "Your host wasn't able to confirm this visit."));
         n.setRelatedId(appointment.getId());
+        n.setCreatedAt(Instant.now());
+        notificationRepository.save(n);
+    }
+
+    // Told to the host when their visitor leaves, so they know without
+    // having to check the Visitors log themselves.
+    @Transactional
+    public void notifyVisitorCheckedOut(Visitor visitor) {
+        if (visitor.getHostId() == null) {
+            return;
+        }
+        Notification n = new Notification();
+        n.setOrganizationId(visitor.getOrganizationId());
+        n.setRecipientEmployeeId(visitor.getHostId());
+        n.setType(NotificationType.VISIT_CHECKED_OUT);
+        n.setTitle("Visitor checked out");
+        n.setBody(visitor.getFullName() + " has checked out.");
+        n.setRelatedId(visitor.getId());
+        n.setCreatedAt(Instant.now());
+        notificationRepository.save(n);
+    }
+
+    // Told to the host as soon as someone requests a visit with them,
+    // so a pending appointment doesn't sit unnoticed until they happen
+    // to open the Appointments tab.
+    @Transactional
+    public void notifyAppointmentRequested(Appointment appointment) {
+        if (appointment.getHostId() == null) {
+            return;
+        }
+        Notification n = new Notification();
+        n.setOrganizationId(appointment.getOrganizationId());
+        n.setRecipientEmployeeId(appointment.getHostId());
+        n.setType(NotificationType.APPOINTMENT_REQUESTED);
+        n.setTitle("New visit request");
+        n.setBody(appointment.getVisitorName() + " wants to visit - " + appointment.getPurpose());
+        n.setRelatedId(appointment.getId());
+        n.setCreatedAt(Instant.now());
+        notificationRepository.save(n);
+    }
+
+    // Only a visitor who booked their own visit has an app account to
+    // notify (bookedByEmail is null for a walk-in reception booked on
+    // someone's behalf) -- silently a no-op otherwise, same as
+    // notifyAppointmentDecision.
+    @Transactional
+    public void notifyAppointmentRescheduled(Appointment appointment) {
+        if (appointment.getBookedByEmail() == null || appointment.getBookedByEmail().isBlank()) {
+            return;
+        }
+        Notification n = new Notification();
+        n.setOrganizationId(appointment.getOrganizationId());
+        n.setRecipientEmail(appointment.getBookedByEmail());
+        n.setType(NotificationType.APPOINTMENT_RESCHEDULED);
+        n.setTitle("Your visit was rescheduled");
+        n.setBody("New time: " + WHEN_FORMAT.format(appointment.getScheduledAt())
+                + (appointment.getRescheduleReason() != null && !appointment.getRescheduleReason().isBlank()
+                        ? " - " + appointment.getRescheduleReason() : ""));
+        n.setRelatedId(appointment.getId());
+        n.setCreatedAt(Instant.now());
+        notificationRepository.save(n);
+    }
+
+    // Told to whoever a call was for, so a missed call doesn't sit
+    // unseen until they happen to open the Call log.
+    @Transactional
+    public void notifyCallLogged(Call call) {
+        if (call.getHostId() == null) {
+            return;
+        }
+        Notification n = new Notification();
+        n.setOrganizationId(call.getOrganizationId());
+        n.setRecipientEmployeeId(call.getHostId());
+        n.setType(NotificationType.CALL_LOGGED);
+        n.setTitle("New call logged for you");
+        n.setBody(call.getCallerName() + " - " + call.getCallType().name().toLowerCase(Locale.ROOT)
+                + (call.getPurpose() != null && !call.getPurpose().isBlank() ? " - " + call.getPurpose() : ""));
+        n.setRelatedId(call.getId());
+        n.setCreatedAt(Instant.now());
+        notificationRepository.save(n);
+    }
+
+    // Told to the participant themselves when the organiser marks them
+    // absent after the fact -- not sent when un-marking (toggling back
+    // to present isn't something they need pinged about).
+    @Transactional
+    public void notifyParticipantAbsent(RoomBooking booking, UUID employeeId) {
+        Notification n = new Notification();
+        n.setOrganizationId(booking.getOrganizationId());
+        n.setRecipientEmployeeId(employeeId);
+        n.setType(NotificationType.PARTICIPANT_ABSENT);
+        n.setTitle("Marked absent");
+        n.setBody("You were marked absent from \"" + booking.getTitle() + "\".");
+        n.setRelatedId(booking.getId());
         n.setCreatedAt(Instant.now());
         notificationRepository.save(n);
     }

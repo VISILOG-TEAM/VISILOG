@@ -16,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CallService {
 
     private final CallRepository callRepository;
+    private final NotificationService notificationService;
 
-    public CallService(CallRepository callRepository) {
+    public CallService(CallRepository callRepository, NotificationService notificationService) {
         this.callRepository = callRepository;
+        this.notificationService = notificationService;
     }
 
     public List<CallDto> list(UUID organizationId) {
@@ -39,7 +41,9 @@ public class CallService {
         c.setDurationMinutes(req.durationMinutes() == null ? 0 : req.durationMinutes());
         c.setNotes(req.notes());
         c.setTimestamp(Instant.now());
-        return CallDto.from(callRepository.save(c));
+        Call saved = callRepository.save(c);
+        notificationService.notifyCallLogged(saved);
+        return CallDto.from(saved);
     }
 
     private CallType parseType(String raw) {
