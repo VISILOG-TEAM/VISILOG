@@ -54,6 +54,7 @@ export type RootStackParamList = {
   NFCCards: undefined;
   NFCLookup: undefined;
   Attendance: undefined;
+  History: { tab?: 'appointments' | 'meetings' | 'clock' } | undefined;
   Billing: undefined;
   CompanySetup: undefined;
   MeetingRooms: undefined;

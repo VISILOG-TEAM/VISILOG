@@ -15,8 +15,8 @@ interface AttendanceScreenProps {
   navigation: RootStackNavigation;
 }
 
-// AttendanceScreen — the clock-in/out ledger, presented as a tap log.
-// (There's no separate NFC-tap-log concept in the real backend — this
+// AttendanceScreen -- the clock-in/out ledger, presented as a tap log.
+// (There's no separate NFC-tap-log concept in the real backend -- this
 // reads the same shared clockRecords ledger as the Employee/Receptionist
 // "on the clock" cards and ManagerClockInsScreen.)
 export default function AttendanceScreen({ navigation }: AttendanceScreenProps) {
@@ -48,8 +48,10 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
         <Header
           title="Attendance"
           subtitle="Clock-in/out log & punctuality"
-          rightIcon="close"
-          onRightPress={() => navigation.goBack()}
+          rightActions={[
+            { icon: 'time-outline', onPress: () => navigation.navigate('History', { tab: 'clock' }) },
+            { icon: 'close', onPress: () => navigation.goBack() },
+          ]}
         />
         <View style={{ flexDirection: 'row' }}>
           <StatTile icon="people" tint="primary"

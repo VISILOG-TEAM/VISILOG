@@ -30,6 +30,7 @@ import CallLogScreen from '../screens/CallLogScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import NFCCardsScreen from '../screens/NFCCardsScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
+import HistoryScreen from '../screens/HistoryScreen';
 import BillingScreen from '../screens/BillingScreen';
 import CompanySetupScreen from '../screens/CompanySetupScreen';
 import MeetingRoomsScreen from '../screens/MeetingRoomsScreen';
@@ -95,6 +96,7 @@ export default function RootNavigator() {
           <Stack.Screen name="NFCCards" component={NFCCardsScreen} />
           <Stack.Screen name="NFCLookup" component={NFCLookupScreen} />
           <Stack.Screen name="Attendance" component={AttendanceScreen} />
+          <Stack.Screen name="History" component={HistoryScreen} />
           <Stack.Screen name="Billing" component={BillingScreen} />
           <Stack.Screen name="CompanySetup" component={CompanySetupScreen} />
           <Stack.Screen name="MeetingRooms" component={MeetingRoomsScreen} />

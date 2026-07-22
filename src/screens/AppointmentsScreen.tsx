@@ -44,6 +44,8 @@ export default function AppointmentsScreen({ navigation }: AppointmentsScreenPro
         <Header
           title={view === 'appointments' ? 'Appointments' : 'Meetings'}
           subtitle={view === 'appointments' ? 'Pre-booked visits & approvals' : 'Everything booked, on-site or outside'}
+          rightIcon="time-outline"
+          onRightPress={() => navigation.navigate('History', { tab: view === 'appointments' ? 'appointments' : 'meetings' })}
         />
         <Segmented
           value={view}
@@ -405,7 +407,7 @@ function responseSummary(responses: RoomBooking['responses']): string {
   if (acknowledged) parts.push(`${acknowledged} seen`);
   if (declined) parts.push(`${declined} declined`);
   if (pending) parts.push(`${pending} pending`);
-  return parts.join(' · ') || 'No responses yet';
+  return parts.join(' - ') || 'No responses yet';
 }
 
 function MeetingsView() {
@@ -483,14 +485,14 @@ function MeetingsView() {
                       <View style={{ flex: 1, marginLeft: spacing.sm }}>
                         <Text variant="bodySemibold">{room.name}</Text>
                         <Text variant="caption" color={colors.textSecondary}>
-                          {room.floor} · Capacity {room.capacity}
+                          {room.floor} - Capacity {room.capacity}
                         </Text>
                       </View>
                       <Badge label={meta.label} status={meta.badge} size="sm" />
                     </View>
                     {booking && status !== 'available' ? (
                       <MetaRow icon="time-outline"
-                        text={`Next: ${fmtTime(booking.startTime)} → ${fmtTime(booking.endTime)}`} />
+                        text={`Next: ${fmtTime(booking.startTime)} to ${fmtTime(booking.endTime)}`} />
                     ) : null}
                   </Card>
                 );
@@ -532,7 +534,7 @@ function MeetingsView() {
             </View>
             <View style={styles.metaList}>
               <MetaRow icon="time-outline"
-                text={`${fmtDate(item.startTime)} · ${fmtTime(item.startTime)} → ${fmtTime(item.endTime)}`} />
+                text={`${fmtDate(item.startTime)} - ${fmtTime(item.startTime)} to ${fmtTime(item.endTime)}`} />
               <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
               {item.participantIds?.length ? (
                 <MetaRow icon="people-outline" text={`${item.participantIds.length} staff invited`} />

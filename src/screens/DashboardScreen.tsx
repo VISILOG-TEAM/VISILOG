@@ -61,9 +61,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <OrgLogo />
       <Header
-        eyebrow="VisiLog · Reception"
+        eyebrow="VisiLog - Reception"
         title={`${greeting},`}
-        subtitle={`${user?.name?.split(' ')[0] || 'there'} · Front desk`}
+        subtitle={`${user?.name?.split(' ')[0] || 'there'} - Front desk`}
         rightIcon="notifications-outline"
         onRightPress={() => navigation.navigate('Notifications')}
         badge={unreadNotificationCount}
@@ -142,6 +142,10 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
         <QuickAction
           icon="document-text-outline" label="Reports"
           onPress={() => navigation.navigate('Reports')}
+        />
+        <QuickAction
+          icon="time-outline" label="History"
+          onPress={() => navigation.navigate('History')}
         />
       </View>
 
