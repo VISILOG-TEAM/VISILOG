@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// A login account. Role is fixed at creation (see AuthService) — never
+// A login account. Role is fixed at creation (see AuthService) -- never
 // user-chosen. employeeId is set only when this account was matched to
 // a roster entry at signup (i.e. role != VISITOR).
 @Entity
@@ -40,6 +40,12 @@ public class AppUser {
     private Role role;
 
     private UUID employeeId;
+
+    // Set only while a Forgot Password reset is in flight -- cleared as
+    // soon as it's used (or replaced by a fresh request). Never exposed
+    // in any DTO.
+    private String resetCode;
+    private Instant resetCodeExpiresAt;
 
     @Column(nullable = false)
     private Instant createdAt = Instant.now();

@@ -1,8 +1,11 @@
 package com.visilog.api.controller;
 
 import com.visilog.api.dto.AuthResponse;
+import com.visilog.api.dto.ForgotPasswordRequest;
 import com.visilog.api.dto.GoogleAuthRequest;
 import com.visilog.api.dto.LoginRequest;
+import com.visilog.api.dto.MessageResponse;
+import com.visilog.api.dto.ResetPasswordRequest;
 import com.visilog.api.dto.SignupRequest;
 import com.visilog.api.dto.UserDto;
 import com.visilog.api.dto.VerifyPasswordRequest;
@@ -36,6 +39,16 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleAuthRequest request) {
         return ResponseEntity.ok(authService.googleAuth(request));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<MessageResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return ResponseEntity.ok(authService.forgotPassword(request));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<MessageResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 
     @GetMapping("/me")

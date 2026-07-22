@@ -62,7 +62,7 @@ public class SecurityConfig {
                 // No account exists yet at these three -- that's the point of them.
                 .requestMatchers(
                         "/api/v1/companies/register", "/api/v1/auth/login", "/api/v1/auth/signup",
-                        "/api/v1/auth/google")
+                        "/api/v1/auth/google", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password")
                         .permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/oauth/google/redirect").permitAll()

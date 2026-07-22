@@ -53,4 +53,48 @@ public class MailService {
             log.warn("Could not send meeting invite email to {}: {}", toEmail, ex.getMessage());
         }
     }
+
+    public void sendPasswordResetEmail(String toEmail, String name, String code) {
+        if (fromAddress == null || fromAddress.isBlank()) {
+            log.info("Mail not configured -- skipping password reset email to {}", toEmail);
+            return;
+        }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(toEmail);
+            message.setSubject("Your VisiLog password reset code");
+            message.setText(
+                    "Hi " + (name == null || name.isBlank() ? "there" : name) + ",\n\n"
+                    + "Here's your VisiLog password reset code:\n\n"
+                    + "  " + code + "\n\n"
+                    + "Enter this in the app to choose a new password. It expires in 15 minutes.\n\n"
+                    + "If you didn't ask to reset your password, you can ignore this email.\n\n"
+                    + "-- VisiLog");
+            mailSender.send(message);
+        } catch (Exception ex) {
+            log.warn("Could not send password reset email to {}: {}", toEmail, ex.getMessage());
+        }
+    }
+
+    public void sendWelcomeEmail(String toEmail, String name, String companyName) {
+        if (fromAddress == null || fromAddress.isBlank()) {
+            log.info("Mail not configured -- skipping welcome email to {}", toEmail);
+            return;
+        }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(toEmail);
+            message.setSubject("Welcome to VisiLog");
+            message.setText(
+                    "Hi " + (name == null || name.isBlank() ? "there" : name) + ",\n\n"
+                    + "Welcome to VisiLog! Your account with " + companyName + " is ready to go.\n\n"
+                    + "You can now check in visitors, book meetings, and clock in right from the app.\n\n"
+                    + "-- VisiLog");
+            mailSender.send(message);
+        } catch (Exception ex) {
+            log.warn("Could not send welcome email to {}: {}", toEmail, ex.getMessage());
+        }
+    }
 }

@@ -1,10 +1,13 @@
 package com.visilog.api.service;
 
 import com.visilog.api.dto.AuthResponse;
+import com.visilog.api.dto.ForgotPasswordRequest;
 import com.visilog.api.dto.GoogleAuthRequest;
 import com.visilog.api.dto.LoginRequest;
+import com.visilog.api.dto.MessageResponse;
 import com.visilog.api.dto.OrganizationDto;
 import com.visilog.api.dto.RegisterCompanyRequest;
+import com.visilog.api.dto.ResetPasswordRequest;
 import com.visilog.api.dto.SignupRequest;
 import com.visilog.api.dto.UserDto;
 import com.visilog.api.entity.AppUser;
@@ -55,6 +58,11 @@ public class AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
+    // Generic response for forgotPassword regardless of whether the email
+    // actually matched an account -- never confirm/deny account existence.
+    private static final MessageResponse FORGOT_PASSWORD_RESPONSE = new MessageResponse(
+            "If that email is registered, we've sent a password reset code to it.");
+
     private final OrganizationRepository organizationRepository;
     private final AppUserRepository appUserRepository;
     private final EmployeeRepository employeeRepository;
@@ -62,6 +70,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final com.visilog.api.security.JwtService jwtService;
     private final GoogleTokenService googleTokenService;
+    private final MailService mailService;
 
     public AuthService(
             OrganizationRepository organizationRepository,
@@ -70,7 +79,8 @@ public class AuthService {
             OrgBillingRepository orgBillingRepository,
             PasswordEncoder passwordEncoder,
             com.visilog.api.security.JwtService jwtService,
-            GoogleTokenService googleTokenService) {
+            GoogleTokenService googleTokenService,
+            MailService mailService) {
         this.organizationRepository = organizationRepository;
         this.appUserRepository = appUserRepository;
         this.employeeRepository = employeeRepository;
@@ -78,6 +88,7 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.googleTokenService = googleTokenService;
+        this.mailService = mailService;
     }
 
     @Transactional
@@ -131,6 +142,7 @@ public class AuthService {
         billing.setRenewalDate(Instant.now().plus(730, ChronoUnit.DAYS));
         orgBillingRepository.save(billing);
 
+        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
         return buildAuthResponse(user, org);
     }
 
@@ -159,6 +171,7 @@ public class AuthService {
         }
         user = appUserRepository.save(user);
 
+        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
         return buildAuthResponse(user, org);
     }
 
@@ -196,7 +209,55 @@ public class AuthService {
         }
         user = appUserRepository.save(user);
 
+        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
         return buildAuthResponse(user, org);
+    }
+
+    // Forgot Password: a numeric code emailed to the account, entered
+    // manually in-app alongside a new password. Chose a code over a
+    // clickable/deep-link flow specifically to avoid repeating the
+    // custom-URI-scheme restrictions that Google Sign-In ran into --
+    // this needs zero app-scheme/redirect wiring at all.
+    //
+    // Always returns the same generic message whether or not the email
+    // matched an account, so this endpoint can't be used to test which
+    // emails have a VisiLog account.
+    @Transactional
+    public MessageResponse forgotPassword(ForgotPasswordRequest req) {
+        Organization org = findOrgByCodeOrThrow(req.companyCode());
+        String email = req.email().trim().toLowerCase(Locale.ROOT);
+
+        appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), email).ifPresent(user -> {
+            String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+            user.setResetCode(code);
+            user.setResetCodeExpiresAt(Instant.now().plus(15, ChronoUnit.MINUTES));
+            appUserRepository.save(user);
+            mailService.sendPasswordResetEmail(user.getEmail(), user.getName(), code);
+        });
+
+        return FORGOT_PASSWORD_RESPONSE;
+    }
+
+    @Transactional
+    public MessageResponse resetPassword(ResetPasswordRequest req) {
+        Organization org = findOrgByCodeOrThrow(req.companyCode());
+        String email = req.email().trim().toLowerCase(Locale.ROOT);
+
+        AppUser user = appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), email)
+                .orElseThrow(() -> ApiException.badRequest("That code is invalid or has expired."));
+
+        if (user.getResetCode() == null || user.getResetCodeExpiresAt() == null
+                || !user.getResetCode().equals(req.code().trim())
+                || Instant.now().isAfter(user.getResetCodeExpiresAt())) {
+            throw ApiException.badRequest("That code is invalid or has expired.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+        user.setResetCode(null);
+        user.setResetCodeExpiresAt(null);
+        appUserRepository.save(user);
+
+        return new MessageResponse("Your password has been reset. You can now log in.");
     }
 
     public AuthResponse login(LoginRequest req) {

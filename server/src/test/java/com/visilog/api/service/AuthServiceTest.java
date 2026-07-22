@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.visilog.api.dto.ForgotPasswordRequest;
+import com.visilog.api.dto.ResetPasswordRequest;
 import com.visilog.api.dto.SignupRequest;
 import com.visilog.api.entity.AppUser;
 import com.visilog.api.entity.Employee;
@@ -45,6 +47,7 @@ class AuthServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtService jwtService;
     @Mock private GoogleTokenService googleTokenService;
+    @Mock private MailService mailService;
 
     private AuthService authService;
     private Organization org;
@@ -53,7 +56,7 @@ class AuthServiceTest {
     void setUp() {
         authService = new AuthService(
                 organizationRepository, appUserRepository, employeeRepository,
-                orgBillingRepository, passwordEncoder, jwtService, googleTokenService);
+                orgBillingRepository, passwordEncoder, jwtService, googleTokenService, mailService);
 
         org = new Organization();
         org.setId(UUID.randomUUID());
@@ -133,5 +136,85 @@ class AuthServiceTest {
                 authService.login(new com.visilog.api.dto.LoginRequest("ACME1234", "wendy@acme.com", "wrong-password")))
                 .isInstanceOf(ApiException.class)
                 .hasMessageContaining("Incorrect email or password");
+    }
+
+    @Test
+    void forgotPasswordSendsCodeWhenEmailMatchesAnAccount() {
+        AppUser existing = new AppUser();
+        existing.setId(UUID.randomUUID());
+        existing.setOrganizationId(org.getId());
+        existing.setEmail("wendy@acme.com");
+        existing.setName("Wendy");
+        when(appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), "wendy@acme.com"))
+                .thenReturn(Optional.of(existing));
+
+        var response = authService.forgotPassword(new ForgotPasswordRequest("ACME1234", "wendy@acme.com"));
+
+        assertThat(response.message()).contains("If that email is registered");
+        assertThat(existing.getResetCode()).isNotNull();
+        assertThat(existing.getResetCodeExpiresAt()).isNotNull();
+    }
+
+    @Test
+    void forgotPasswordReturnsSameGenericMessageWhenEmailDoesNotMatch() {
+        when(appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), "nobody@acme.com"))
+                .thenReturn(Optional.empty());
+
+        var response = authService.forgotPassword(new ForgotPasswordRequest("ACME1234", "nobody@acme.com"));
+
+        assertThat(response.message()).contains("If that email is registered");
+    }
+
+    @Test
+    void resetPasswordRejectsWrongCode() {
+        AppUser existing = new AppUser();
+        existing.setId(UUID.randomUUID());
+        existing.setOrganizationId(org.getId());
+        existing.setEmail("wendy@acme.com");
+        existing.setResetCode("123456");
+        existing.setResetCodeExpiresAt(java.time.Instant.now().plusSeconds(300));
+        when(appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), "wendy@acme.com"))
+                .thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> authService.resetPassword(
+                new ResetPasswordRequest("ACME1234", "wendy@acme.com", "000000", "newpassword123")))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("invalid or has expired");
+    }
+
+    @Test
+    void resetPasswordRejectsExpiredCode() {
+        AppUser existing = new AppUser();
+        existing.setId(UUID.randomUUID());
+        existing.setOrganizationId(org.getId());
+        existing.setEmail("wendy@acme.com");
+        existing.setResetCode("123456");
+        existing.setResetCodeExpiresAt(java.time.Instant.now().minusSeconds(1));
+        when(appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), "wendy@acme.com"))
+                .thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> authService.resetPassword(
+                new ResetPasswordRequest("ACME1234", "wendy@acme.com", "123456", "newpassword123")))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("invalid or has expired");
+    }
+
+    @Test
+    void resetPasswordSucceedsWithValidCodeAndClearsIt() {
+        AppUser existing = new AppUser();
+        existing.setId(UUID.randomUUID());
+        existing.setOrganizationId(org.getId());
+        existing.setEmail("wendy@acme.com");
+        existing.setResetCode("123456");
+        existing.setResetCodeExpiresAt(java.time.Instant.now().plusSeconds(300));
+        when(appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), "wendy@acme.com"))
+                .thenReturn(Optional.of(existing));
+
+        var response = authService.resetPassword(
+                new ResetPasswordRequest("ACME1234", "wendy@acme.com", "123456", "newpassword123"));
+
+        assertThat(response.message()).contains("password has been reset");
+        assertThat(existing.getResetCode()).isNull();
+        assertThat(existing.getResetCodeExpiresAt()).isNull();
     }
 }
