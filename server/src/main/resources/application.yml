@@ -7,7 +7,7 @@ spring:
     password: ${DB_PASSWORD:visipro}
   jpa:
     hibernate:
-      # Flyway owns the schema — Hibernate only validates it matches.
+      # Flyway owns the schema -- Hibernate only validates it matches.
       ddl-auto: validate
     open-in-view: false
     properties:
@@ -34,6 +34,11 @@ spring:
 
 server:
   port: ${PORT:8080}
+
+management:
+  health:
+    mail:
+      enabled: false
 
 visilog:
   jwt:
