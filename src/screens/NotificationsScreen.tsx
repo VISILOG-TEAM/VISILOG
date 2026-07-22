@@ -14,16 +14,31 @@ import { useData } from '../context/DataContext';
 import { fmtRelative } from '../data/format';
 import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
-import type { AppNotification, RoomBookingResponse } from '../types';
+import type { AppNotification, IoniconName, NotificationType, RoomBookingResponse } from '../types';
+
+// One icon per notification type -- anything not listed (shouldn't
+// happen, but keeps this forward-compatible with a type this build
+// doesn't know about yet) falls back to a plain bell.
+const NOTIFICATION_ICONS: Record<NotificationType, IoniconName> = {
+  meeting_invite: 'calendar-outline',
+  meeting_declined: 'close-circle-outline',
+  visit_admitted: 'card-outline',
+  visit_rejected: 'close-circle-outline',
+  visit_checked_out: 'exit-outline',
+  appointment_requested: 'person-add-outline',
+  appointment_rescheduled: 'swap-horizontal-outline',
+  call_logged: 'call-outline',
+  participant_absent: 'close-circle-outline',
+};
 
 interface NotificationsScreenProps {
   navigation: RootStackNavigation;
 }
 
-// NotificationsScreen — in-app alerts (meeting invites, and an
+// NotificationsScreen -- in-app alerts (meeting invites, and an
 // organiser being told someone declined). Reached from the bell icon
 // on the Home header. There's no push/SMS delivery in this build, so
-// this list (fetched on focus) is the only place these show up — see
+// this list (fetched on focus) is the only place these show up -- see
 // NotificationService on the backend.
 export default function NotificationsScreen({ navigation }: NotificationsScreenProps) {
   const { user } = useAuth();
@@ -53,7 +68,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
   );
 
   // A participant's own response row for the meeting a notification
-  // points at — undefined once the organiser sees it (they don't get
+  // points at -- undefined once the organiser sees it (they don't get
   // a response row for their own meeting) or for non-invite types.
   const myResponseFor = (n: AppNotification): RoomBookingResponse | undefined => {
     if (n.type !== 'meeting_invite' || !n.relatedId || !user?.employeeId) return undefined;
@@ -144,13 +159,7 @@ function NotificationRow({
         <View style={styles.row}>
           <View style={[styles.iconWrap, { backgroundColor: themeColors.primarySurface }]}>
             <Ionicons
-              name={
-                notification.type === 'meeting_declined' || notification.type === 'visit_rejected'
-                  ? 'close-circle-outline'
-                  : notification.type === 'visit_admitted'
-                  ? 'card-outline'
-                  : 'calendar-outline'
-              }
+              name={NOTIFICATION_ICONS[notification.type] || 'notifications-outline'}
               size={18}
               color={themeColors.primary}
             />
@@ -208,7 +217,7 @@ function NotificationRow({
 
 // A reason is required to decline (per RoomBookingService.respond),
 // and Android has no built-in Alert.prompt, so this is a small custom
-// modal — same pattern as RescheduleModal's reason field.
+// modal -- same pattern as RescheduleModal's reason field.
 function DeclineReasonModal({
   visible, onCancel, onConfirm,
 }: { visible: boolean; onCancel: () => void; onConfirm: (reason: string) => void }) {
@@ -230,7 +239,7 @@ function DeclineReasonModal({
         <View style={modalStyles.card}>
           <Text variant="h3">Can't make it?</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
-            Let the organiser know why — they'll see this right away.
+            Let the organiser know why -- they'll see this right away.
           </Text>
           <TextInput
             value={reason}

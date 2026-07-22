@@ -158,7 +158,10 @@ export interface RoomBooking {
   responses: RoomBookingResponse[];
 }
 
-export type NotificationType = 'meeting_invite' | 'meeting_declined' | 'visit_admitted' | 'visit_rejected';
+export type NotificationType =
+  | 'meeting_invite' | 'meeting_declined' | 'visit_admitted' | 'visit_rejected'
+  | 'visit_checked_out' | 'appointment_requested' | 'appointment_rescheduled'
+  | 'call_logged' | 'participant_absent';
 
 export interface AppNotification {
   id: string;
