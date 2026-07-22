@@ -68,7 +68,7 @@ export default function NFCLookupScreen({ navigation }: NFCLookupScreenProps) {
             <Badge label={found.status} status="success" size="sm" />
           </View>
 
-          <Row icon="card-outline" label="NFC code" value={found.nfcCode} />
+          <Row icon="card-outline" label="NFC code" value={found.nfcCode || 'Not yet issued'} />
           <Row icon="call-outline" label="Phone" value={found.visitorPhone} />
           <Row icon="briefcase-outline" label="Purpose" value={found.purpose} />
           <Row icon="people-outline" label="Host"

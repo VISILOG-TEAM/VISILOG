@@ -144,7 +144,13 @@ function NotificationRow({
         <View style={styles.row}>
           <View style={[styles.iconWrap, { backgroundColor: themeColors.primarySurface }]}>
             <Ionicons
-              name={notification.type === 'meeting_declined' ? 'close-circle-outline' : 'calendar-outline'}
+              name={
+                notification.type === 'meeting_declined' || notification.type === 'visit_rejected'
+                  ? 'close-circle-outline'
+                  : notification.type === 'visit_admitted'
+                  ? 'card-outline'
+                  : 'calendar-outline'
+              }
               size={18}
               color={themeColors.primary}
             />

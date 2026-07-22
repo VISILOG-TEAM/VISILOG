@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, FlatList, StyleSheet, Pressable } from 'react-native';
+import { View, SectionList, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState, Avatar,
@@ -7,7 +7,7 @@ import {
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { fmtTime, fmtDuration } from '../data/format';
+import { fmtTime, fmtDuration, splitRecentOlder } from '../data/format';
 import type { RootStackNavigation } from '../types/navigation';
 import type { Visitor } from '../types';
 
@@ -46,6 +46,11 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
       .sort((a, b) => new Date(b.checkInAt).getTime() - new Date(a.checkInAt).getTime());
   }, [visitors, query, status]);
 
+  const sections = useMemo(
+    () => splitRecentOlder(filtered, (v) => v.checkInAt),
+    [filtered]
+  );
+
   return (
     <Screen scroll={false} padded={false}>
       <View style={styles.head}>
@@ -75,11 +80,16 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
         />
       </View>
 
-      <FlatList
-        data={filtered}
+      <SectionList
+        sections={sections}
         keyExtractor={(v) => v.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        renderSectionHeader={({ section }) => (
+          <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionHeader}>
+            {section.title}
+          </Text>
+        )}
         ListEmptyComponent={
           <EmptyState
             icon="people-outline"
@@ -153,6 +163,7 @@ function VisitorRow({
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: 0 },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
+  sectionHeader: { backgroundColor: colors.background, paddingVertical: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
   middle: { flex: 1, marginLeft: spacing.sm },
   titleRow: {

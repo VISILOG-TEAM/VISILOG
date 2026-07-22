@@ -43,7 +43,7 @@ export default function CompanyMapSection() {
       capacity: r.capacity,
       icon: 'business-outline' as IoniconName,
       photoUrl: r.photoUrl,
-      directions: [
+      directions: r.description ? [r.description] : [
         'From reception, take the lift or stairs up.',
         `Follow signage to ${r.floor}.`,
         `${r.name} is the ${i === 0 ? 'first' : i === 1 ? 'second' : 'third'} door on the left.`,

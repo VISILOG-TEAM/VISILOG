@@ -29,6 +29,7 @@ interface OrganizationPatch {
   name?: string;
   logoUrl?: string | null;
   theme?: Organization['theme'];
+  wifiNetworkName?: string | null;
 }
 
 interface AuthContextValue {

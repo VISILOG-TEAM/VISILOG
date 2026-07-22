@@ -181,15 +181,17 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
           sub="Build 1.0.0 - Reception + NFC"
           onPress={() => Alert.alert(
             'VisiLog',
-            'Build 1.0.0 — Reception + NFC\n\nVisitor management, staff attendance, and meeting-room booking for ' +
+            'Build 1.0.0 -- Reception + NFC\n\nVisitor management, staff attendance, and meeting-room booking for ' +
             (user?.organizationName || 'your organization') + '.'
           )} />
         <Divider />
         <LinkRow icon="help-circle-outline" title="Help & support"
-          sub="Contact your VisiLog administrator"
+          sub={user?.role === 'manager' ? 'Contact the VisiLog help desk' : 'Contact your VisiLog administrator'}
           onPress={() => Alert.alert(
             'Help & support',
-            'For access issues, incorrect roster entries, or anything else you need changed, contact your organization’s Administrator — they manage your staff roster and company settings in Company Setup.'
+            user?.role === 'manager'
+              ? "As the Administrator, reach the VisiLog help desk directly for anything you can't resolve in Company Setup:\n\nPhone: 0509343709\nEmail: voldyabbey@gmail.com"
+              : "For access issues, incorrect roster entries, or anything else you need changed, contact your organization's Administrator -- they manage your staff roster and company settings in Company Setup."
           )} />
         <Divider />
         <LinkRow icon="document-text-outline" title="Privacy policy"
@@ -198,7 +200,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             'Privacy policy',
             'Visitor and staff data you enter (name, phone, purpose of visit, badge/NFC activity) is stored for ' +
             (user?.organizationName || 'your organization') + ' only, and is never shared with other companies using VisiLog. ' +
-            'It’s used solely to run reception, attendance, and meeting-room booking for your organization.'
+            "It's used solely to run reception, attendance, and meeting-room booking for your organization."
           )} />
       </Card>
 

@@ -98,7 +98,7 @@ interface DataContextValue {
   // operations
   registerAndCheckIn: (input: RegisterVisitorInput) => Promise<Visitor>;
   checkOutVisitor: (visitorId: string, notes?: string) => Promise<Visitor>;
-  updateAppointmentStatus: (id: string, status: AppointmentStatus) => Promise<Appointment>;
+  updateAppointmentStatus: (id: string, status: AppointmentStatus, reason?: string) => Promise<Appointment>;
   admitAppointment: (appointment: Appointment) => Promise<Visitor>;
   logCall: (input: LogCallInput) => Promise<Call>;
   addEmployee: (input: EmployeeInput) => Promise<Employee>;
@@ -261,8 +261,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateAppointmentStatus = async (id: string, status: AppointmentStatus): Promise<Appointment> => {
-    const dto = await apiClient.patch<AppointmentDto>(`/api/v1/appointments/${id}/status`, { status });
+  const updateAppointmentStatus = async (
+    id: string, status: AppointmentStatus, reason?: string
+  ): Promise<Appointment> => {
+    const dto = await apiClient.patch<AppointmentDto>(`/api/v1/appointments/${id}/status`, { status, reason });
     const appointment = mapAppointment(dto);
     setAppointments((as) => as.map((a) => (a.id === id ? appointment : a)));
     return appointment;
@@ -346,7 +348,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addMeetingRoom = async (input: MeetingRoomInput): Promise<MeetingRoom> => {
     const room = await apiClient.post<MeetingRoom>('/api/v1/meeting-rooms', {
       name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
-      photoUrl: input.photoUrl || null,
+      photoUrl: input.photoUrl || null, description: input.description || null,
     });
     setMeetingRooms((rs) => [...rs, room]);
     return room;
@@ -359,6 +361,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       {
         rooms: rows.map((r) => ({
           name: r.name, capacity: Number(r.capacity) || null, floor: r.floor, photoUrl: r.photoUrl || null,
+          description: r.description || null,
         })),
       }
     );
@@ -369,7 +372,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateMeetingRoom = async (id: string, input: MeetingRoomInput): Promise<MeetingRoom> => {
     const room = await apiClient.patch<MeetingRoom>(`/api/v1/meeting-rooms/${id}`, {
       name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
-      photoUrl: input.photoUrl || null,
+      photoUrl: input.photoUrl || null, description: input.description || null,
     });
     setMeetingRooms((rs) => rs.map((r) => (r.id === id ? room : r)));
     return room;
@@ -433,7 +436,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       startTime: input.startTime,
       endTime: input.endTime,
       participantIds: input.participantIds || [],
-      externalGuests: input.externalGuests || null,
+      externalGuests: input.externalGuests || [],
       priority: input.priority || 'normal',
     });
     const booking = mapRoomBooking(dto);

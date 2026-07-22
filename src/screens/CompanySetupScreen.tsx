@@ -50,6 +50,7 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
 
   const [name, setName] = useState(organization?.name || '');
   const [logoUrl, setLogoUrl] = useState(organization?.logoUrl || '');
+  const [wifiNetworkName, setWifiNetworkName] = useState(organization?.wifiNetworkName || '');
   const [savingBrand, setSavingBrand] = useState(false);
   const [pickingLogo, setPickingLogo] = useState(false);
 
@@ -118,7 +119,9 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
       return;
     }
     setSavingBrand(true);
-    const result = await updateOrganization({ name: name.trim(), logoUrl: logoUrl.trim() || null });
+    const result = await updateOrganization({
+      name: name.trim(), logoUrl: logoUrl.trim() || null, wifiNetworkName: wifiNetworkName.trim() || null,
+    });
     setSavingBrand(false);
     if (!result.ok) Alert.alert('Could not save', result.error);
   };
@@ -130,12 +133,14 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     if (!result.ok) Alert.alert('Could not save', result.error);
   };
 
+  const locationIsSet = latitude.trim() !== '' && longitude.trim() !== '';
+
   const onSaveLocation = async () => {
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
-    const radius = parseInt(radiusMeters, 10);
-    if (Number.isNaN(lat) || Number.isNaN(lng) || Number.isNaN(radius)) {
-      Alert.alert('Almost there', 'Latitude, longitude and radius must all be numbers.');
+    const radius = parseInt(radiusMeters, 10) || 500;
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      Alert.alert('Almost there', 'Tap "Use my current location" while standing at the office first.');
       return;
     }
     setSavingLocation(true);
@@ -165,7 +170,7 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
           </Pressable>
         </View>
         <Text variant="caption" color={colors.textMuted}>
-          Give this to your staff and post it wherever you invite visitors — they enter it when they sign up.
+          Give this to your staff and post it wherever you invite visitors -- they enter it when they sign up.
         </Text>
       </Card>
 
@@ -185,15 +190,20 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
           </View>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <Text variant="bodySemibold" color={themeColors.brand}>
-              {pickingLogo ? 'Opening photos…' : logoUrl ? 'Change logo' : 'Upload a logo'}
+              {pickingLogo ? 'Opening photos...' : logoUrl ? 'Change logo' : 'Upload a logo'}
             </Text>
             <Text variant="caption" color={colors.textMuted}>From your device's photo library</Text>
           </View>
         </Pressable>
 
-        <Input label="…or paste a logo URL" value={logoUrl} onChangeText={setLogoUrl}
-          placeholder="https://…" icon="link-outline" autoCapitalize="none" />
-        <Button label={savingBrand ? 'Saving…' : 'Save'} onPress={onSaveBrand} disabled={savingBrand} />
+        <Input label="...or paste a logo URL" value={logoUrl} onChangeText={setLogoUrl}
+          placeholder="https://..." icon="link-outline" autoCapitalize="none" />
+        <Input label="WiFi network name" value={wifiNetworkName} onChangeText={setWifiNetworkName}
+          placeholder="e.g. Office-WiFi" icon="wifi-outline" />
+        <Text variant="caption" color={colors.textMuted} style={{ marginTop: -6, marginBottom: spacing.sm }}>
+          Shown to staff as a reminder of which network to join before clocking in.
+        </Text>
+        <Button label={savingBrand ? 'Saving...' : 'Save'} onPress={onSaveBrand} disabled={savingBrand} />
       </Card>
 
       <Card style={{ marginTop: spacing.sm }}>
@@ -220,20 +230,26 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
           Staff must be within this radius to clock in. Leave blank to skip the location check.
         </Text>
         <Button
-          label={locating ? 'Getting your location…' : 'Use my current location'}
+          label={locating ? 'Getting your location...' : 'Use my current location'}
           icon="locate"
           variant="secondary"
           onPress={onUseCurrentLocation}
           disabled={locating}
           style={{ marginBottom: spacing.md }}
         />
-        <Input label="Latitude" value={latitude} onChangeText={setLatitude}
-          placeholder="e.g. 5.6037" icon="locate-outline" keyboardType="numbers-and-punctuation" />
-        <Input label="Longitude" value={longitude} onChangeText={setLongitude}
-          placeholder="e.g. -0.1870" icon="locate-outline" keyboardType="numbers-and-punctuation" />
+        <View style={[styles.locationStatus, { backgroundColor: colors.surfaceAlt }]}>
+          <Ionicons
+            name={locationIsSet ? 'checkmark-circle' : 'alert-circle-outline'}
+            size={18}
+            color={locationIsSet ? themeColors.primary : colors.textMuted}
+          />
+          <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 8 }}>
+            {locationIsSet ? 'Location set' : 'No location set yet'}
+          </Text>
+        </View>
         <Input label="Radius (meters)" value={radiusMeters} onChangeText={setRadiusMeters}
           placeholder="e.g. 500" icon="radio-outline" keyboardType="number-pad" />
-        <Button label={savingLocation ? 'Saving…' : 'Save location'} onPress={onSaveLocation} disabled={savingLocation} />
+        <Button label={savingLocation ? 'Saving...' : 'Save location'} onPress={onSaveLocation} disabled={savingLocation} />
       </Card>
 
       {/* Staff & rooms */}
@@ -297,4 +313,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   divider: { height: 1, backgroundColor: colors.border, marginLeft: spacing.md + 32 + spacing.sm },
+  locationStatus: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: radius.md, padding: spacing.sm, marginBottom: spacing.sm,
+  },
 });

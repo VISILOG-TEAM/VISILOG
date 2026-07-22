@@ -18,8 +18,8 @@ interface RegisterCompanyScreenProps {
   navigation: RootStackNavigation;
 }
 
-// RegisterCompanyScreen — the self-serve "sign your company up" entry
-// point. Only *collects* the form here — a company can't actually use
+// RegisterCompanyScreen -- the self-serve "sign your company up" entry
+// point. Only *collects* the form here -- a company can't actually use
 // VisiLog (and doesn't get a company code) until the admin has agreed
 // to the legal terms and gone through the subscription step on
 // LegalAgreementScreen, which is what actually calls registerCompany().
@@ -40,7 +40,7 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Passwords don’t match', 'Please re-enter the same password twice.');
+      Alert.alert("Passwords don't match", 'Please re-enter the same password twice.');
       return;
     }
     navigation.navigate('LegalAgreement', {
@@ -55,7 +55,7 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
 
   return (
     <ImageBackground
-      source={require('../../assets/login-bg-plum.webp')}
+      source={require('../../assets/login-bg.jpg')}
       style={styles.bg}
       resizeMode="cover"
     >
@@ -80,8 +80,8 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
                 <Text style={styles.wordmark}>VisiLog</Text>
                 <Text style={styles.heading}>Register your company</Text>
                 <Text style={styles.subheading}>
-                  Set up VisiLog for your organization. You’ll be the first
-                  Administrator — add your staff roster and office details
+                  Set up VisiLog for your organization. You'll be the first
+                  Administrator -- add your staff roster and office details
                   afterwards in Company Setup.
                 </Text>
 

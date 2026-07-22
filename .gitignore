@@ -2,3 +2,5 @@
 .expo/
 dist/
 web-build/
+.env
+*.patch

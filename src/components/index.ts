@@ -19,3 +19,4 @@ export { default as MultiSelect } from './MultiSelect';
 export { default as BookMeetingForm } from './BookMeetingForm';
 export { default as CsvImportModal } from './CsvImportModal';
 export { default as OrgLogo } from './OrgLogo';
+export { DateChips, TimeChips } from './QuickDateTime';

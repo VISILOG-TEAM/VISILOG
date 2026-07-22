@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { View, FlatList, StyleSheet, Alert } from 'react-native';
+import {
+  View, FlatList, StyleSheet, Alert, Modal, TextInput, Pressable, KeyboardAvoidingView,
+} from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -8,6 +10,7 @@ import {
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
+import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtTime, fmtDate } from '../data/format';
@@ -64,11 +67,12 @@ function AppointmentsList() {
   const { appointments, updateAppointmentStatus, admitAppointment } = useData();
   const [filter, setFilter] = useState<AppointmentFilter>('pending');
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null);
+  const [rejecting, setRejecting] = useState<Appointment | null>(null);
   // Only Employees (and Visitors, on their own Visits screen) can edit
-  // an appointment's time — Receptionist/Manager use Admit/Reject instead.
+  // an appointment's time -- Receptionist/Manager use Admit/Reject instead.
   const canReschedule = user?.role === 'employee';
   // Tapping "Admit" twice before the first request finishes used to
-  // check the same visitor in twice — the row doesn't leave the
+  // check the same visitor in twice -- the row doesn't leave the
   // pending list until the response comes back, so a second tap in
   // that window fired a second, real admit. Track in-flight ids
   // synchronously (a ref, not state) so the second tap is ignored.
@@ -107,21 +111,16 @@ function AppointmentsList() {
     );
   };
 
-  const onReject = (appt: Appointment) => {
-    Alert.alert(
-      'Reject visitor?',
-      `${appt.visitorName} will be denied entry.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: () => updateAppointmentStatus(appt.id, 'rejected').catch(
-            (err) => Alert.alert('Could not reject', err instanceof ApiError ? err.message : 'Something went wrong.')
-          ),
-        },
-      ]
-    );
+  const onReject = (appt: Appointment) => setRejecting(appt);
+
+  const onConfirmReject = async (reason: string) => {
+    if (!rejecting) return;
+    try {
+      await updateAppointmentStatus(rejecting.id, 'rejected', reason);
+      setRejecting(null);
+    } catch (err) {
+      Alert.alert('Could not reject', err instanceof ApiError ? err.message : 'Something went wrong.');
+    }
   };
 
   return (
@@ -150,7 +149,7 @@ function AppointmentsList() {
             title="No appointments here"
             message={
               filter === 'pending'
-                ? 'You’re all caught up - no visitors waiting for approval.'
+                ? "You're all caught up - no visitors waiting for approval."
                 : 'Try a different filter to see appointments in other states.'
             }
           />
@@ -170,6 +169,19 @@ function AppointmentsList() {
         appointment={rescheduling}
         visible={!!rescheduling}
         onClose={() => setRescheduling(null)}
+      />
+
+      <RejectReasonModal
+        visible={!!rejecting}
+        visitorName={rejecting?.visitorName || ''}
+        canReschedule={canReschedule}
+        onCancel={() => setRejecting(null)}
+        onConfirm={onConfirmReject}
+        onRescheduleInstead={() => {
+          const appt = rejecting;
+          setRejecting(null);
+          if (appt) setRescheduling(appt);
+        }}
       />
     </>
   );
@@ -215,10 +227,14 @@ function AppointmentRow({ appointment, canAct, onAdmit, onReject, onReschedule }
           icon="time-outline"
           text={`${fmtDate(appointment.scheduledAt)} - ${fmtTime(appointment.scheduledAt)}`}
         />
-        {/* NFC code, visible so reception can read it aloud if a card fails */}
-        <MetaRow icon="card-outline" text={`Code: ${appointment.nfcCode || '—'}`} />
+        {/* NFC code, visible so reception can read it aloud if a card fails --
+            only assigned once admitted, see AppointmentService.admit */}
+        <MetaRow icon="card-outline" text={`Code: ${appointment.nfcCode || 'Not yet issued'}`} />
         {appointment.rescheduleReason ? (
           <MetaRow icon="swap-horizontal-outline" text={`Rescheduled: ${appointment.rescheduleReason}`} />
+        ) : null}
+        {appointment.rejectReason ? (
+          <MetaRow icon="close-circle-outline" text={`Rejected: ${appointment.rejectReason}`} />
         ) : null}
       </View>
 
@@ -250,6 +266,72 @@ function AppointmentRow({ appointment, canAct, onAdmit, onReject, onReschedule }
         </View>
       )}
     </Card>
+  );
+}
+
+interface RejectReasonModalProps {
+  visible: boolean;
+  visitorName: string;
+  canReschedule: boolean;
+  onCancel: () => void;
+  onConfirm: (reason: string) => void;
+  onRescheduleInstead: () => void;
+}
+
+// A reason is now required to reject a visit (per the backend guard in
+// AppointmentService.updateStatus) so the host always has a record of
+// why -- and if the real issue is just bad timing, "Reschedule instead"
+// routes to RescheduleModal rather than turning the visitor away.
+function RejectReasonModal({
+  visible, visitorName, canReschedule, onCancel, onConfirm, onRescheduleInstead,
+}: RejectReasonModalProps) {
+  const { colors: themeColors } = useTheme();
+  const [reason, setReason] = useState('');
+
+  const onSubmit = () => {
+    if (!reason.trim()) {
+      Alert.alert('Almost there', 'Please give a reason for rejecting this visit.');
+      return;
+    }
+    onConfirm(reason.trim());
+    setReason('');
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <KeyboardAvoidingView style={rejectStyles.wrap} behavior="padding">
+        <View style={rejectStyles.card}>
+          <Text variant="h3">Reject visitor?</Text>
+          <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
+            {visitorName} will be denied entry. Let them know why.
+          </Text>
+          <TextInput
+            value={reason}
+            onChangeText={setReason}
+            placeholder="e.g. No availability that day"
+            placeholderTextColor={colors.textMuted}
+            style={rejectStyles.input}
+            multiline
+          />
+          {canReschedule ? (
+            <Pressable onPress={onRescheduleInstead} style={rejectStyles.rescheduleLink}>
+              <Ionicons name="calendar-outline" size={16} color={themeColors.primary} />
+              <Text variant="caption" color={themeColors.primary} style={{ marginLeft: 6 }}>
+                Just a scheduling conflict? Reschedule instead
+              </Text>
+            </Pressable>
+          ) : null}
+          <View style={rejectStyles.row}>
+            <Pressable onPress={onCancel} style={[rejectStyles.btn, rejectStyles.btnGhost]}>
+              <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
+            </Pressable>
+            <Pressable onPress={onSubmit} style={[rejectStyles.btn, { backgroundColor: themeColors.brand }]}>
+              <Text variant="bodySemibold" color={themeColors.textInverse}>Reject</Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -291,15 +373,15 @@ const ROOM_STATUS_META: Record<RoomStatus, { label: string; badge: StatusKey }> 
 };
 
 // A single FlatList drives the whole screen (every upcoming meeting,
-// room-based or an outside location — previously an outside-location
+// room-based or an outside location -- previously an outside-location
 // booking never showed up *anywhere* after you made it, and a room
 // with several bookings only ever showed the single soonest one). The
 // per-room availability cards sit in the header as a plain, short,
-// non-virtualized list — nesting a second FlatList in there would
+// non-virtualized list -- nesting a second FlatList in there would
 // trigger RN's "VirtualizedLists should never be nested" warning.
 // Lets the organiser tell at a glance who's seen the invite and who's
 // declined (and see the reason via the row itself is enough detail for
-// now — a full per-person breakdown wasn't asked for).
+// now -- a full per-person breakdown wasn't asked for).
 function responseSummary(responses: RoomBooking['responses']): string {
   const acknowledged = responses.filter((r) => r.status === 'acknowledged').length;
   const declined = responses.filter((r) => r.status === 'declined').length;
@@ -326,7 +408,7 @@ function MeetingsView() {
     [roomBookings, meetingRooms]
   );
 
-  // Not filtered by time at all — BookMeetingForm defaults to today's
+  // Not filtered by time at all -- BookMeetingForm defaults to today's
   // date with a fixed 10:00-11:00 window, so a meeting booked later in
   // the day is technically "in the past" the instant it's created; an
   // "upcoming only" filter made it vanish immediately with no way to
@@ -411,12 +493,13 @@ function MeetingsView() {
             <View style={styles.metaList}>
               <MetaRow icon="time-outline"
                 text={`${fmtDate(item.startTime)} · ${fmtTime(item.startTime)} → ${fmtTime(item.endTime)}`} />
-              <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '—'}`} />
+              <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
               {item.participantIds?.length ? (
                 <MetaRow icon="people-outline" text={`${item.participantIds.length} staff invited`} />
               ) : null}
-              {item.externalGuests ? (
-                <MetaRow icon="person-add-outline" text={`Guests: ${item.externalGuests}`} />
+              {item.externalGuests?.length ? (
+                <MetaRow icon="person-add-outline"
+                  text={`Guests: ${item.externalGuests.map((g) => g.name).filter(Boolean).join(', ')}`} />
               ) : null}
               {item.responses?.length ? (
                 <MetaRow icon="checkmark-done-outline" text={responseSummary(item.responses)} />
@@ -442,4 +525,26 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   sectionLabel: { marginBottom: spacing.sm, marginTop: spacing.xs },
+});
+
+const rejectStyles = StyleSheet.create({
+  wrap: {
+    flex: 1, backgroundColor: 'rgba(10,42,29,0.55)',
+    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+  },
+  card: {
+    width: '100%', maxWidth: 360,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+  },
+  input: {
+    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    paddingHorizontal: spacing.sm, paddingVertical: 10, minHeight: 44,
+    fontFamily: fonts.regular, fontSize: 14, color: colors.textPrimary,
+  },
+  rescheduleLink: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
+  row: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
+  btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  btnGhost: { backgroundColor: colors.surfaceAlt },
 });

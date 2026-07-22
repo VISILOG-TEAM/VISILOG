@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Pressable, Alert } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Text, Card, Badge, Avatar, CompanyMapSection,
@@ -27,7 +27,7 @@ interface VisitorHomeScreenProps {
 export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps) {
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const { employees, appointments } = useData();
+  const { employees, appointments, unreadNotificationCount } = useData();
 
   const myBooking = appointments
     .filter((a) => a.bookedByEmail === user!.email)
@@ -35,18 +35,25 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
 
   const host = myBooking ? employees.find((e) => e.id === myBooking.hostId) : null;
 
-  const onNotifications = () => {
-    Alert.alert('Notifications', 'No new notifications right now.');
-  };
-
   return (
     <Screen>
       <View style={styles.topRow}>
         <Pressable onPress={() => navigation.navigate('Settings')}>
           <Avatar name={user?.name || 'You'} size={44} />
         </Pressable>
-        <Pressable onPress={onNotifications} style={[styles.bellBtn, { backgroundColor: themeColors.primarySurface }]} hitSlop={8}>
+        <Pressable
+          onPress={() => navigation.navigate('Notifications')}
+          style={[styles.bellBtn, { backgroundColor: themeColors.primarySurface }]}
+          hitSlop={8}
+        >
           <Ionicons name="notifications-outline" size={22} color={themeColors.brand} />
+          {unreadNotificationCount > 0 ? (
+            <View style={[styles.bellBadge, { backgroundColor: colors.status.rejected.solid }]}>
+              <Text variant="caption" color="#FFFFFF" style={styles.bellBadgeText}>
+                {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
+              </Text>
+            </View>
+          ) : null}
         </Pressable>
       </View>
 
@@ -57,7 +64,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
       </Text>
       <Text variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
         {myBooking
-          ? 'Here’s your latest visit pass.'
+          ? "Here's your latest visit pass."
           : 'Head to the Book tab to schedule a visit and get your NFC pass.'}
       </Text>
 
@@ -76,7 +83,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
             </View>
 
             <Text style={styles.passEyebrow}>
-              VISITOR PASS · #{myBooking.nfcCode}
+              {myBooking.nfcCode ? `VISITOR PASS - #${myBooking.nfcCode}` : 'VISITOR PASS - PENDING APPROVAL'}
             </Text>
             <Text style={styles.passName} numberOfLines={1}>{user?.name || 'Visitor'}</Text>
 
@@ -224,6 +231,12 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
   },
+  bellBadge: {
+    position: 'absolute', top: 2, right: 2,
+    minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  bellBadgeText: { fontSize: 10, lineHeight: 12 },
   welcome: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.textPrimary },
   eyebrow: { marginTop: spacing.md, marginBottom: spacing.sm },
 

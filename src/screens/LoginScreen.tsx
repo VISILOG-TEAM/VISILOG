@@ -21,13 +21,13 @@ interface LoginScreenProps {
 // LoginScreen
 // ---------------------------------------------------------------
 // Uses the original teal-silk background photo (kept on Login/Signup
-// specifically, per design direction — the green gradient is only for
+// specifically, per design direction -- the green gradient is only for
 // the newer Splash/RoleSelect screens). The sign-in/register pill at
-// the top of the card is purely navigational — tapping "Register"
+// the top of the card is purely navigational -- tapping "Register"
 // jumps to the Signup screen (see Segmented usage below).
 //
 // The company code identifies which paying organization (tenant) this
-// login belongs to — VisiLog serves several companies, each with their
+// login belongs to -- VisiLog serves several companies, each with their
 // own data and brand colors, so this resolves both.
 export default function LoginScreen({ navigation }: LoginScreenProps) {
   const { login } = useAuth();
@@ -52,13 +52,13 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const onGoogleLogin = () => {
     Alert.alert(
       'Demo only',
-      'Google sign-in requires a live OAuth backend, which is outside this demo’s scope.'
+      "Google sign-in requires a live OAuth backend, which is outside this demo's scope."
     );
   };
 
   return (
     <ImageBackground
-      source={require('../../assets/login-bg-plum.webp')}
+      source={require('../../assets/login-bg.jpg')}
       style={styles.bg}
       resizeMode="cover"
     >
@@ -78,7 +78,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 blur; on Android it falls back to a translucent fill. */}
             <BlurView intensity={25} tint="light" style={styles.card}>
               <View style={styles.cardInner}>
-                {/* Wordmark — used here instead of a separate logo image */}
+                {/* Wordmark -- used here instead of a separate logo image */}
                 <Text style={styles.wordmark}>VisiLog</Text>
                 <Text style={styles.tagline}>
                   Visitor Management & Reception Operations
@@ -101,7 +101,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   Welcome back. Please sign in to continue.
                 </Text>
 
-                {/* Company code — resolves which organization this login is for */}
+                {/* Company code -- resolves which organization this login is for */}
                 <View style={styles.fieldRow}>
                   <Ionicons name="business-outline" size={18} color="rgba(255,255,255,0.85)" />
                   <TextInput
@@ -167,12 +167,12 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                     style={styles.loginBtn}
                   >
                     <Text style={styles.loginBtnText}>
-                      {submitting ? 'Signing in…' : 'Login'}
+                      {submitting ? 'Signing in...' : 'Login'}
                     </Text>
                   </LinearGradient>
                 </Pressable>
 
-                {/* Google sign-in — UI only, no live OAuth backend in this demo */}
+                {/* Google sign-in -- UI only, no live OAuth backend in this demo */}
                 <Pressable onPress={onGoogleLogin} style={styles.googleBtn}>
                   <Ionicons name="logo-google" size={18} color="#FFFFFF" />
                   <Text style={styles.googleBtnText}>Continue with Google</Text>
@@ -180,16 +180,16 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
                 {/* Signup */}
                 <View style={styles.signupRow}>
-                  <Text style={styles.signupHint}>Don&apos;t have an account? </Text>
-                  <Pressable onPress={() => navigation.navigate('Signup')}>
+                  <Text style={styles.signupHint}>Don&apos;t have an account?{' '}</Text>
+                  <Pressable onPress={() => navigation.navigate('Signup')} hitSlop={6}>
                     <Text style={styles.signupLink}>Signup</Text>
                   </Pressable>
                 </View>
 
                 {/* New company */}
-                <View style={styles.signupRow}>
-                  <Text style={styles.signupHint}>Setting up VisiLog for your company? </Text>
-                  <Pressable onPress={() => navigation.navigate('RegisterCompany')}>
+                <View style={[styles.signupRow, styles.newCompanyRow]}>
+                  <Text style={styles.signupHint}>Setting up VisiLog for your company?{' '}</Text>
+                  <Pressable onPress={() => navigation.navigate('RegisterCompany')} hitSlop={6}>
                     <Text style={styles.signupLink}>Register your company</Text>
                   </Pressable>
                 </View>
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
 
-  // Form fields — translucent so the glass shows through
+  // Form fields -- translucent so the glass shows through
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -321,10 +321,19 @@ const styles = StyleSheet.create({
   },
   googleBtnText: { fontFamily: fonts.medium, fontSize: 14, color: '#FFFFFF' },
 
-  // Signup
-  signupRow: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing.lg },
-  signupHint: { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)' },
-  signupLink: { fontFamily: fonts.bold, fontSize: 13, color: '#FFFFFF' },
+  // Signup -- flexWrap so long copy ("Setting up VisiLog for your
+  // company? Register your company") breaks onto its own centered line
+  // on narrow phones instead of the two Text nodes bunching together.
+  signupRow: {
+    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
+    marginTop: spacing.lg, paddingHorizontal: spacing.sm,
+  },
+  newCompanyRow: { marginTop: spacing.sm },
+  signupHint: {
+    fontFamily: fonts.regular, fontSize: 13, lineHeight: 20,
+    color: 'rgba(255,255,255,0.85)', textAlign: 'center',
+  },
+  signupLink: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 20, color: '#FFFFFF' },
 
   footer: {
     fontFamily: fonts.medium,

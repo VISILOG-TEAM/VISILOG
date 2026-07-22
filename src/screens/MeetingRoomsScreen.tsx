@@ -23,6 +23,7 @@ function mapCsvRow(record: Record<string, string>): MeetingRoomInput {
     capacity: record['capacity'] || '',
     floor: record['floor'] || '',
     photoUrl: null,
+    description: record['description'] || record['directions'] || '',
   };
 }
 
@@ -36,6 +37,7 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
   const [name, setName] = useState('');
   const [capacity, setCapacity] = useState('');
   const [floor, setFloor] = useState('');
+  const [description, setDescription] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [pickingPhoto, setPickingPhoto] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -75,8 +77,11 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
     }
     setAdding(true);
     try {
-      await addMeetingRoom({ name: name.trim(), capacity, floor: floor.trim(), photoUrl: photoUrl || null });
-      setName(''); setCapacity(''); setFloor(''); setPhotoUrl('');
+      await addMeetingRoom({
+        name: name.trim(), capacity, floor: floor.trim(),
+        photoUrl: photoUrl || null, description: description.trim() || null,
+      });
+      setName(''); setCapacity(''); setFloor(''); setPhotoUrl(''); setDescription('');
     } catch (err) {
       Alert.alert('Could not add room', err instanceof ApiError ? err.message : 'Something went wrong.');
     } finally {
@@ -122,6 +127,8 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
                 placeholder="e.g. 3rd Floor" icon="layers-outline" />
             </View>
           </View>
+          <Input label="Description / directions (optional)" value={description} onChangeText={setDescription}
+            placeholder="e.g. Past the kitchen, second door on the left" icon="map-outline" multiline />
           <Pressable onPress={onPickPhoto} disabled={pickingPhoto} style={styles.photoRow}>
             <View style={[styles.photoPreview, { borderColor: colors.border }]}>
               {photoUrl ? (
@@ -161,6 +168,11 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
                 <Text variant="caption" color={colors.textSecondary}>
                   {item.floor || 'No floor set'}{item.capacity ? ` · Capacity ${item.capacity}` : ''}
                 </Text>
+                {item.description ? (
+                  <Text variant="caption" color={colors.textMuted} numberOfLines={2} style={{ marginTop: 2 }}>
+                    {item.description}
+                  </Text>
+                ) : null}
               </View>
               <Pressable onPress={() => onRemove(item)} hitSlop={8}>
                 <Ionicons name="trash-outline" size={20} color={colors.status.rejected.solid} />
@@ -174,7 +186,7 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
         visible={importVisible}
         onClose={() => setImportVisible(false)}
         title="Import rooms"
-        columnsHint="Columns: name, capacity, floor"
+        columnsHint="Columns: name, capacity, floor, description"
         mapRow={mapCsvRow}
         onImport={bulkImportMeetingRooms}
       />

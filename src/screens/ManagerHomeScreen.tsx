@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
 import {
   Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard, OrgLogo,
 } from '../components';
@@ -19,7 +19,7 @@ interface ManagerHomeScreenProps {
 // clock-in/out card every other role gets — an Administrator is staff
 // too, and shows up on their own Clock-ins screen like everyone else.
 export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps) {
-  const { setOrgTheme } = useTheme();
+  const { colors: themeColors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const {
     stats, visitors, calls, employees, employeeById, unreadNotificationCount,
@@ -81,9 +81,14 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
         ))}
       </Card>
 
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Currently on-site
-      </Text>
+      <View style={styles.sectionHeader}>
+        <Text variant="eyebrow" color={colors.textMuted}>
+          Currently on-site
+        </Text>
+        <Pressable onPress={() => navigation.navigate('Visitors')}>
+          <Text variant="label" color={themeColors.primary}>View all visitors</Text>
+        </Pressable>
+      </View>
       <Card>
         {visitors.filter((v) => v.status === 'onsite').map((v) => (
           <View key={v.id} style={styles.row}>
@@ -104,4 +109,8 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
 const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
+  sectionHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginTop: spacing.xl, marginBottom: spacing.sm,
+  },
 });

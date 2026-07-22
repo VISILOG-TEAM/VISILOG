@@ -69,8 +69,8 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
       return;
     }
     Alert.alert(
-      'You’re all set',
-      `${result.organization!.name} is registered and active for the next ${TERM_YEARS} years. Your company code is ${result.organization!.code} — share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`,
+      "You're all set",
+      `${result.organization!.name} is registered and active for the next ${TERM_YEARS} years. Your company code is ${result.organization!.code} -- share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`,
       [{
         text: 'Continue',
         onPress: () => {
@@ -94,7 +94,7 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
         title="Legal agreement"
         subtitle={viewOnly
           ? 'The terms your organization agreed to when it registered.'
-          : "Read and agree to continue — you're a couple of taps from a company code."}
+          : "Read and agree to continue -- you're a couple of taps from a company code."}
         onBackPress={() => navigation.goBack()}
       />
 
@@ -119,7 +119,7 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
               </Text>
             </View>
             <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
-              This is a demo build — no real payment is processed and no card details are collected. Agreeing below activates your subscription immediately.
+              This is a demo build -- no real payment is processed and no card details are collected. Agreeing below activates your subscription immediately.
             </Text>
           </Card>
 
@@ -136,7 +136,7 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
           </Pressable>
 
           <Button
-            label={submitting ? 'Activating…' : `Agree & activate (${TERM_YEARS}-year term)`}
+            label={submitting ? 'Activating...' : `Agree & activate (${TERM_YEARS}-year term)`}
             icon="shield-checkmark-outline"
             onPress={onConfirm}
             disabled={!agreed || submitting}

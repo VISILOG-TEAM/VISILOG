@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: visilog-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/visipro}
+    username: ${DB_USER:visipro}
+    password: ${DB_PASSWORD:visipro}
+  jpa:
+    hibernate:
+      # Flyway owns the schema — Hibernate only validates it matches.
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  # Outside-guest meeting invite emails go through Gmail's SMTP relay
+  # using an account App Password (not the real account password) --
+  # see MailService. Left blank (the default), MailService just skips
+  # sending and logs instead of failing the booking.
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${GMAIL_USERNAME:}
+    password: ${GMAIL_APP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${PORT:8080}
+
+visilog:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-secret-key-visilog-change-me-in-prod-32bytes-min}
+    expiration-ms: 86400000 # 24h
+
+logging:
+  level:
+    com.visilog: INFO

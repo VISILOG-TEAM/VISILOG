@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import { View, SectionList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState,
@@ -7,7 +7,7 @@ import {
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { fmtDateTime } from '../data/format';
+import { fmtDateTime, splitRecentOlder } from '../data/format';
 import type { RootStackNavigation } from '../types/navigation';
 import type { Call, StatusKey } from '../types';
 
@@ -40,6 +40,11 @@ export default function CallLogScreen({ navigation }: CallLogScreenProps) {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [calls, query, filter, employeeById]);
 
+  const sections = useMemo(
+    () => splitRecentOlder(filtered, (c) => c.timestamp),
+    [filtered]
+  );
+
   return (
     <Screen scroll={false} padded={false}>
       <View style={styles.head}>
@@ -67,11 +72,16 @@ export default function CallLogScreen({ navigation }: CallLogScreenProps) {
         />
       </View>
 
-      <FlatList
-        data={filtered}
+      <SectionList
+        sections={sections}
         keyExtractor={(c) => c.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        renderSectionHeader={({ section }) => (
+          <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionHeader}>
+            {section.title}
+          </Text>
+        )}
         ListEmptyComponent={
           <EmptyState
             icon="call-outline"
@@ -134,6 +144,7 @@ function CallRow({ call }: { call: Call }) {
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: 0 },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
+  sectionHeader: { backgroundColor: colors.background, paddingVertical: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'flex-start', padding: spacing.md },
   iconWrap: {
     width: 40, height: 40, borderRadius: 12,

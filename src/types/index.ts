@@ -1,5 +1,5 @@
 // Core domain types shared across the app. These describe the *mapped*
-// (frontend-normalized, lowercase-enum) shapes produced by context/*.tsx —
+// (frontend-normalized, lowercase-enum) shapes produced by context/*.tsx --
 // not the raw backend DTOs, which arrive with UPPERCASE enum strings and
 // get normalized at the DataContext/AuthContext boundary (see mapVisitor,
 // mapAppointment, etc.) so every screen can work with one consistent case.
@@ -43,6 +43,7 @@ export interface Organization {
   logoUrl: string | null;
   theme: BrandTheme;
   officeLocation: OfficeLocation | null;
+  wifiNetworkName: string | null;
 }
 
 export interface Employee {
@@ -86,10 +87,11 @@ export interface Appointment {
   hostId: string;
   scheduledAt: string;
   status: AppointmentStatus;
-  nfcCode: string;
+  nfcCode: string | null;
   bookedByEmail?: string | null;
   rescheduleReason?: string | null;
   rescheduledAt?: string | null;
+  rejectReason?: string | null;
 }
 
 export type CallType = 'Incoming' | 'Outgoing' | 'Missed';
@@ -112,6 +114,7 @@ export interface MeetingRoom {
   capacity: number | null;
   floor: string;
   photoUrl: string | null;
+  description: string | null;
 }
 
 export type ClockType = 'in' | 'out';
@@ -134,6 +137,12 @@ export interface RoomBookingResponse {
   respondedAt: string | null;
 }
 
+export interface ExternalGuest {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
 export interface RoomBooking {
   id: string;
   roomId: string | null;
@@ -143,12 +152,12 @@ export interface RoomBooking {
   startTime: string;
   endTime: string;
   participantIds: string[];
-  externalGuests: string | null;
+  externalGuests: ExternalGuest[];
   priority: MeetingPriority;
   responses: RoomBookingResponse[];
 }
 
-export type NotificationType = 'meeting_invite' | 'meeting_declined';
+export type NotificationType = 'meeting_invite' | 'meeting_declined' | 'visit_admitted' | 'visit_rejected';
 
 export interface AppNotification {
   id: string;
@@ -244,6 +253,7 @@ export interface MeetingRoomInput {
   capacity?: number | string | null;
   floor?: string;
   photoUrl?: string | null;
+  description?: string | null;
 }
 
 export interface BookRoomInput {
@@ -253,12 +263,12 @@ export interface BookRoomInput {
   startTime: string;
   endTime: string;
   participantIds?: string[];
-  externalGuests?: string | null;
+  externalGuests?: ExternalGuest[];
   priority?: MeetingPriority;
 }
 
 // No backend model exists for standalone NFC cards yet (the per-visit
-// NFC code lives on Appointment.nfcCode) — DataContext seeds this as an
+// NFC code lives on Appointment.nfcCode) -- DataContext seeds this as an
 // always-empty array, but NFCCardsScreen is written against this shape
 // so it's ready once/if a real NfcCard endpoint exists.
 export type NfcCardStatus = 'active' | 'revoked';

@@ -21,9 +21,9 @@ interface SignupScreenProps {
 
 // Signup uses the exact same background photo as Login, so the two
 // pages feel like one continuous flow. The sign-in/register pill at
-// the top mirrors Login's — tapping "Sign in" here just goes back.
+// the top mirrors Login's -- tapping "Sign in" here just goes back.
 //
-// Role isn't chosen here — the backend matches `email` against the
+// Role isn't chosen here -- the backend matches `email` against the
 // company's staff roster (that role) or falls back to visitor.
 export default function SignupScreen({ navigation }: SignupScreenProps) {
   const [fullName, setFullName] = useState('');
@@ -44,7 +44,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Passwords don’t match', 'Please re-enter the same password twice.');
+      Alert.alert("Passwords don't match", 'Please re-enter the same password twice.');
       return;
     }
     setSubmitting(true);
@@ -58,7 +58,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
   };
   return (
     <ImageBackground
-      source={require('../../assets/login-bg-plum.webp')}
+      source={require('../../assets/login-bg.jpg')}
       style={styles.bg}
       resizeMode="cover"
     >
@@ -119,7 +119,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
                     style={styles.signupBtn}
                   >
                     <Text style={styles.signupBtnText}>
-                      {submitting ? 'Creating account…' : 'Create account'}
+                      {submitting ? 'Creating account...' : 'Create account'}
                     </Text>
                   </LinearGradient>
                 </Pressable>

@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Button, Input, Select,
+  Screen, Header, Text, Card, Button, Input, Select, DateChips, TimeChips,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -17,7 +17,7 @@ interface VisitorBookScreenProps {
   navigation: RootStackNavigation;
 }
 
-// VisitorBookScreen — the visitor's own "Book" tab. Same fields as the
+// VisitorBookScreen -- the visitor's own "Book" tab. Same fields as the
 // form that used to live on VisitorHomeScreen, given a more formal,
 // sectioned treatment (distinct headers per group) since it's now a
 // dedicated screen rather than embedded on the dashboard.
@@ -58,14 +58,16 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
     submittingRef.current = true;
     setSubmitting(true);
     try {
-      const a = await bookVisit({
+      await bookVisit({
         visitorName: name, visitorPhone: phone, visitorEmail: email, visitorCompany: company,
         purpose: purpose === 'Other' ? otherPurpose.trim() : purpose, hostId,
         scheduledAt: toInstant(date, time),
       });
-      Alert.alert('Booked', `Your visit code is ${a.nfcCode}. Show it at reception.`, [
-        { text: 'Done', onPress: () => navigation.navigate('Home') },
-      ]);
+      Alert.alert(
+        'Booked',
+        "Your visit request has been sent. You'll get a notification with your pass code once your host approves it.",
+        [{ text: 'Done', onPress: () => navigation.navigate('Home') }]
+      );
     } catch (err) {
       Alert.alert('Could not book visit', err instanceof ApiError ? err.message : 'Something went wrong.');
     } finally {
@@ -118,23 +120,16 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
         3 · When
       </Text>
       <Card>
-        <View style={styles.dateRow}>
-          <View style={{ flex: 1 }}>
-            <Input label="Date" value={date} onChangeText={setDate}
-              placeholder="YYYY-MM-DD" icon="calendar-outline" />
-          </View>
-          <View style={{ width: spacing.sm }} />
-          <View style={{ flex: 1 }}>
-            <Input label="Time" value={time} onChangeText={setTime}
-              placeholder="HH:MM" icon="time-outline" />
-          </View>
-        </View>
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Date</Text>
+        <DateChips value={date} onChange={setDate} />
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Time</Text>
+        <TimeChips value={time} onChange={setTime} />
       </Card>
 
       <View style={[styles.notice, { backgroundColor: themeColors.primarySurface }]}>
         <Ionicons name="information-circle" size={18} color={themeColors.primary} />
         <Text variant="caption" color={themeColors.brand} style={{ marginLeft: 8, flex: 1 }}>
-          You’ll receive an NFC pass code once submitted — show it at reception on arrival.
+          You'll receive an NFC pass code once submitted -- show it at reception on arrival.
         </Text>
       </View>
 
@@ -159,7 +154,7 @@ function toInstant(dateStr: string, timeStr: string): string {
 
 const styles = StyleSheet.create({
   sectionLabel: { marginTop: spacing.lg, marginBottom: spacing.xs, textTransform: 'uppercase' },
-  dateRow: { flexDirection: 'row' },
+  chipsLabel: { marginBottom: spacing.xs },
   notice: {
     flexDirection: 'row',
     alignItems: 'flex-start',

@@ -10,7 +10,7 @@ import { useData } from '../context/DataContext';
 import { fmtDate, fmtTime } from '../data/format';
 import type { Appointment, AppointmentStatus, StatusKey } from '../types';
 
-// VisitorVisitsScreen — every booking this visitor has made, past and
+// VisitorVisitsScreen -- every booking this visitor has made, past and
 // pending (VisitorHomeScreen only ever showed the single latest one).
 // Visitors can also reschedule a pending visit, with a reason, same as
 // Employees can on their own Appointments tab.
@@ -60,11 +60,16 @@ export default function VisitorVisitsScreen() {
                 {item.purpose} · Host: {host?.name || 'Unassigned'}
               </Text>
               <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
-                {fmtTime(item.scheduledAt)} · Code {item.nfcCode}
+                {fmtTime(item.scheduledAt)} · Code {item.nfcCode || 'pending approval'}
               </Text>
               {item.rescheduleReason ? (
                 <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
                   Rescheduled: {item.rescheduleReason}
+                </Text>
+              ) : null}
+              {item.rejectReason ? (
+                <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
+                  Reason: {item.rejectReason}
                 </Text>
               ) : null}
               {item.status === 'pending' && (

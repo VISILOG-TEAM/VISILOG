@@ -1,14 +1,20 @@
 import React, { useRef, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, Pressable, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Card from './Card';
 import Button from './Button';
 import Input from './Input';
 import Select from './Select';
 import MultiSelect from './MultiSelect';
 import Segmented from './Segmented';
-import { spacing } from '../theme/spacing';
+import Text from './Text';
+import { DateChips, TimeChips } from './QuickDateTime';
+import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
+import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { ApiError } from '../api/client';
+import type { ExternalGuest } from '../types';
 
 type LocationType = 'room' | 'outside';
 type Priority = 'normal' | 'important' | 'urgent';
@@ -27,6 +33,7 @@ interface BookMeetingFormProps {
 // organiser is derived server-side from the signed-in user's own
 // employee record — see RoomBookingController.
 export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
+  const { colors: themeColors } = useTheme();
   const { employees, meetingRooms, bookRoom } = useData();
 
   const [title, setTitle] = useState('');
@@ -34,13 +41,35 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
   const [roomId, setRoomId] = useState<string | null>(null);
   const [outsideLocation, setOutsideLocation] = useState('');
   const [attendeeIds, setAttendeeIds] = useState<string[]>([]);
-  const [externalGuests, setExternalGuests] = useState('');
+  const [externalGuests, setExternalGuests] = useState<ExternalGuest[]>([]);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
   const [priority, setPriority] = useState<Priority>('normal');
   const [date, setDate] = useState(formatDate(new Date()));
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('11:00');
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+
+  const onAddGuest = () => {
+    if (!guestName.trim()) {
+      Alert.alert('Almost there', "Give the guest's name.");
+      return;
+    }
+    if (!guestEmail.trim() && !guestPhone.trim()) {
+      Alert.alert('Almost there', 'Add an email or phone number so the guest can actually be reached.');
+      return;
+    }
+    setExternalGuests((gs) => [...gs, {
+      name: guestName.trim(), email: guestEmail.trim() || null, phone: guestPhone.trim() || null,
+    }]);
+    setGuestName(''); setGuestEmail(''); setGuestPhone('');
+  };
+
+  const onRemoveGuest = (index: number) => {
+    setExternalGuests((gs) => gs.filter((_, i) => i !== index));
+  };
 
   const onSubmit = async () => {
     if (submittingRef.current) return;
@@ -61,7 +90,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
         startTime: toInstant(date, startTime),
         endTime: toInstant(date, endTime),
         participantIds: attendeeIds,
-        externalGuests: externalGuests.trim(),
+        externalGuests,
         priority,
       });
       Alert.alert('Booked', `${title} is on the calendar.`, [
@@ -139,32 +168,56 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
           }))}
         />
 
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
+          Outside guests (optional)
+        </Text>
+        {externalGuests.map((g, i) => (
+          <View key={i} style={[styles.guestRow, { borderColor: colors.border }]}>
+            <View style={{ flex: 1 }}>
+              <Text variant="bodySemibold">{g.name}</Text>
+              <Text variant="caption" color={colors.textSecondary}>
+                {[g.email, g.phone].filter(Boolean).join(' - ')}
+              </Text>
+            </View>
+            <Pressable onPress={() => onRemoveGuest(i)} hitSlop={8}>
+              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+            </Pressable>
+          </View>
+        ))}
         <Input
-          label="Outside guests (optional)"
-          value={externalGuests}
-          onChangeText={setExternalGuests}
-          placeholder="e.g. Kwame Mensah (client), Ama Boateng"
+          label="Guest name"
+          value={guestName}
+          onChangeText={setGuestName}
+          placeholder="e.g. Kwame Mensah (client)"
           icon="person-add-outline"
         />
-
-        <Input
-          label="Date"
-          value={date}
-          onChangeText={setDate}
-          placeholder="YYYY-MM-DD"
-          icon="calendar-outline"
-        />
-        <View style={styles.timeRow}>
+        <View style={styles.guestContactRow}>
           <View style={{ flex: 1 }}>
-            <Input label="Start" value={startTime} onChangeText={setStartTime}
-              placeholder="HH:MM" icon="time-outline" />
+            <Input label="Email" value={guestEmail} onChangeText={setGuestEmail}
+              placeholder="them@example.com" icon="mail-outline" autoCapitalize="none" keyboardType="email-address" />
           </View>
           <View style={{ width: spacing.sm }} />
           <View style={{ flex: 1 }}>
-            <Input label="End" value={endTime} onChangeText={setEndTime}
-              placeholder="HH:MM" icon="time-outline" />
+            <Input label="Phone" value={guestPhone} onChangeText={setGuestPhone}
+              placeholder="Optional" icon="call-outline" keyboardType="phone-pad" />
           </View>
         </View>
+        <Pressable
+          onPress={onAddGuest}
+          style={[styles.addGuestBtn, { borderColor: themeColors.primary }]}
+        >
+          <Ionicons name="add-circle-outline" size={18} color={themeColors.primary} />
+          <Text variant="bodySemibold" color={themeColors.primary} style={{ marginLeft: 6 }}>
+            Add guest
+          </Text>
+        </Pressable>
+
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Date</Text>
+        <DateChips value={date} onChange={setDate} />
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Start time</Text>
+        <TimeChips value={startTime} onChange={setStartTime} />
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>End time</Text>
+        <TimeChips value={endTime} onChange={setEndTime} />
       </Card>
 
       <Button
@@ -195,5 +248,17 @@ function toInstant(dateStr: string, timeStr: string): string {
 }
 
 const styles = StyleSheet.create({
-  timeRow: { flexDirection: 'row' },
+  chipsLabel: { marginBottom: spacing.xs },
+  guestRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1, borderRadius: radius.md,
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  guestContactRow: { flexDirection: 'row' },
+  addGuestBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderRadius: radius.md, borderStyle: 'dashed',
+    height: 44, marginBottom: spacing.md,
+  },
 });

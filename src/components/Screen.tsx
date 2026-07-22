@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import {
-  View, ScrollView, StyleSheet, KeyboardAvoidingView, type StyleProp, type ViewStyle,
+  View, Image, ScrollView, StyleSheet, KeyboardAvoidingView, type StyleProp, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
@@ -13,6 +13,23 @@ interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   edges?: Edge[];
+}
+
+// A big, faint, diagonal brand mark behind every screen's content --
+// purely decorative (pointerEvents="none" so it never intercepts
+// taps), the same on every role since it's the app's own brand, not
+// an org's. Sits under the ScrollView/View as an absolutely
+// positioned sibling so it never scrolls with the content.
+function Watermark() {
+  return (
+    <View style={styles.watermarkWrap} pointerEvents="none">
+      <Image
+        source={require('../../assets/logo.png')}
+        style={styles.watermarkImage}
+        resizeMode="contain"
+      />
+    </View>
+  );
 }
 
 // Standard page shell: respects the notch/home-indicator, paints the app
@@ -34,6 +51,7 @@ export default function Screen({
   if (scroll) {
     return (
       <SafeAreaView style={[styles.safe, style]} edges={edges}>
+        <Watermark />
         <KeyboardAvoidingView
           style={styles.flex}
           behavior="padding"
@@ -51,6 +69,7 @@ export default function Screen({
   }
   return (
     <SafeAreaView style={[styles.safe, style]} edges={edges}>
+      <Watermark />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior="padding"
@@ -65,4 +84,16 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
   padded: { padding: spacing.md, paddingBottom: spacing.xxxl },
+  watermarkWrap: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  watermarkImage: {
+    width: '180%',
+    height: '60%',
+    opacity: 0.05,
+    transform: [{ rotate: '-25deg' }],
+  },
 });
