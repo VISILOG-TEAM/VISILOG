@@ -7,6 +7,7 @@ import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { useTheme } from '../theme/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 interface ScreenProps {
   children?: ReactNode;
@@ -24,14 +25,18 @@ interface ScreenProps {
 
 // A big, faint, diagonal brand mark behind every screen's content --
 // purely decorative (pointerEvents="none" so it never intercepts
-// taps), the same on every role since it's the app's own brand, not
-// an org's. Sits under the ScrollView/View as an absolutely
-// positioned sibling so it never scrolls with the content.
+// taps). Shows the signed-in org's own uploaded logo once they've set
+// one (Company Setup > Branding), so a company's app actually looks
+// like their own; falls back to the static VisiLog mark before
+// sign-in and for orgs that haven't uploaded a logo yet. Sits under
+// the ScrollView/View as an absolutely positioned sibling so it never
+// scrolls with the content.
 function Watermark() {
+  const { organization } = useAuth();
   return (
     <View style={styles.watermarkWrap} pointerEvents="none">
       <Image
-        source={require('../../assets/logo.png')}
+        source={organization?.logoUrl ? { uri: organization.logoUrl } : require('../../assets/logo.png')}
         style={styles.watermarkImage}
         resizeMode="contain"
       />

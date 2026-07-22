@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import {
-  Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard, OrgLogo,
+  Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -47,7 +47,6 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <OrgLogo />
       <Header
         eyebrow="Manager view"
         title="Overview"

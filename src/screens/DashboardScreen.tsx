@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard, OrgLogo,
+  Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard,
 } from '../components';
 import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -59,11 +59,10 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <OrgLogo />
       <Header
-        eyebrow="VisiLog - Reception"
+        eyebrow="VisiLog · Reception"
         title={`${greeting},`}
-        subtitle={`${user?.name?.split(' ')[0] || 'there'} - Front desk`}
+        subtitle={`${user?.name?.split(' ')[0] || 'there'} · Front desk`}
         rightIcon="notifications-outline"
         onRightPress={() => navigation.navigate('Notifications')}
         badge={unreadNotificationCount}
