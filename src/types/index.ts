@@ -135,6 +135,7 @@ export interface RoomBookingResponse {
   status: MeetingResponseStatus;
   declineReason: string | null;
   respondedAt: string | null;
+  absent: boolean;
 }
 
 export interface ExternalGuest {

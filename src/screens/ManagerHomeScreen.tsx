@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import {
   Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard, OrgLogo,
@@ -16,15 +16,24 @@ interface ManagerHomeScreenProps {
 }
 
 // Manager dashboard: organisation-wide insight, plus the same
-// clock-in/out card every other role gets — an Administrator is staff
+// clock-in/out card every other role gets -- an Administrator is staff
 // too, and shows up on their own Clock-ins screen like everyone else.
 export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps) {
   const { colors: themeColors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const {
-    stats, visitors, calls, employees, employeeById, unreadNotificationCount,
+    stats, visitors, calls, employees, employeeById, unreadNotificationCount, refreshAll,
   } = useData();
   const onLogout = () => { logout(); setOrgTheme(null); };
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshAll();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Top hosts (employees with the most visitors).
   const hostCounts: Record<string, number> = {};
@@ -37,7 +46,7 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
     .map(([id, count]) => ({ employee: employeeById(id), count }));
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <OrgLogo />
       <Header
         eyebrow="Manager view"

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -18,7 +18,7 @@ interface VisitorHomeScreenProps {
   navigation: RootStackNavigation;
 }
 
-// VisitorHomeScreen — the visitor's tab-bar landing page. The booking
+// VisitorHomeScreen -- the visitor's tab-bar landing page. The booking
 // form itself now lives on its own "Book" tab (VisitorBookScreen); this
 // screen is a dashboard: profile + notifications up top, a full-bleed
 // virtual pass card in the org's own brand colors (or a prompt to
@@ -27,7 +27,16 @@ interface VisitorHomeScreenProps {
 export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps) {
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const { employees, appointments, unreadNotificationCount } = useData();
+  const { employees, appointments, unreadNotificationCount, refreshAll } = useData();
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshAll();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const myBooking = appointments
     .filter((a) => a.bookedByEmail === user!.email)
@@ -36,7 +45,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
   const host = myBooking ? employees.find((e) => e.id === myBooking.hostId) : null;
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <View style={styles.topRow}>
         <Pressable onPress={() => navigation.navigate('Settings')}>
           <Avatar name={user?.name || 'You'} size={44} />
@@ -91,7 +100,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               <View style={{ flex: 1 }}>
                 <Text style={styles.passMetaLabel}>Host</Text>
                 <Text style={styles.passMetaValue} numberOfLines={1}>
-                  {host?.name || '—'}
+                  {host?.name || '--'}
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -117,11 +126,11 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
             Details you submitted
           </Text>
           <Card>
-            <DetailRow label="Company" value={myBooking.visitorCompany || '—'} />
+            <DetailRow label="Company" value={myBooking.visitorCompany || '--'} />
             <View style={styles.hairline} />
-            <DetailRow label="Purpose" value={myBooking.purpose || '—'} />
+            <DetailRow label="Purpose" value={myBooking.purpose || '--'} />
             <View style={styles.hairline} />
-            <DetailRow label="Contact" value={myBooking.visitorPhone || '—'} />
+            <DetailRow label="Contact" value={myBooking.visitorPhone || '--'} />
           </Card>
 
           {/* Visit status timeline */}

@@ -1,10 +1,12 @@
 import React, { type ReactNode } from 'react';
 import {
-  View, Image, ScrollView, StyleSheet, KeyboardAvoidingView, type StyleProp, type ViewStyle,
+  View, Image, ScrollView, StyleSheet, KeyboardAvoidingView, RefreshControl,
+  type StyleProp, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
+import { useTheme } from '../theme/ThemeContext';
 
 interface ScreenProps {
   children?: ReactNode;
@@ -13,6 +15,11 @@ interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   edges?: Edge[];
+  // Pull-to-refresh -- only wired up on the scroll={true} (default)
+  // variant, since scroll={false} screens manage their own FlatList
+  // (which takes its own refreshControl prop directly).
+  refreshing?: boolean;
+  onRefresh?: () => void;
 }
 
 // A big, faint, diagonal brand mark behind every screen's content --
@@ -38,7 +45,7 @@ function Watermark() {
 //
 // Wrapped in KeyboardAvoidingView so forms (Register visitor, Add
 // employee, Book a visit, etc.) don't get their lower fields hidden
-// behind the on-screen keyboard — every screen built on Screen gets
+// behind the on-screen keyboard -- every screen built on Screen gets
 // this for free instead of each one having to wire it up itself.
 export default function Screen({
   children,
@@ -47,7 +54,10 @@ export default function Screen({
   style,
   contentStyle,
   edges = ['top'],
+  refreshing,
+  onRefresh,
 }: ScreenProps) {
+  const { colors: themeColors } = useTheme();
   if (scroll) {
     return (
       <SafeAreaView style={[styles.safe, style]} edges={edges}>
@@ -60,6 +70,11 @@ export default function Screen({
             contentContainerStyle={[padded && styles.padded, contentStyle]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />
+              ) : undefined
+            }
           >
             {children}
           </ScrollView>

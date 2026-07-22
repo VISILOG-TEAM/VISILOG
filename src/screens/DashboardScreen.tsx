@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -17,7 +17,7 @@ interface DashboardScreenProps {
   navigation: RootStackNavigation;
 }
 
-// DashboardScreen — the receptionist's landing page.
+// DashboardScreen -- the receptionist's landing page.
 // Implements the four headline stats from the VisiLog User Guide:
 //   1. Visitors Today
 //   2. Currently Checked-In
@@ -27,7 +27,20 @@ interface DashboardScreenProps {
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const { colors: themeColors } = useTheme();
   const { user } = useAuth();
-  const { stats, visitors, appointments, employeeById, unreadNotificationCount } = useData();
+  const { stats, visitors, appointments, employeeById, unreadNotificationCount, refreshAll } = useData();
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Previously the only way to see something that changed server-side
+  // (e.g. a pending appointment someone else booked) was to sign out
+  // and back in -- pull down to refetch everything instead.
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshAll();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Personalise the greeting by time of day.
   const greeting = (() => {
@@ -45,7 +58,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const pending = appointments.filter((a) => a.status === 'pending');
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <OrgLogo />
       <Header
         eyebrow="VisiLog · Reception"
@@ -58,7 +71,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
       <ClockCard />
 
-      {/* Four headline stats — rendered as a 2x2 grid */}
+      {/* Four headline stats -- rendered as a 2x2 grid */}
       <View style={[styles.statsRow, { marginTop: spacing.md }]}>
         <StatTile icon="people" tint="primary" label="Visitors today" value={stats.visitorsToday} />
         <View style={{ width: spacing.sm }} />
@@ -91,7 +104,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
         </Pressable>
       )}
 
-      {/* Quick actions — Visitors, Directory, NFC lookup/cards & Call
+      {/* Quick actions -- Visitors, Directory, NFC lookup/cards & Call
           log all live here now instead of as their own tabs/More menu,
           since the bottom bar shrank to 4 tabs. */}
       <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionEyebrow}>

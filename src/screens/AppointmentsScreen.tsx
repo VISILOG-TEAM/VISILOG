@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  View, FlatList, StyleSheet, Alert, Modal, TextInput, Pressable, KeyboardAvoidingView,
+  View, FlatList, StyleSheet, Alert, Modal, TextInput, Pressable, KeyboardAvoidingView, ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -64,10 +65,23 @@ type AppointmentFilter = AppointmentStatus | 'all';
 
 function AppointmentsList() {
   const { user } = useAuth();
-  const { appointments, updateAppointmentStatus, admitAppointment } = useData();
+  const { appointments, updateAppointmentStatus, admitAppointment, refreshAll } = useData();
   const [filter, setFilter] = useState<AppointmentFilter>('pending');
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null);
   const [rejecting, setRejecting] = useState<Appointment | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Previously the only way to see a new pending appointment someone
+  // else just booked was to sign out and back in -- pull down to
+  // refetch everything instead.
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshAll();
+    } finally {
+      setRefreshing(false);
+    }
+  };
   // Only Employees (and Visitors, on their own Visits screen) can edit
   // an appointment's time -- Receptionist/Manager use Admit/Reject instead.
   const canReschedule = user?.role === 'employee';
@@ -142,6 +156,7 @@ function AppointmentsList() {
         data={filtered}
         keyExtractor={(a) => a.id}
         contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         ListEmptyComponent={
           <EmptyState
@@ -395,13 +410,36 @@ function responseSummary(responses: RoomBooking['responses']): string {
 
 function MeetingsView() {
   const { colors: themeColors } = useTheme();
-  const { roomBookings, meetingRooms, employeeById, roomById, refreshRoomBookings } = useData();
+  const { user } = useAuth();
+  const {
+    roomBookings, meetingRooms, employeeById, roomById, refreshRoomBookings, markParticipantAbsent,
+  } = useData();
+  const [attendanceForId, setAttendanceForId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
       refreshRoomBookings().catch(() => {});
     }, [])
   );
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshRoomBookings();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const attendanceBooking = roomBookings.find((b) => b.id === attendanceForId) || null;
+
+  const onToggleAbsent = (employeeId: string, absent: boolean) => {
+    if (!attendanceForId) return;
+    markParticipantAbsent(attendanceForId, employeeId, absent).catch(
+      (err) => Alert.alert('Could not update attendance', err instanceof ApiError ? err.message : 'Something went wrong.')
+    );
+  };
 
   const rooms = useMemo(
     () => meetingRooms.map((r) => ({ room: r, ...roomStatus(r, roomBookings) })),
@@ -420,10 +458,12 @@ function MeetingsView() {
   );
 
   return (
+    <>
     <FlatList
       data={sortedMeetings}
       keyExtractor={(b) => b.id}
       contentContainerStyle={styles.list}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
       ListHeaderComponent={
         <>
@@ -450,7 +490,7 @@ function MeetingsView() {
                     </View>
                     {booking && status !== 'available' ? (
                       <MetaRow icon="time-outline"
-                        text={`Next: ${fmtTime(booking.startTime)} -> ${fmtTime(booking.endTime)}`} />
+                        text={`Next: ${fmtTime(booking.startTime)} → ${fmtTime(booking.endTime)}`} />
                     ) : null}
                   </Card>
                 );
@@ -492,7 +532,7 @@ function MeetingsView() {
             </View>
             <View style={styles.metaList}>
               <MetaRow icon="time-outline"
-                text={`${fmtDate(item.startTime)} · ${fmtTime(item.startTime)} -> ${fmtTime(item.endTime)}`} />
+                text={`${fmtDate(item.startTime)} · ${fmtTime(item.startTime)} → ${fmtTime(item.endTime)}`} />
               <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
               {item.participantIds?.length ? (
                 <MetaRow icon="people-outline" text={`${item.participantIds.length} staff invited`} />
@@ -505,10 +545,82 @@ function MeetingsView() {
                 <MetaRow icon="checkmark-done-outline" text={responseSummary(item.responses)} />
               ) : null}
             </View>
+            {item.organiserId === user?.employeeId && item.participantIds?.length
+              && new Date(item.endTime).getTime() < Date.now() ? (
+              <Button
+                label="Mark attendance"
+                variant="secondary"
+                icon="checkmark-circle-outline"
+                onPress={() => setAttendanceForId(item.id)}
+              />
+            ) : null}
           </Card>
         );
       }}
     />
+    <MarkAttendanceModal
+      visible={!!attendanceForId}
+      booking={attendanceBooking}
+      onClose={() => setAttendanceForId(null)}
+      onToggle={onToggleAbsent}
+    />
+    </>
+  );
+}
+
+interface MarkAttendanceModalProps {
+  visible: boolean;
+  booking: RoomBooking | null;
+  onClose: () => void;
+  onToggle: (employeeId: string, absent: boolean) => void;
+}
+
+// Lets the organiser mark who actually showed up, after the meeting --
+// independent of whether that person acknowledged or declined
+// beforehand (acknowledging an invite doesn't guarantee attendance).
+// Only invited staff have a response row to toggle; external guests
+// aren't tracked here.
+function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttendanceModalProps) {
+  const { colors: themeColors } = useTheme();
+  const { employeeById } = useData();
+
+  if (!booking) return null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={rejectStyles.wrap}>
+        <View style={rejectStyles.card}>
+          <Text variant="h3">Mark attendance</Text>
+          <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
+            {booking.title}
+          </Text>
+          <ScrollView style={{ maxHeight: 320 }}>
+            {booking.participantIds.map((id) => {
+              const employee = employeeById(id);
+              const response = booking.responses.find((r) => r.employeeId === id);
+              const absent = response?.absent || false;
+              return (
+                <View key={id} style={attendanceStyles.row}>
+                  <Text variant="bodySemibold" style={{ flex: 1 }}>{employee?.name || 'Unknown'}</Text>
+                  <Pressable
+                    onPress={() => onToggle(id, !absent)}
+                    style={[
+                      attendanceStyles.pill,
+                      { backgroundColor: absent ? colors.status.rejected.solid : themeColors.brand },
+                    ]}
+                  >
+                    <Text variant="caption" color={themeColors.textInverse}>
+                      {absent ? 'Absent' : 'Present'}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </ScrollView>
+          <Button label="Done" variant="secondary" onPress={onClose} style={{ marginTop: spacing.md }} />
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -547,4 +659,14 @@ const rejectStyles = StyleSheet.create({
   row: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
   btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   btnGhost: { backgroundColor: colors.surfaceAlt },
+});
+
+const attendanceStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border,
+  },
+  pill: {
+    paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.md,
+  },
 });

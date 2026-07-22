@@ -33,6 +33,12 @@
         {
           "photosPermission": "VisiLog needs access to your photos to let you upload a company logo or meeting room photo."
         }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "VisiLog uses Face ID to confirm it's you before clocking in."
+        }
       ]
     ]
   }

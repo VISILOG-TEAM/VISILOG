@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -22,18 +22,27 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
   const { colors: themeColors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const {
-    appointments, calls, updateAppointmentStatus, admitAppointment, unreadNotificationCount,
+    appointments, calls, updateAppointmentStatus, admitAppointment, unreadNotificationCount, refreshAll,
   } = useData();
   const onLogout = () => { logout(); setOrgTheme(null); };
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshAll();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // The backend already scopes GET /appointments to only this employee's
-  // own hosted visits (see AppointmentService.list) — reception is the
+  // own hosted visits (see AppointmentService.list) -- reception is the
   // only role that ever gets the whole org's list.
   const myPending = appointments.filter((a) => a.status === 'pending');
   const myCalls = calls.slice(0, 3);
 
   return (
-    <Screen>
+    <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <OrgLogo />
       <Header
         eyebrow="Employee dashboard"

@@ -3,6 +3,7 @@ import {
   View, StyleSheet, Alert, Modal, TextInput, Pressable,
   KeyboardAvoidingView,
 } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 import Text from './Text';
 import Card from './Card';
 import Button from './Button';
@@ -17,17 +18,20 @@ import { isOnWifi } from '../data/wifiCheck';
 import { isAtOffice } from '../data/locationCheck';
 import { ApiError } from '../api/client';
 
-// ClockCard — the personal "on the clock" card shared by every role's
+// ClockCard -- the personal "on the clock" card shared by every role's
 // home screen. Backed by DataContext's shared clock ledger (not local
 // state) so the Manager's Clock-ins screen sees the same records.
 //
 // Clocking IN requires: (1) a best-effort WiFi check, (2) a best-effort
 // GPS geofence check against the signed-in org's office location, (3)
-// re-entering your own password — this doesn't stop someone who
-// genuinely knows a coworker's password, but blocks the far more
-// common case of clocking in from a phone someone else left signed in
-// and unattended — and (4) not having already clocked in once today.
-// Clocking OUT never blocks.
+// confirming it's really you -- an on-device biometric prompt (Face
+// ID/fingerprint) when the device has one enrolled, falling back to
+// re-entering your own password otherwise (or if the biometric prompt
+// itself is cancelled/fails) -- and (4) not having already clocked in
+// once today. None of this stops someone who genuinely knows a
+// coworker's password/has their fingerprint, but it blocks the far
+// more common case of clocking in from a phone someone else left
+// signed in and unattended. Clocking OUT never blocks.
 export default function ClockCard() {
   const { user, organization, verifyPassword } = useAuth();
   const { clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday } = useData();
@@ -41,10 +45,19 @@ export default function ClockCard() {
   const lastRecord = clockRecords.find((c) => c.employeeId === employeeId);
   const doneForToday = !clockedIn && hasClockedInToday(employeeId);
 
+  const performClockIn = async () => {
+    try {
+      const r = await clockIn(employeeId, user!.name);
+      Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
+    } catch (err) {
+      Alert.alert('Could not clock in', err instanceof ApiError ? err.message : 'Something went wrong.');
+    }
+  };
+
   const toggle = async () => {
     if (!clockedIn) {
       if (hasClockedInToday(employeeId)) {
-        Alert.alert('Already clocked in today', 'You can only clock in once per day — see you tomorrow.');
+        Alert.alert('Already clocked in today', 'You can only clock in once per day -- see you tomorrow.');
         return;
       }
       setChecking(true);
@@ -60,6 +73,28 @@ export default function ClockCard() {
         Alert.alert('Location check failed', locationResult.error);
         return;
       }
+
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = hasHardware && await LocalAuthentication.isEnrolledAsync();
+      if (isEnrolled) {
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Confirm it is you to clock in',
+          cancelLabel: 'Use password instead',
+        });
+        setChecking(false);
+        if (result.success) {
+          await performClockIn();
+          return;
+        }
+        // Cancelled, failed, or "Use password instead" was tapped --
+        // fall back to the password modal rather than blocking the
+        // clock-in outright (e.g. a dirty fingerprint sensor shouldn't
+        // strand someone off the clock all day).
+        setPassword('');
+        setConfirmVisible(true);
+        return;
+      }
+
       setChecking(false);
       setPassword('');
       setConfirmVisible(true);
@@ -82,16 +117,10 @@ export default function ClockCard() {
       Alert.alert('Could not verify you', result.error);
       return;
     }
-    try {
-      const r = await clockIn(employeeId, user!.name);
-      setConfirmVisible(false);
-      setPassword('');
-      Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
-    } catch (err) {
-      Alert.alert('Could not clock in', err instanceof ApiError ? err.message : 'Something went wrong.');
-    } finally {
-      setConfirming(false);
-    }
+    setConfirmVisible(false);
+    setPassword('');
+    setConfirming(false);
+    await performClockIn();
   };
 
   return (
@@ -106,12 +135,12 @@ export default function ClockCard() {
             </Text>
           ) : doneForToday ? (
             <Text variant="caption" color={colors.textMuted}>
-              Done for today — see you tomorrow.
+              Done for today -- see you tomorrow.
             </Text>
           ) : null}
         </View>
         <Button
-          label={checking ? 'Checking…' : clockedIn ? 'Check out' : doneForToday ? 'Done for today' : 'Check in'}
+          label={checking ? 'Checking...' : clockedIn ? 'Check out' : doneForToday ? 'Done for today' : 'Check in'}
           icon={clockedIn ? 'log-out-outline' : 'log-in-outline'}
           variant={clockedIn ? 'danger' : 'primary'}
           onPress={toggle}
@@ -140,8 +169,9 @@ interface ConfirmClockInModalProps {
   onConfirm: () => void;
 }
 
-// A quick re-entry of your own password before a clock-in actually
-// records — see the note on ClockCard above for why.
+// Fallback for devices with no biometric enrolled (or when the
+// biometric prompt itself was cancelled/failed) -- see the note on
+// ClockCard above.
 function ConfirmClockInModal({
   visible, password, onChangePassword, confirming, onCancel, onConfirm,
 }: ConfirmClockInModalProps) {
@@ -179,7 +209,7 @@ function ConfirmClockInModal({
               ]}
             >
               <Text variant="bodySemibold" color={colors.textInverse}>
-                {confirming ? 'Checking…' : 'Clock in'}
+                {confirming ? 'Checking...' : 'Clock in'}
               </Text>
             </Pressable>
           </View>

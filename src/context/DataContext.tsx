@@ -15,7 +15,7 @@ import type {
 // UI doesn't need a full refetch after every action.
 //
 // Backend enums come back as UPPERCASE strings (VisitorStatus, Role,
-// etc.) — every screen in this app was built against the mock data's
+// etc.) -- every screen in this app was built against the mock data's
 // lowercase/Capitalized casing, so the map* helpers below normalize at
 // the boundary and every screen keeps working unchanged.
 
@@ -95,6 +95,8 @@ interface DataContextValue {
   // lookup helpers
   employeeById: (id: string) => Employee | undefined;
   roomById: (id: string) => MeetingRoom | undefined;
+  // pull-to-refresh -- refetches every collection above in one go
+  refreshAll: () => Promise<void>;
   // operations
   registerAndCheckIn: (input: RegisterVisitorInput) => Promise<Visitor>;
   checkOutVisitor: (visitorId: string, notes?: string) => Promise<Visitor>;
@@ -123,6 +125,7 @@ interface DataContextValue {
   bookRoom: (input: BookRoomInput) => Promise<RoomBooking>;
   refreshRoomBookings: () => Promise<void>;
   respondToMeeting: (bookingId: string, status: 'acknowledged' | 'declined', reason?: string) => Promise<void>;
+  markParticipantAbsent: (bookingId: string, employeeId: string, absent: boolean) => Promise<void>;
   // billing / subscriptions
   plans: Plan[];
   billing: Billing | null;
@@ -151,7 +154,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [calls, setCalls] = useState<Call[]>([]);
-  // No backend model for standalone NFC cards in this pass — the
+  // No backend model for standalone NFC cards in this pass -- the
   // per-visit NFC code lives on the appointment itself (see nfcCode).
   const [nfcCards] = useState<NfcCard[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -163,9 +166,55 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
-  // Load every collection once a user is signed in. Billing/invoices
-  // are manager-only on the backend, so non-managers skip those calls
-  // entirely rather than getting a 403.
+  // Fetches every collection for the signed-in user. Used both for the
+  // one-time load on sign-in and as the shared pull-to-refresh action
+  // every screen calls -- previously the only way to see something
+  // that changed server-side (e.g. a new pending appointment someone
+  // else booked) was to sign out and back in, since nothing ever
+  // refetched on its own. Billing/invoices are manager-only on the
+  // backend, so non-managers skip those calls entirely rather than
+  // getting a 403.
+  const loadAll = async (): Promise<void> => {
+    if (!user) return;
+    const isManager = user.role === 'manager';
+    const appointmentsPath = user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';
+
+    const [v, a, c, e, r, cr, rb, p] = await Promise.all([
+      apiClient.get<VisitorDto[]>('/api/v1/visitors'),
+      apiClient.get<AppointmentDto[]>(appointmentsPath),
+      apiClient.get<CallDto[]>('/api/v1/calls'),
+      apiClient.get<EmployeeDto[]>('/api/v1/employees'),
+      apiClient.get<MeetingRoom[]>('/api/v1/meeting-rooms'),
+      apiClient.get<ClockRecordDto[]>('/api/v1/clock-records'),
+      apiClient.get<RoomBookingDto[]>('/api/v1/room-bookings'),
+      apiClient.get<PlanDto[]>('/api/v1/plans'),
+    ]);
+    setVisitors(v.map(mapVisitor));
+    setAppointments(a.map(mapAppointment));
+    setCalls(c.map(mapCall));
+    setEmployees(e.map(mapEmployee));
+    setMeetingRooms(r);
+    setClockRecords(cr.map(mapClockRecord));
+    setRoomBookings(rb.map(mapRoomBooking));
+    setPlans(p.map(mapPlan));
+
+    if (isManager) {
+      const [b, inv] = await Promise.all([
+        apiClient.get<BillingDto>('/api/v1/billing'),
+        apiClient.get<InvoiceDto[]>('/api/v1/billing/invoices'),
+      ]);
+      setBilling(mapBilling(b));
+      setInvoices(inv.map(mapInvoice));
+    }
+
+    // Visitors have no employeeId, so there's nothing for them to be
+    // notified about (meeting invites only ever target staff).
+    if (user.employeeId) {
+      const n = await apiClient.get<NotificationDto[]>('/api/v1/notifications');
+      setNotifications(n.map(mapNotification));
+    }
+  };
+
   useEffect(() => {
     if (!user) {
       setVisitors([]); setAppointments([]); setCalls([]); setEmployees([]);
@@ -173,46 +222,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setBilling(null); setInvoices([]); setPlans([]); setNotifications([]);
       return;
     }
-    const isManager = user.role === 'manager';
-    const appointmentsPath = user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';
-
-    (async () => {
-      const [v, a, c, e, r, cr, rb, p] = await Promise.all([
-        apiClient.get<VisitorDto[]>('/api/v1/visitors'),
-        apiClient.get<AppointmentDto[]>(appointmentsPath),
-        apiClient.get<CallDto[]>('/api/v1/calls'),
-        apiClient.get<EmployeeDto[]>('/api/v1/employees'),
-        apiClient.get<MeetingRoom[]>('/api/v1/meeting-rooms'),
-        apiClient.get<ClockRecordDto[]>('/api/v1/clock-records'),
-        apiClient.get<RoomBookingDto[]>('/api/v1/room-bookings'),
-        apiClient.get<PlanDto[]>('/api/v1/plans'),
-      ]);
-      setVisitors(v.map(mapVisitor));
-      setAppointments(a.map(mapAppointment));
-      setCalls(c.map(mapCall));
-      setEmployees(e.map(mapEmployee));
-      setMeetingRooms(r);
-      setClockRecords(cr.map(mapClockRecord));
-      setRoomBookings(rb.map(mapRoomBooking));
-      setPlans(p.map(mapPlan));
-
-      if (isManager) {
-        const [b, inv] = await Promise.all([
-          apiClient.get<BillingDto>('/api/v1/billing'),
-          apiClient.get<InvoiceDto[]>('/api/v1/billing/invoices'),
-        ]);
-        setBilling(mapBilling(b));
-        setInvoices(inv.map(mapInvoice));
-      }
-
-      // Visitors have no employeeId, so there's nothing for them to be
-      // notified about (meeting invites only ever target staff).
-      if (user.employeeId) {
-        const n = await apiClient.get<NotificationDto[]>('/api/v1/notifications');
-        setNotifications(n.map(mapNotification));
-      }
-    })();
+    loadAll();
   }, [user?.id]);
+
+  const refreshAll = async (): Promise<void> => {
+    await loadAll();
+  };
 
   // ---- lookup helpers ----
   const employeeById = (id: string) => employees.find((e) => e.id === id);
@@ -297,7 +312,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return call;
   };
 
-  // ---- directory (staff roster) operations — manager only ----
+  // ---- directory (staff roster) operations -- manager only ----
 
   const addEmployee = async (input: EmployeeInput): Promise<Employee> => {
     const dto = await apiClient.post<EmployeeDto>('/api/v1/employees', {
@@ -309,7 +324,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return employee;
   };
 
-  // CSV bulk import — parsed rows come in already shaped like
+  // CSV bulk import -- parsed rows come in already shaped like
   // EmployeeInput (see DirectoryScreen's mapRow); the backend still
   // validates and reports back per-row, since a CSV can have typos a
   // single-add form would never let through.
@@ -354,7 +369,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return room;
   };
 
-  // CSV bulk import — see bulkImportEmployees above for the pattern.
+  // CSV bulk import -- see bulkImportEmployees above for the pattern.
   const bulkImportMeetingRooms = async (rows: MeetingRoomInput[]): Promise<BulkImportResult<MeetingRoom>> => {
     const res = await apiClient.post<{ created: MeetingRoom[]; errors: BulkImportResult<never>['errors'] }>(
       '/api/v1/meeting-rooms/bulk',
@@ -400,7 +415,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   // Everything above only reflects actions taken in *this* signed-in
-  // session — a receptionist clocking in on their own phone doesn't
+  // session -- a receptionist clocking in on their own phone doesn't
   // push anything to a manager's already-open app (no websockets/
   // polling in this build). ManagerClockInsScreen calls this whenever
   // it comes into focus so it actually picks up everyone else's
@@ -410,7 +425,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setClockRecords(cr.map(mapClockRecord));
   };
 
-  // Records are newest-first — these stay synchronous, derived from the
+  // Records are newest-first -- these stay synchronous, derived from the
   // locally-held ledger, so ClockCard's render logic doesn't change.
   const isClockedIn = (employeeId: string): boolean => {
     const mine = clockRecords.find((c) => c.employeeId === employeeId);
@@ -452,6 +467,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const dto = await apiClient.patch<RoomBookingDto>(`/api/v1/room-bookings/${bookingId}/respond`, {
       status, reason,
     });
+    const updated = mapRoomBooking(dto);
+    setRoomBookings((rs) => rs.map((b) => (b.id === bookingId ? updated : b)));
+  };
+
+  // Organiser marking who actually showed up to their own meeting,
+  // after the fact -- independent of whether that person acknowledged
+  // or declined beforehand.
+  const markParticipantAbsent = async (
+    bookingId: string, employeeId: string, absent: boolean
+  ): Promise<void> => {
+    const dto = await apiClient.patch<RoomBookingDto>(
+      `/api/v1/room-bookings/${bookingId}/participants/${employeeId}/absent`, { absent }
+    );
     const updated = mapRoomBooking(dto);
     setRoomBookings((rs) => rs.map((b) => (b.id === bookingId ? updated : b)));
   };
@@ -537,6 +565,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         visitors, appointments, calls, nfcCards, roomBookings, employees, meetingRooms,
         // lookup helpers
         employeeById, roomById,
+        // pull-to-refresh
+        refreshAll,
         // operations
         registerAndCheckIn, checkOutVisitor,
         updateAppointmentStatus, admitAppointment,
@@ -546,7 +576,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // work attendance (clock in/out) + appointment rescheduling
         clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, refreshClockRecords, rescheduleAppointment,
         // self-service room booking
-        bookRoom, refreshRoomBookings, respondToMeeting,
+        bookRoom, refreshRoomBookings, respondToMeeting, markParticipantAbsent,
         // billing / subscriptions
         plans, billing, invoices, changePlan,
         // in-app notifications
