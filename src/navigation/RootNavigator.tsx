@@ -7,6 +7,7 @@ import SplashScreen from '../screens/SplashScreen';
 // Auth / onboarding screens
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import RegisterCompanyScreen from '../screens/RegisterCompanyScreen';
 import LegalAgreementScreen from '../screens/LegalAgreementScreen';
 
@@ -39,7 +40,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 // Root navigator. Role is fixed server-side at signup (matched against
 // the company's staff roster, or visitor if there's no match), so a
-// signed-in user goes straight to their role's tab shell — no picker,
+// signed-in user goes straight to their role's tab shell -- no picker,
 // no ID-verify step. `initializing` covers the one-time check for a
 // previously-stored session on cold start.
 export default function RootNavigator() {
@@ -56,6 +57,7 @@ export default function RootNavigator() {
         <Stack.Group>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="RegisterCompany" component={RegisterCompanyScreen} />
           <Stack.Screen name="LegalAgreement" component={LegalAgreementScreen} />
         </Stack.Group>

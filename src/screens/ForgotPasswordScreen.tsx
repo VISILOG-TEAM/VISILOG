@@ -1,0 +1,290 @@
+import React, { useState } from 'react';
+import {
+  View, ImageBackground, StyleSheet, Pressable, TextInput,
+  KeyboardAvoidingView, Platform, ScrollView, Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../components';
+import { fonts } from '../theme/typography';
+import { spacing, radius } from '../theme/spacing';
+import { useAuth } from '../context/AuthContext';
+import type { RootStackNavigation } from '../types/navigation';
+
+interface ForgotPasswordScreenProps {
+  navigation: RootStackNavigation;
+}
+
+// ForgotPasswordScreen -- a two-step recovery flow: request a numeric
+// code by email, then enter that code alongside a new password. Chose
+// an emailed code over a clickable reset link specifically to avoid the
+// custom-URI-scheme restrictions Google Sign-In ran into (see
+// OAuthRedirectController) -- this needs no deep link at all.
+export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScreenProps) {
+  const { forgotPassword, resetPassword } = useAuth();
+  const [step, setStep] = useState<'request' | 'reset'>('request');
+  const [companyCode, setCompanyCode] = useState('');
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const onRequestCode = async () => {
+    if (!companyCode.trim() || !email.trim()) {
+      Alert.alert('Almost there', 'Enter your company code and email address.');
+      return;
+    }
+    setSubmitting(true);
+    const result = await forgotPassword(companyCode, email);
+    setSubmitting(false);
+    if (!result.ok) {
+      Alert.alert('Could not send code', result.message);
+      return;
+    }
+    Alert.alert('Check your email', result.message);
+    setStep('reset');
+  };
+
+  const onResetPassword = async () => {
+    if (!code.trim() || newPassword.length < 6) {
+      Alert.alert('Almost there', 'Enter the code from your email and a password of at least 6 characters.');
+      return;
+    }
+    setSubmitting(true);
+    const result = await resetPassword(companyCode, email, code, newPassword);
+    setSubmitting(false);
+    if (!result.ok) {
+      Alert.alert('Could not reset password', result.message);
+      return;
+    }
+    Alert.alert('Password reset', result.message, [
+      { text: 'OK', onPress: () => navigation.navigate('Login') },
+    ]);
+  };
+
+  return (
+    <ImageBackground
+      source={require('../../assets/login-bg.jpg')}
+      style={styles.bg}
+      resizeMode="cover"
+    >
+      <StatusBar style="light" />
+      <View style={styles.wash} />
+      <SafeAreaView style={styles.safe}>
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <BlurView intensity={25} tint="light" style={styles.card}>
+              <View style={styles.cardInner}>
+                <Pressable style={styles.backRow} onPress={() => navigation.navigate('Login')} hitSlop={8}>
+                  <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
+                  <Text style={styles.backText}>Back to login</Text>
+                </Pressable>
+
+                <Text style={styles.heading}>
+                  {step === 'request' ? 'Forgot password' : 'Enter reset code'}
+                </Text>
+                <Text style={styles.subheading}>
+                  {step === 'request'
+                    ? "Enter your company code and email -- we'll send you a reset code."
+                    : `We sent a 6-digit code to ${email}. Enter it below with your new password.`}
+                </Text>
+
+                {step === 'request' ? (
+                  <>
+                    <View style={styles.fieldRow}>
+                      <Ionicons name="business-outline" size={18} color="rgba(255,255,255,0.85)" />
+                      <TextInput
+                        value={companyCode}
+                        onChangeText={setCompanyCode}
+                        placeholder="Company code"
+                        placeholderTextColor="rgba(255,255,255,0.65)"
+                        autoCapitalize="characters"
+                        style={styles.input}
+                      />
+                    </View>
+                    <View style={styles.fieldRow}>
+                      <Ionicons name="person-outline" size={18} color="rgba(255,255,255,0.85)" />
+                      <TextInput
+                        value={email}
+                        onChangeText={setEmail}
+                        placeholder="Email address"
+                        placeholderTextColor="rgba(255,255,255,0.65)"
+                        autoCapitalize="none"
+                        keyboardType="email-address"
+                        style={styles.input}
+                      />
+                    </View>
+
+                    <Pressable onPress={onRequestCode} disabled={submitting} style={({ pressed }) => [
+                      { opacity: pressed || submitting ? 0.85 : 1 },
+                    ]}>
+                      <LinearGradient
+                        colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.actionBtn}
+                      >
+                        <Text style={styles.actionBtnText}>
+                          {submitting ? 'Sending...' : 'Send reset code'}
+                        </Text>
+                      </LinearGradient>
+                    </Pressable>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.fieldRow}>
+                      <Ionicons name="keypad-outline" size={18} color="rgba(255,255,255,0.85)" />
+                      <TextInput
+                        value={code}
+                        onChangeText={setCode}
+                        placeholder="6-digit code"
+                        placeholderTextColor="rgba(255,255,255,0.65)"
+                        keyboardType="number-pad"
+                        maxLength={6}
+                        style={styles.input}
+                      />
+                    </View>
+                    <View style={styles.fieldRow}>
+                      <Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.85)" />
+                      <TextInput
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        placeholder="New password"
+                        placeholderTextColor="rgba(255,255,255,0.65)"
+                        secureTextEntry={!showPassword}
+                        style={styles.input}
+                      />
+                      <Pressable onPress={() => setShowPassword((s) => !s)} hitSlop={8}>
+                        <Ionicons
+                          name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                          size={18}
+                          color="rgba(255,255,255,0.85)"
+                        />
+                      </Pressable>
+                    </View>
+                    <Text style={styles.hint}>At least 6 characters.</Text>
+
+                    <Pressable onPress={onResetPassword} disabled={submitting} style={({ pressed }) => [
+                      { opacity: pressed || submitting ? 0.85 : 1 },
+                    ]}>
+                      <LinearGradient
+                        colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.actionBtn}
+                      >
+                        <Text style={styles.actionBtnText}>
+                          {submitting ? 'Resetting...' : 'Reset password'}
+                        </Text>
+                      </LinearGradient>
+                    </Pressable>
+
+                    <Pressable onPress={() => setStep('request')} hitSlop={6} style={{ marginTop: spacing.md }}>
+                      <Text style={styles.resendText}>Didn&apos;t get a code? Send again</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            </BlurView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </ImageBackground>
+  );
+}
+
+const styles = StyleSheet.create({
+  bg: { flex: 1, backgroundColor: '#0E4E55' },
+  wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
+  safe: { flex: 1 },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xxl,
+  },
+
+  card: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  cardInner: {
+    padding: spacing.xl,
+    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+  },
+
+  backRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },
+  backText: { fontFamily: fonts.medium, fontSize: 13, color: '#FFFFFF', marginLeft: 2 },
+
+  heading: {
+    fontFamily: fonts.displayBold,
+    fontSize: 24,
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  subheading: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: spacing.lg,
+  },
+
+  fieldRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderColor: 'rgba(255,255,255,0.28)',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    height: 48,
+    marginBottom: spacing.sm,
+  },
+  input: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: '#FFFFFF',
+    marginHorizontal: 8,
+    paddingVertical: 0,
+  },
+  hint: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    marginBottom: spacing.sm,
+  },
+
+  actionBtn: {
+    height: 50,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  actionBtnText: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+
+  resendText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+});

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { apiClient, ApiError } from '../api/client';
 import { setToken, clearToken, loadStoredToken } from '../api/tokenStore';
+import { saveRememberedLogin, clearRememberedLogin } from '../api/rememberedLogin';
 import { useTheme } from '../theme/ThemeContext';
 import type { AuthResult, Organization, Role, User } from '../types';
 
@@ -32,6 +33,11 @@ interface OrganizationPatch {
   wifiNetworkName?: string | null;
 }
 
+interface MessageResult {
+  ok: boolean;
+  message: string;
+}
+
 interface AuthContextValue {
   user: User | null;
   organization: Organization | null;
@@ -39,6 +45,10 @@ interface AuthContextValue {
   login: (email: string, password: string, companyCode: string, remember?: boolean) => Promise<AuthResult>;
   signup: (companyCode: string, email: string, password: string, name: string) => Promise<AuthResult>;
   loginWithGoogle: (companyCode: string, idToken: string) => Promise<AuthResult>;
+  forgotPassword: (companyCode: string, email: string) => Promise<MessageResult>;
+  resetPassword: (
+    companyCode: string, email: string, code: string, newPassword: string
+  ) => Promise<MessageResult>;
   registerCompany: (
     companyName: string, adminName: string, adminEmail: string, adminPassword: string
   ) => Promise<AuthResult>;
@@ -127,6 +137,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
       await applyAuthResponse(res, remember);
+      if (remember) {
+        await saveRememberedLogin({ companyCode: companyCode.trim(), email: email.trim() });
+      } else {
+        await clearRememberedLogin();
+      }
       return { ok: true, organization: res.organization };
     } catch (err) {
       return { ok: false, error: err instanceof ApiError ? err.message : 'Login failed.' };
@@ -201,6 +216,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Forgot Password: request a numeric reset code by email, then submit
+  // it alongside a new password. Neither call touches the signed-in
+  // session -- both work from the signed-out Login screen.
+  const forgotPassword = async (companyCode: string, email: string): Promise<MessageResult> => {
+    try {
+      const res = await apiClient.post<{ message: string }>('/api/v1/auth/forgot-password', {
+        companyCode: companyCode.trim(),
+        email: email.trim(),
+      });
+      return { ok: true, message: res.message };
+    } catch (err) {
+      return { ok: false, message: err instanceof ApiError ? err.message : 'Could not send a reset code.' };
+    }
+  };
+
+  const resetPassword = async (
+    companyCode: string, email: string, code: string, newPassword: string
+  ): Promise<MessageResult> => {
+    try {
+      const res = await apiClient.post<{ message: string }>('/api/v1/auth/reset-password', {
+        companyCode: companyCode.trim(),
+        email: email.trim(),
+        code: code.trim(),
+        newPassword,
+      });
+      return { ok: true, message: res.message };
+    } catch (err) {
+      return { ok: false, message: err instanceof ApiError ? err.message : 'Could not reset your password.' };
+    }
+  };
+
   // Step-up confirmation before a sensitive action on the *current*
   // session -- currently just clock-in (see ClockCard). Re-checks the
   // signed-in user's own password without touching the stored token.
@@ -252,6 +298,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user, organization, initializing,
         login, signup, loginWithGoogle, registerCompany, logout, verifyPassword,
+        forgotPassword, resetPassword,
         updateOrganization, updateOfficeLocation,
       }}
     >

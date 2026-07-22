@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, ImageBackground, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, ScrollView, Alert,
@@ -15,6 +15,7 @@ import { Text, Segmented } from '../components';
 import { fonts } from '../theme/typography';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
+import { loadRememberedLogin } from '../api/rememberedLogin';
 import { API_BASE_URL } from '../api/config';
 import { GOOGLE_CLIENT_ID } from '../api/googleConfig';
 import type { RootStackNavigation } from '../types/navigation';
@@ -54,6 +55,21 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
   const [submitting, setSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [nonce] = useState(() => Crypto.randomUUID());
+
+  // "Remember me" previously only kept the session alive across app
+  // restarts -- it never actually remembered anything the user could
+  // see, which is what the label promises. This restores the last
+  // company code + email (never the password) that were saved on a
+  // successful login with the box checked.
+  useEffect(() => {
+    (async () => {
+      const remembered = await loadRememberedLogin();
+      if (remembered) {
+        setCompanyCode(remembered.companyCode);
+        setEmail(remembered.email);
+      }
+    })();
+  }, []);
 
   // Requesting an ID token directly (rather than an auth code) means no
   // client secret is ever needed on the phone -- Google hands back a
@@ -208,13 +224,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                   </Pressable>
                 </View>
 
-                {/* Remember me */}
-                <Pressable style={styles.remember} onPress={() => setRemember((r) => !r)}>
-                  <View style={[styles.checkbox, remember && styles.checkboxOn]}>
-                    {remember ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
-                  </View>
-                  <Text style={styles.rememberText}>Remember me</Text>
-                </Pressable>
+                {/* Remember me / Forgot password */}
+                <View style={styles.rememberRow}>
+                  <Pressable style={styles.remember} onPress={() => setRemember((r) => !r)}>
+                    <View style={[styles.checkbox, remember && styles.checkboxOn]}>
+                      {remember ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
+                    </View>
+                    <Text style={styles.rememberText}>Remember me</Text>
+                  </Pressable>
+                  <Pressable onPress={() => navigation.navigate('ForgotPassword')} hitSlop={6}>
+                    <Text style={styles.forgotText}>Forgot password?</Text>
+                  </Pressable>
+                </View>
 
                 {/* Gradient login button */}
                 <Pressable onPress={onSubmit} disabled={submitting} style={({ pressed }) => [
@@ -346,8 +367,13 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
   },
 
-  // Remember me
-  remember: { flexDirection: 'row', alignItems: 'center', marginVertical: spacing.sm },
+  // Remember me / Forgot password
+  rememberRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    marginVertical: spacing.sm,
+  },
+  remember: { flexDirection: 'row', alignItems: 'center' },
+  forgotText: { fontFamily: fonts.medium, fontSize: 13, color: '#FFFFFF', textDecorationLine: 'underline' },
   checkbox: {
     width: 18, height: 18, borderRadius: 5,
     borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.85)',

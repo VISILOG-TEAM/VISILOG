@@ -5,7 +5,7 @@ import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-n
 // (VisitorTabNavigator, EmployeeTabNavigator, ManagerTabNavigator,
 // TabNavigator) is itself mounted as one screen in this stack, and
 // React Navigation merges the stack's navigation prop into every
-// nested tab screen — so typing screens against this one param list
+// nested tab screen -- so typing screens against this one param list
 // (rather than a separate list per tab navigator) matches how
 // `navigation.navigate(...)` actually resolves at runtime across the
 // whole app.
@@ -13,6 +13,7 @@ export type RootStackParamList = {
   // Signed-out stack
   Login: undefined;
   Signup: undefined;
+  ForgotPassword: undefined;
   RegisterCompany: undefined;
   LegalAgreement: {
     pending?: {
@@ -67,4 +68,3 @@ export type RootStackScreenName = keyof RootStackParamList;
 // LegalAgreement).
 export type RootStackNavigation = NativeStackNavigationProp<RootStackParamList>;
 export type RootStackScreenProps<T extends RootStackScreenName> = NativeStackScreenProps<RootStackParamList, T>;
-
