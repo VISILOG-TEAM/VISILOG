@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// One row per invited participant on a RoomBooking — created PENDING
+// One row per invited participant on a RoomBooking -- created PENDING
 // when the meeting is booked, updated when that participant
 // acknowledges ("seen it") or declines (with a reason) the invite.
 // The organiser doesn't get one for their own meeting.
@@ -42,4 +42,9 @@ public class RoomBookingResponse {
 
     @Column(name = "responded_at")
     private Instant respondedAt;
+
+    // Set by the organiser after the meeting, independent of status --
+    // someone can acknowledge an invite and still not show up.
+    @Column(nullable = false)
+    private boolean absent = false;
 }

@@ -3,7 +3,7 @@ package com.visilog.api.exception;
 import org.springframework.http.HttpStatus;
 
 // Thrown by services for expected, user-facing failures (bad company
-// code, wrong password, not found, etc.) — GlobalExceptionHandler maps
+// code, wrong password, not found, etc.) -- GlobalExceptionHandler maps
 // this to {error, message} with the given status. Anything else
 // (unexpected exceptions) maps to a generic 500 without leaking detail.
 public class ApiException extends RuntimeException {
@@ -35,6 +35,10 @@ public class ApiException extends RuntimeException {
 
     public static ApiException forbidden(String message) {
         return new ApiException(HttpStatus.FORBIDDEN, "forbidden", message);
+    }
+
+    public static ApiException tooManyRequests(String message) {
+        return new ApiException(HttpStatus.TOO_MANY_REQUESTS, "too_many_requests", message);
     }
 
     public HttpStatus getStatus() {

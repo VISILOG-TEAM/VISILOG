@@ -5,10 +5,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 public record RoomBookingResponseDto(
-        UUID employeeId, String status, String declineReason, Instant respondedAt
+        UUID employeeId, String status, String declineReason, Instant respondedAt, boolean absent
 ) {
     public static RoomBookingResponseDto from(RoomBookingResponse r) {
         return new RoomBookingResponseDto(
-                r.getEmployeeId(), r.getStatus().name(), r.getDeclineReason(), r.getRespondedAt());
+                r.getEmployeeId(), r.getStatus().name(), r.getDeclineReason(), r.getRespondedAt(), r.isAbsent());
     }
 }

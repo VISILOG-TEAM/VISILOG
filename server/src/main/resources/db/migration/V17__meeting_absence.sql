@@ -1,0 +1,1 @@
+ALTER TABLE room_booking_responses ADD COLUMN absent BOOLEAN NOT NULL DEFAULT FALSE;

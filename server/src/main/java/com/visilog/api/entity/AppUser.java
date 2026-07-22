@@ -47,6 +47,14 @@ public class AppUser {
     private String resetCode;
     private Instant resetCodeExpiresAt;
 
+    // Login lockout -- resets to 0 on any successful login. Once it
+    // hits AuthService.MAX_LOGIN_ATTEMPTS, lockedUntil is set and
+    // login() rejects attempts (even with the right password) until
+    // that time passes.
+    @Column(nullable = false)
+    private int failedLoginAttempts = 0;
+    private Instant lockedUntil;
+
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 }

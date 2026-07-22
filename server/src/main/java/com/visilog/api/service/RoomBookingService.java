@@ -1,6 +1,7 @@
 package com.visilog.api.service;
 
 import com.visilog.api.dto.BookRoomRequest;
+import com.visilog.api.dto.MarkAbsentRequest;
 import com.visilog.api.dto.RespondToMeetingRequest;
 import com.visilog.api.dto.RoomBookingDto;
 import com.visilog.api.dto.RoomBookingResponseDto;
@@ -37,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RoomBookingService {
 
     // Appointments only carry a single scheduledAt instant, no
-    // duration — a visit is assumed to occupy this much of the host's
+    // duration -- a visit is assumed to occupy this much of the host's
     // time when checking it against a new meeting invite.
     private static final Duration ASSUMED_APPOINTMENT_DURATION = Duration.ofMinutes(30);
     private static final DateTimeFormatter WHEN_FORMAT =
@@ -68,7 +69,7 @@ public class RoomBookingService {
     }
 
     // readOnly: RoomBookingDto.from reads the lazy participantIds
-    // element collection — needs an open session for the whole mapping,
+    // element collection -- needs an open session for the whole mapping,
     // not just the initial query.
     @Transactional(readOnly = true)
     public List<RoomBookingDto> list(UUID organizationId) {
@@ -83,7 +84,7 @@ public class RoomBookingService {
             throw ApiException.badRequest("Only staff accounts can book a meeting.");
         }
         if ((req.roomId() == null) == (req.location() == null || req.location().isBlank())) {
-            throw ApiException.badRequest("Pick a meeting room or enter an outside location — not both.");
+            throw ApiException.badRequest("Pick a meeting room or enter an outside location -- not both.");
         }
         if (req.endTime() != null && req.startTime() != null && !req.endTime().isAfter(req.startTime())) {
             throw ApiException.badRequest("End time must be after the start time.");
@@ -92,7 +93,7 @@ public class RoomBookingService {
         // Person-level clash check: neither the organiser nor anyone
         // they're inviting may already be in another meeting, or
         // already hosting a visitor appointment, at an overlapping
-        // time — regardless of which room or location this new one
+        // time -- regardless of which room or location this new one
         // uses.
         Set<UUID> people = new LinkedHashSet<>();
         people.add(organiserId);
@@ -112,7 +113,7 @@ public class RoomBookingService {
                     organizationId, req.roomId(), req.startTime(), req.endTime());
             if (!clashes.isEmpty()) {
                 throw ApiException.conflict(
-                        roomName + " is already booked for that time — pick a different time or room.");
+                        roomName + " is already booked for that time -- pick a different time or room.");
             }
         }
 
@@ -159,7 +160,7 @@ public class RoomBookingService {
             }
         }
 
-        // A pending response row per invited participant — the surface
+        // A pending response row per invited participant -- the surface
         // for "seen it" (acknowledge) / "can't make it" (decline + why).
         for (UUID participantId : saved.getParticipantIds()) {
             if (participantId.equals(organiserId)) {
@@ -210,6 +211,28 @@ public class RoomBookingService {
                     .map(Employee::getName).orElse("A colleague");
             notificationService.notifyDecline(booking, declinerName, response.getDeclineReason());
         }
+
+        return RoomBookingDto.from(booking, responsesFor(roomBookingId));
+    }
+
+    // Marking who actually showed up -- organiser only, and independent
+    // of whether that person acknowledged or declined beforehand
+    // (acknowledging an invite doesn't guarantee they attended).
+    @Transactional
+    public RoomBookingDto markAbsent(
+            UUID organizationId, UUID callerId, UUID roomBookingId, UUID employeeId, MarkAbsentRequest req) {
+        RoomBooking booking = roomBookingRepository.findById(roomBookingId)
+                .filter(b -> b.getOrganizationId().equals(organizationId))
+                .orElseThrow(() -> ApiException.notFound("Meeting not found."));
+        if (!booking.getOrganiserId().equals(callerId)) {
+            throw ApiException.forbidden("Only the organiser can mark attendance for this meeting.");
+        }
+        RoomBookingResponse response = roomBookingResponseRepository
+                .findByRoomBookingIdAndEmployeeId(roomBookingId, employeeId)
+                .orElseThrow(() -> ApiException.notFound("That person wasn't invited to this meeting."));
+
+        response.setAbsent(req.absent());
+        roomBookingResponseRepository.save(response);
 
         return RoomBookingDto.from(booking, responsesFor(roomBookingId));
     }

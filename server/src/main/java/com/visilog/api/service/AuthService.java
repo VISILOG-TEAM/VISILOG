@@ -23,6 +23,7 @@ import com.visilog.api.repository.OrgBillingRepository;
 import com.visilog.api.repository.OrganizationRepository;
 import com.visilog.api.security.AuthPrincipal;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Locale;
@@ -57,6 +58,11 @@ public class AuthService {
     private static final String DEFAULT_PRIMARY_SURFACE_STRONG = "#F5E6BC";
 
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    // Login lockout -- unlimited password guesses is a real risk on a
+    // login form with no other rate-limit layer in front of it.
+    private static final int MAX_LOGIN_ATTEMPTS = 5;
+    private static final Duration LOCKOUT_DURATION = Duration.ofMinutes(15);
 
     // Generic response for forgotPassword regardless of whether the email
     // actually matched an account -- never confirm/deny account existence.
@@ -260,6 +266,7 @@ public class AuthService {
         return new MessageResponse("Your password has been reset. You can now log in.");
     }
 
+    @Transactional
     public AuthResponse login(LoginRequest req) {
         Organization org = findOrgByCodeOrThrow(req.companyCode());
         String email = req.email().trim().toLowerCase(Locale.ROOT);
@@ -267,9 +274,25 @@ public class AuthService {
         AppUser user = appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), email)
                 .orElseThrow(() -> ApiException.unauthorized("Incorrect email or password."));
 
+        if (user.getLockedUntil() != null && Instant.now().isBefore(user.getLockedUntil())) {
+            long minutesLeft = Math.max(1, Duration.between(Instant.now(), user.getLockedUntil()).toMinutes());
+            throw ApiException.tooManyRequests(
+                    "Too many failed attempts. Try again in " + minutesLeft
+                            + (minutesLeft == 1 ? " minute." : " minutes."));
+        }
+
         if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
+            user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+            if (user.getFailedLoginAttempts() >= MAX_LOGIN_ATTEMPTS) {
+                user.setLockedUntil(Instant.now().plus(LOCKOUT_DURATION));
+            }
+            appUserRepository.save(user);
             throw ApiException.unauthorized("Incorrect email or password.");
         }
+
+        user.setFailedLoginAttempts(0);
+        user.setLockedUntil(null);
+        appUserRepository.save(user);
 
         return buildAuthResponse(user, org);
     }

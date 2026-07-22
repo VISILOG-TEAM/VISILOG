@@ -139,6 +139,50 @@ class AuthServiceTest {
     }
 
     @Test
+    void loginLocksAccountAfterFiveFailedAttempts() {
+        AppUser existing = new AppUser();
+        existing.setId(UUID.randomUUID());
+        existing.setOrganizationId(org.getId());
+        existing.setEmail("wendy@acme.com");
+        existing.setPasswordHash("hashed");
+        existing.setRole(Role.RECEPTIONIST);
+        when(appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), "wendy@acme.com"))
+                .thenReturn(Optional.of(existing));
+        when(passwordEncoder.matches("wrong-password", "hashed")).thenReturn(false);
+
+        for (int i = 0; i < 5; i++) {
+            assertThatThrownBy(() -> authService.login(
+                    new com.visilog.api.dto.LoginRequest("ACME1234", "wendy@acme.com", "wrong-password")))
+                    .isInstanceOf(ApiException.class);
+        }
+
+        assertThat(existing.getLockedUntil()).isNotNull();
+        assertThatThrownBy(() -> authService.login(
+                new com.visilog.api.dto.LoginRequest("ACME1234", "wendy@acme.com", "wrong-password")))
+                .isInstanceOf(ApiException.class)
+                .hasMessageContaining("Too many failed attempts");
+    }
+
+    @Test
+    void loginResetsFailedAttemptsOnSuccess() {
+        AppUser existing = new AppUser();
+        existing.setId(UUID.randomUUID());
+        existing.setOrganizationId(org.getId());
+        existing.setEmail("wendy@acme.com");
+        existing.setPasswordHash("hashed");
+        existing.setRole(Role.RECEPTIONIST);
+        existing.setFailedLoginAttempts(3);
+        when(appUserRepository.findByOrganizationIdAndEmailIgnoreCase(org.getId(), "wendy@acme.com"))
+                .thenReturn(Optional.of(existing));
+        when(passwordEncoder.matches("correct-password", "hashed")).thenReturn(true);
+
+        authService.login(new com.visilog.api.dto.LoginRequest("ACME1234", "wendy@acme.com", "correct-password"));
+
+        assertThat(existing.getFailedLoginAttempts()).isEqualTo(0);
+        assertThat(existing.getLockedUntil()).isNull();
+    }
+
+    @Test
     void forgotPasswordSendsCodeWhenEmailMatchesAnAccount() {
         AppUser existing = new AppUser();
         existing.setId(UUID.randomUUID());
