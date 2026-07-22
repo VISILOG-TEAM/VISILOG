@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile,
+  Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile, ExportModal,
 } from '../components';
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { fmtTime, fmtRelative } from '../data/format';
+import { fmtTime, fmtDateTime, fmtRelative } from '../data/format';
+import { toCsv, toHtmlTable, exportCsvFile, exportPdfFile, type ExportColumn } from '../data/export';
 import type { RootStackNavigation } from '../types/navigation';
 import type { ClockRecord, ClockType, Employee } from '../types';
 
@@ -21,10 +22,20 @@ interface AttendanceScreenProps {
 // "on the clock" cards and ManagerClockInsScreen.)
 export default function AttendanceScreen({ navigation }: AttendanceScreenProps) {
   const { clockRecords, employeeById } = useData();
+  const [exporting, setExporting] = useState(false);
 
   const sorted = [...clockRecords].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
+
+  const exportColumns: ExportColumn<ClockRecord>[] = [
+    { header: 'Employee', get: (t) => employeeById(t.employeeId)?.name || 'Unknown' },
+    { header: 'Department', get: (t) => employeeById(t.employeeId)?.department || '' },
+    { header: 'Type', get: (t) => (t.type === 'in' ? 'Tap in' : 'Tap out') },
+    { header: 'Time', get: (t) => fmtDateTime(t.timestamp) },
+  ];
+  const onExportCsv = () => exportCsvFile(`attendance-${Date.now()}.csv`, toCsv(sorted, exportColumns));
+  const onExportPdf = () => exportPdfFile(`attendance-${Date.now()}.pdf`, toHtmlTable('Attendance log', sorted, exportColumns));
 
   // Stat: how many distinct employees are currently signed in (based on
   // their last record of the day being 'in').
@@ -49,6 +60,7 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
           title="Attendance"
           subtitle="Clock-in/out log & punctuality"
           rightActions={[
+            { icon: 'download-outline', onPress: () => setExporting(true) },
             { icon: 'time-outline', onPress: () => navigation.navigate('History', { tab: 'clock' }) },
             { icon: 'close', onPress: () => navigation.goBack() },
           ]}
@@ -77,6 +89,14 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
         renderItem={({ item }) => (
           <TapRow tap={item} employee={employeeById(item.employeeId)} />
         )}
+      />
+
+      <ExportModal
+        visible={exporting}
+        title="Export attendance log"
+        onClose={() => setExporting(false)}
+        onExportCsv={onExportCsv}
+        onExportPdf={onExportPdf}
       />
     </Screen>
   );

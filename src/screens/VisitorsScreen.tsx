@@ -2,12 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { View, SectionList, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState, Avatar,
+  Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState, Avatar, ExportModal,
 } from '../components';
 import { colors } from '../theme/colors';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { fmtTime, fmtDuration, splitRecentOlder } from '../data/format';
+import { fmtTime, fmtDateTime, fmtDuration, splitRecentOlder } from '../data/format';
+import { toCsv, toHtmlTable, exportCsvFile, exportPdfFile, type ExportColumn } from '../data/export';
 import type { RootStackNavigation } from '../types/navigation';
 import type { Visitor } from '../types';
 
@@ -17,7 +18,7 @@ interface VisitorsScreenProps {
 
 type StatusFilter = 'all' | 'onsite' | 'completed';
 
-// VisitorsScreen — the live visitor log.
+// VisitorsScreen -- the live visitor log.
 // Implements the "Visitor Logs" page from the User Guide:
 //   - search by name, badge number, or host
 //   - status filter: All / On-site / Completed
@@ -28,6 +29,7 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
   const { visitors, employeeById } = useData();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [exporting, setExporting] = useState(false);
 
   // Filter pipeline: text search across name/badge/host, then status.
   const filtered = useMemo(() => {
@@ -51,6 +53,21 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
     [filtered]
   );
 
+  // Exports whatever the search/status filters currently show, so
+  // "export" always matches what's on screen rather than the whole log.
+  const exportColumns: ExportColumn<Visitor>[] = [
+    { header: 'Name', get: (v) => v.fullName },
+    { header: 'Badge', get: (v) => v.badgeId },
+    { header: 'Status', get: (v) => (v.status === 'onsite' ? 'On-site' : 'Completed') },
+    { header: 'Purpose', get: (v) => v.purpose },
+    { header: 'Host', get: (v) => employeeById(v.hostId)?.name || '' },
+    { header: 'Company', get: (v) => v.company },
+    { header: 'Check-in', get: (v) => fmtDateTime(v.checkInAt) },
+    { header: 'Check-out', get: (v) => (v.checkOutAt ? fmtDateTime(v.checkOutAt) : '') },
+  ];
+  const onExportCsv = () => exportCsvFile(`visitors-${Date.now()}.csv`, toCsv(filtered, exportColumns));
+  const onExportPdf = () => exportPdfFile(`visitors-${Date.now()}.pdf`, toHtmlTable('Visitor log', filtered, exportColumns));
+
   return (
     <Screen scroll={false} padded={false}>
       <View style={styles.head}>
@@ -58,8 +75,10 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
           title="Visitors"
           subtitle="Live visitor log & check-in"
           onBackPress={() => navigation.goBack()}
-          rightIcon="person-add"
-          onRightPress={() => navigation.navigate('RegisterVisitor')}
+          rightActions={[
+            { icon: 'download-outline', onPress: () => setExporting(true) },
+            { icon: 'person-add', onPress: () => navigation.navigate('RegisterVisitor') },
+          ]}
         />
 
         <Input
@@ -113,6 +132,14 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
             />
           );
         }}
+      />
+
+      <ExportModal
+        visible={exporting}
+        title="Export visitor log"
+        onClose={() => setExporting(false)}
+        onExportCsv={onExportCsv}
+        onExportPdf={onExportPdf}
       />
     </Screen>
   );
