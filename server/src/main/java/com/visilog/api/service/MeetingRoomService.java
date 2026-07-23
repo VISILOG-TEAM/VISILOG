@@ -16,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class MeetingRoomService {
 
     private final MeetingRoomRepository meetingRoomRepository;
+    private final PlanFeatureService planFeatureService;
 
-    public MeetingRoomService(MeetingRoomRepository meetingRoomRepository) {
+    public MeetingRoomService(MeetingRoomRepository meetingRoomRepository, PlanFeatureService planFeatureService) {
         this.meetingRoomRepository = meetingRoomRepository;
+        this.planFeatureService = planFeatureService;
     }
 
     public List<MeetingRoomDto> list(UUID organizationId) {
@@ -43,9 +45,10 @@ public class MeetingRoomService {
         return MeetingRoomDto.from(meetingRoomRepository.save(r));
     }
 
-    // CSV bulk import from Company Setup -- see EmployeeService.bulkCreate
+    // CSV bulk import from Company Setup â€” see EmployeeService.bulkCreate
     // for why this stays row-by-row and un-@Transactional.
     public BulkImportResult<MeetingRoomDto> bulkCreate(UUID organizationId, List<MeetingRoomRequest> rows) {
+        planFeatureService.requirePlan(organizationId, "pro", "CSV import");
         List<MeetingRoomDto> created = new ArrayList<>();
         List<BulkImportResult.RowError> errors = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {

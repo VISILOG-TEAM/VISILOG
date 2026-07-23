@@ -10,15 +10,17 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Company Setup > branding + office location — manager-only, enforced
+// Company Setup > branding + office location â€” manager-only, enforced
 // at the controller via @PreAuthorize("hasRole('MANAGER')").
 @Service
 public class OrgService {
 
     private final OrganizationRepository organizationRepository;
+    private final PlanFeatureService planFeatureService;
 
-    public OrgService(OrganizationRepository organizationRepository) {
+    public OrgService(OrganizationRepository organizationRepository, PlanFeatureService planFeatureService) {
         this.organizationRepository = organizationRepository;
+        this.planFeatureService = planFeatureService;
     }
 
     public OrganizationDto get(UUID organizationId) {
@@ -30,6 +32,15 @@ public class OrgService {
         Organization org = findOrThrow(organizationId);
         if (req.name() != null && !req.name().isBlank()) {
             org.setName(req.name().trim());
+        }
+        // Clearing the logo is always allowed -- only setting a new one
+        // is the paid feature. Same for theme: only changing away from
+        // the default is gated, never reverting.
+        if (req.logoUrl() != null && !req.logoUrl().isBlank()) {
+            planFeatureService.requirePlan(organizationId, "enterprise", "Custom branding");
+        }
+        if (req.theme() != null) {
+            planFeatureService.requirePlan(organizationId, "enterprise", "Custom branding");
         }
         if (req.logoUrl() != null) {
             org.setLogoUrl(req.logoUrl().isBlank() ? null : req.logoUrl().trim());

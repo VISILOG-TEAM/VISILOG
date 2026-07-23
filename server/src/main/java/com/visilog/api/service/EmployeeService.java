@@ -19,12 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // Company Setup > staff roster. This is what AuthService.signup checks
-// against — adding someone here with role=RECEPTIONIST/MANAGER/EMPLOYEE
+// against â€” adding someone here with role=RECEPTIONIST/MANAGER/EMPLOYEE
 // is what lets them get that role automatically when they sign up with
 // a matching email, instead of the old free role-picker.
 //
 // Note: editing an Employee's role here does NOT retroactively change
-// any AppUser who already signed up — role is fixed at signup time by
+// any AppUser who already signed up â€” role is fixed at signup time by
 // design (see AuthService). This only affects people who sign up after
 // the change.
 @Service
@@ -33,13 +33,15 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final OrgBillingRepository orgBillingRepository;
     private final PlanRepository planRepository;
+    private final PlanFeatureService planFeatureService;
 
     public EmployeeService(
             EmployeeRepository employeeRepository, OrgBillingRepository orgBillingRepository,
-            PlanRepository planRepository) {
+            PlanRepository planRepository, PlanFeatureService planFeatureService) {
         this.employeeRepository = employeeRepository;
         this.orgBillingRepository = orgBillingRepository;
         this.planRepository = planRepository;
+        this.planFeatureService = planFeatureService;
     }
 
     public List<EmployeeDto> list(UUID organizationId) {
@@ -90,13 +92,14 @@ public class EmployeeService {
         return EmployeeDto.from(employeeRepository.save(e));
     }
 
-    // CSV bulk import from Company Setup — succeeds row by row rather
+    // CSV bulk import from Company Setup â€” succeeds row by row rather
     // than all-or-nothing, so a duplicate code or a missing email on
     // one row doesn't block the rest of a large roster upload. Not
     // @Transactional itself, deliberately: each employeeRepository.save()
     // (inside create()) commits on its own, so a later row failing
     // can't undo the ones that already succeeded.
     public BulkImportResult<EmployeeDto> bulkCreate(UUID organizationId, List<EmployeeRequest> rows) {
+        planFeatureService.requirePlan(organizationId, "pro", "CSV import");
         List<EmployeeDto> created = new ArrayList<>();
         List<BulkImportResult.RowError> errors = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
