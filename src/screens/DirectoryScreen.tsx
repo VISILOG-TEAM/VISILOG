@@ -2,7 +2,14 @@ import React, { useMemo, useState } from 'react';
 import { View, FlatList, StyleSheet, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Input, Text, Card, EmptyState, Avatar, CsvImportModal,
+  Screen,
+  Header,
+  Input,
+  Text,
+  Card,
+  EmptyState,
+  Avatar,
+  CsvImportModal,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
@@ -25,11 +32,19 @@ function mapCsvRow(record: Record<string, string>): EmployeeInput {
   const combinedName = [firstName, lastName].filter(Boolean).join(' ');
 
   return {
-    employeeId: record['code'] || record['employee code'] || record['employeecode']
-      || record['employeeid'] || record['employee id'] || record['staff id'] || record['id'] || '',
+    employeeId:
+      record['code'] ||
+      record['employee code'] ||
+      record['employeecode'] ||
+      record['employeeid'] ||
+      record['employee id'] ||
+      record['staff id'] ||
+      record['id'] ||
+      '',
     name: record['name'] || record['full name'] || record['fullname'] || combinedName || '',
     department: record['department'] || '',
-    phone: record['phone'] || record['phone number'] || record['phonenumber'] || record['mobile'] || '',
+    phone:
+      record['phone'] || record['phone number'] || record['phonenumber'] || record['mobile'] || '',
     email: record['email'] || record['email address'] || record['emailaddress'] || '',
     role: (record['role'] || 'employee').toLowerCase() as Role,
   };
@@ -50,7 +65,7 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
       (e) =>
         e.name.toLowerCase().includes(q) ||
         e.department.toLowerCase().includes(q) ||
-        e.phone.includes(q)
+        e.phone.includes(q),
     );
   }, [employees, query]);
 
@@ -108,20 +123,32 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
 }
 
 function DirectoryRow({
-  employee, onPress, onCall,
-}: { employee: Employee; onPress: () => void; onCall: () => void }) {
+  employee,
+  onPress,
+  onCall,
+}: {
+  employee: Employee;
+  onPress: () => void;
+  onCall: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <Card padded={false} onPress={onPress} style={{ marginHorizontal: spacing.md }}>
       <View style={styles.row}>
         <Avatar name={employee.name} size={44} />
         <View style={{ flex: 1, marginLeft: spacing.sm }}>
-          <Text variant="bodySemibold" numberOfLines={1}>{employee.name}</Text>
+          <Text variant="bodySemibold" numberOfLines={1}>
+            {employee.name}
+          </Text>
           <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
             {employee.department}
           </Text>
         </View>
-        <Pressable onPress={onCall} hitSlop={8} style={[styles.callBtn, { backgroundColor: colors.primarySurface }]}>
+        <Pressable
+          onPress={onCall}
+          hitSlop={8}
+          style={[styles.callBtn, { backgroundColor: colors.primarySurface }]}
+        >
           <Ionicons name="call" size={18} color={colors.primary} />
         </Pressable>
       </View>
@@ -134,7 +161,10 @@ const styles = StyleSheet.create({
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
   row: { flexDirection: 'row', alignItems: 'center', padding: spacing.sm },
   callBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

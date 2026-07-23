@@ -1,7 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import {
-  Screen, Header, Text, Card, Badge, Button, EmptyState, RescheduleModal,
+  Screen,
+  Header,
+  Text,
+  Card,
+  Badge,
+  Button,
+  EmptyState,
+  RescheduleModal,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
@@ -21,15 +28,15 @@ export default function VisitorVisitsScreen() {
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null);
 
   const mine = useMemo(
-    () => appointments
-      .filter((a) => a.bookedByEmail === user!.email)
-      .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
-    [appointments, user]
+    () =>
+      appointments
+        .filter((a) => a.bookedByEmail === user!.email)
+        .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
+    [appointments, user],
   );
 
-  const badgeStatus = (status: AppointmentStatus): StatusKey => (
-    status === 'admitted' ? 'success' : status === 'rejected' ? 'rejected' : 'pending'
-  );
+  const badgeStatus = (status: AppointmentStatus): StatusKey =>
+    status === 'admitted' ? 'success' : status === 'rejected' ? 'rejected' : 'pending';
 
   return (
     <Screen scroll={false} padded={false}>
@@ -58,10 +65,10 @@ export default function VisitorVisitsScreen() {
                 <Badge label={item.status} status={badgeStatus(item.status)} size="sm" />
               </View>
               <Text variant="caption" color={colors.textSecondary}>
-                {item.purpose} Â· Host: {host?.name || 'Unassigned'}
+                {item.purpose} - Host: {host?.name || 'Unassigned'}
               </Text>
               <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
-                {fmtTime(item.scheduledAt)} Â· Code {item.nfcCode || 'pending approval'}
+                {fmtTime(item.scheduledAt)} - Code {item.nfcCode || 'pending approval'}
               </Text>
               {item.rescheduleReason ? (
                 <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>

@@ -1,4 +1,7 @@
-import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import type {
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+} from '@react-navigation/native-stack';
 
 // Route param types for the single root native-stack navigator (see
 // navigation/RootNavigator.tsx). Every per-role tab navigator
@@ -15,14 +18,16 @@ export type RootStackParamList = {
   Signup: undefined;
   ForgotPassword: undefined;
   RegisterCompany: undefined;
-  LegalAgreement: {
-    pending?: {
-      companyName: string;
-      adminName: string;
-      adminEmail: string;
-      password: string;
-    };
-  } | undefined;
+  LegalAgreement:
+    | {
+        pending?: {
+          companyName: string;
+          adminName: string;
+          adminEmail: string;
+          password: string;
+        };
+      }
+    | undefined;
 
   // Per-role tab shells
   Tabs: undefined;
@@ -68,4 +73,7 @@ export type RootStackScreenName = keyof RootStackParamList;
 // the handful that read route.params (VisitorDetail, EmployeeDetail,
 // LegalAgreement).
 export type RootStackNavigation = NativeStackNavigationProp<RootStackParamList>;
-export type RootStackScreenProps<T extends RootStackScreenName> = NativeStackScreenProps<RootStackParamList, T>;
+export type RootStackScreenProps<T extends RootStackScreenName> = NativeStackScreenProps<
+  RootStackParamList,
+  T
+>;

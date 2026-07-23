@@ -42,20 +42,40 @@ interface AuthContextValue {
   user: User | null;
   organization: Organization | null;
   initializing: boolean;
-  login: (email: string, password: string, companyCode: string, remember?: boolean) => Promise<AuthResult>;
-  signup: (companyCode: string, email: string, password: string, name: string) => Promise<AuthResult>;
+  login: (
+    email: string,
+    password: string,
+    companyCode: string,
+    remember?: boolean,
+  ) => Promise<AuthResult>;
+  signup: (
+    companyCode: string,
+    email: string,
+    password: string,
+    name: string,
+  ) => Promise<AuthResult>;
   loginWithGoogle: (companyCode: string, idToken: string) => Promise<AuthResult>;
   forgotPassword: (companyCode: string, email: string) => Promise<MessageResult>;
   resetPassword: (
-    companyCode: string, email: string, code: string, newPassword: string
+    companyCode: string,
+    email: string,
+    code: string,
+    newPassword: string,
   ) => Promise<MessageResult>;
   registerCompany: (
-    companyName: string, adminName: string, adminEmail: string, adminPassword: string
+    companyName: string,
+    adminName: string,
+    adminEmail: string,
+    adminPassword: string,
   ) => Promise<AuthResult>;
   logout: () => Promise<void>;
   verifyPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
   updateOrganization: (patch: OrganizationPatch) => Promise<AuthResult>;
-  updateOfficeLocation: (latitude: number, longitude: number, radiusMeters: number) => Promise<AuthResult>;
+  updateOfficeLocation: (
+    latitude: number,
+    longitude: number,
+    radiusMeters: number,
+  ) => Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -125,7 +145,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // login belongs to -- required since VisiLog serves several
   // companies, each with their own data and brand colors.
   const login = async (
-    email: string, password: string, companyCode: string, remember = true
+    email: string,
+    password: string,
+    companyCode: string,
+    remember = true,
   ): Promise<AuthResult> => {
     if (!email || !password || !companyCode) {
       return { ok: false, error: 'Enter your company code, email and password.' };
@@ -152,7 +175,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // server-side: matches `email` against the company's staff roster
   // (that role) or falls back to visitor if there's no match.
   const signup = async (
-    companyCode: string, email: string, password: string, name: string
+    companyCode: string,
+    email: string,
+    password: string,
+    name: string,
   ): Promise<AuthResult> => {
     if (!companyCode || !email || !password || !name) {
       return { ok: false, error: 'Please fill in every field above.' };
@@ -175,7 +201,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // first Administrator (Manager) account, and hands back a company
   // code the admin can then share with their staff/visitors.
   const registerCompany = async (
-    companyName: string, adminName: string, adminEmail: string, adminPassword: string
+    companyName: string,
+    adminName: string,
+    adminEmail: string,
+    adminPassword: string,
   ): Promise<AuthResult> => {
     if (!companyName || !adminName || !adminEmail || !adminPassword) {
       return { ok: false, error: 'Please fill in every field above.' };
@@ -190,7 +219,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await applyAuthResponse(res);
       return { ok: true, organization: res.organization };
     } catch (err) {
-      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not register your company.' };
+      return {
+        ok: false,
+        error: err instanceof ApiError ? err.message : 'Could not register your company.',
+      };
     }
   };
 
@@ -227,12 +259,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       return { ok: true, message: res.message };
     } catch (err) {
-      return { ok: false, message: err instanceof ApiError ? err.message : 'Could not send a reset code.' };
+      return {
+        ok: false,
+        message: err instanceof ApiError ? err.message : 'Could not send a reset code.',
+      };
     }
   };
 
   const resetPassword = async (
-    companyCode: string, email: string, code: string, newPassword: string
+    companyCode: string,
+    email: string,
+    code: string,
+    newPassword: string,
   ): Promise<MessageResult> => {
     try {
       const res = await apiClient.post<{ message: string }>('/api/v1/auth/reset-password', {
@@ -243,7 +281,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       return { ok: true, message: res.message };
     } catch (err) {
-      return { ok: false, message: err instanceof ApiError ? err.message : 'Could not reset your password.' };
+      return {
+        ok: false,
+        message: err instanceof ApiError ? err.message : 'Could not reset your password.',
+      };
     }
   };
 
@@ -255,7 +296,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiClient.post('/api/v1/auth/verify-password', { password });
       return { ok: true };
     } catch (err) {
-      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not verify your password.' };
+      return {
+        ok: false,
+        error: err instanceof ApiError ? err.message : 'Could not verify your password.',
+      };
     }
   };
 
@@ -273,33 +317,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setOrganization(org);
       return { ok: true, organization: org };
     } catch (err) {
-      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not save your changes.' };
+      return {
+        ok: false,
+        error: err instanceof ApiError ? err.message : 'Could not save your changes.',
+      };
     }
   };
 
   // Company Setup > office location (manager only) -- backs the
   // clock-in geofence check (src/data/locationCheck.ts).
   const updateOfficeLocation = async (
-    latitude: number, longitude: number, radiusMeters: number
+    latitude: number,
+    longitude: number,
+    radiusMeters: number,
   ): Promise<AuthResult> => {
     try {
       const org = await apiClient.patch<Organization>('/api/v1/org/office-location', {
-        latitude, longitude, radiusMeters,
+        latitude,
+        longitude,
+        radiusMeters,
       });
       setOrganization(org);
       return { ok: true, organization: org };
     } catch (err) {
-      return { ok: false, error: err instanceof ApiError ? err.message : 'Could not save the office location.' };
+      return {
+        ok: false,
+        error: err instanceof ApiError ? err.message : 'Could not save the office location.',
+      };
     }
   };
 
   return (
     <AuthContext.Provider
       value={{
-        user, organization, initializing,
-        login, signup, loginWithGoogle, registerCompany, logout, verifyPassword,
-        forgotPassword, resetPassword,
-        updateOrganization, updateOfficeLocation,
+        user,
+        organization,
+        initializing,
+        login,
+        signup,
+        loginWithGoogle,
+        registerCompany,
+        logout,
+        verifyPassword,
+        forgotPassword,
+        resetPassword,
+        updateOrganization,
+        updateOfficeLocation,
       }}
     >
       {children}

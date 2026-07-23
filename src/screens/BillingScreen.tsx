@@ -1,9 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Badge, Button,
-} from '../components';
+import { Screen, Header, Text, Card, Badge, Button } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -44,9 +42,15 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
     if (plan.id === currentPlan?.id) return;
     try {
       await changePlan(plan.id);
-      Alert.alert('Plan updated', `You're now on the ${plan.name} plan (GHS ${plan.price} / 2 years).`);
+      Alert.alert(
+        'Plan updated',
+        `You're now on the ${plan.name} plan (GHS ${plan.price} / 2 years).`,
+      );
     } catch (err) {
-      Alert.alert('Could not switch plan', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not switch plan',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     }
   };
 
@@ -64,7 +68,9 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
       <Card accent={statusMeta.badge}>
         <View style={styles.planHead}>
           <View style={{ flex: 1 }}>
-            <Text variant="caption" color={colors.textSecondary}>Current plan</Text>
+            <Text variant="caption" color={colors.textSecondary}>
+              Current plan
+            </Text>
             <Text variant="h2">{currentPlan?.name || '--'}</Text>
           </View>
           <Badge label={statusMeta.label} status={statusMeta.badge} />
@@ -72,14 +78,19 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
 
         <Text style={[styles.price, { color: colors.brand }]}>
           GHS {currentPlan?.price}
-          <Text variant="body" color={colors.textSecondary}> / 2 years</Text>
+          <Text variant="body" color={colors.textSecondary}>
+            {' '}
+            / 2 years
+          </Text>
         </Text>
 
         <View style={styles.metaRow}>
-          <MetaCell icon="people-outline" label="Seats used"
-            value={`${billing?.seatsUsed ?? 0} / ${currentPlan?.seatLimit ?? '--'}`} />
-          <MetaCell icon="calendar-outline" label="Renews"
-            value={fmtDate(billing?.renewalDate)} />
+          <MetaCell
+            icon="people-outline"
+            label="Seats used"
+            value={`${billing?.seatsUsed ?? 0} / ${currentPlan?.seatLimit ?? '--'}`}
+          />
+          <MetaCell icon="calendar-outline" label="Renews" value={fmtDate(billing?.renewalDate)} />
         </View>
       </Card>
 
@@ -95,16 +106,26 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
               <View style={{ flex: 1 }}>
                 <Text variant="h3">{plan.name}</Text>
                 <Text variant="bodySemibold" style={{ color: colors.brand }}>
-                  GHS {plan.price}<Text variant="caption" color={colors.textSecondary}> / 2yr</Text>
+                  GHS {plan.price}
+                  <Text variant="caption" color={colors.textSecondary}>
+                    {' '}
+                    / 2yr
+                  </Text>
                 </Text>
               </View>
-              {isCurrent ? <Badge label="Current plan" status="info" size="sm" dot={false} /> : null}
+              {isCurrent ? (
+                <Badge label="Current plan" status="info" size="sm" dot={false} />
+              ) : null}
             </View>
 
             {plan.features.map((f) => (
               <View key={f} style={styles.featureRow}>
                 <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
-                <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 6, flex: 1 }}>
+                <Text
+                  variant="bodyMd"
+                  color={colors.textSecondary}
+                  style={{ marginLeft: 6, flex: 1 }}
+                >
                   {f}
                 </Text>
               </View>
@@ -132,15 +153,22 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
             <Ionicons name="card-outline" size={20} color={colors.brand} />
           </View>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
-            <Text variant="bodySemibold">Card ending in {billing?.paymentLast4 || 'â€¢â€¢â€¢â€¢'}</Text>
-            <Text variant="caption" color={colors.textSecondary}>Billed once every 2 years</Text>
+            <Text variant="bodySemibold">Card ending in {billing?.paymentLast4 || '****'}</Text>
+            <Text variant="caption" color={colors.textSecondary}>
+              Billed once every 2 years
+            </Text>
           </View>
           <Button
             label="Update"
             variant="ghost"
             size="sm"
             fullWidth={false}
-            onPress={() => Alert.alert('Demo only', 'Updating a card wires up to Stripe Billing Portal in production.')}
+            onPress={() =>
+              Alert.alert(
+                'Demo only',
+                'Updating a card wires up to Stripe Billing Portal in production.',
+              )
+            }
           />
         </View>
       </Card>
@@ -174,7 +202,9 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
                   dot={false}
                 />
               </View>
-              {i < invoices.length - 1 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
+              {i < invoices.length - 1 ? (
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              ) : null}
             </View>
           ))
         )}
@@ -189,7 +219,9 @@ function MetaCell({ icon, label, value }: { icon: IoniconName; label: string; va
     <View style={styles.metaCell}>
       <Ionicons name={icon} size={16} color={colors.primary} style={{ marginRight: 6 }} />
       <View>
-        <Text variant="caption" color={colors.textSecondary}>{label}</Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          {label}
+        </Text>
         <Text variant="bodySemibold">{value}</Text>
       </View>
     </View>
@@ -205,11 +237,15 @@ const styles = StyleSheet.create({
   featureRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 3 },
   cardRow: { flexDirection: 'row', alignItems: 'center' },
   cardIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   invoiceRow: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing.md,
   },
   divider: { height: 1, marginLeft: spacing.md },

@@ -3,9 +3,7 @@ import { View, Image, StyleSheet, Alert, Pressable, Share } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import {
-  Screen, Header, Text, Card, Button, Input,
-} from '../components';
+import { Screen, Header, Text, Card, Button, Input } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -19,22 +17,58 @@ interface CompanySetupScreenProps {
 // A handful of ready-made brand palettes, so a manager can restyle the
 // app without needing a full color-picker UI.
 const THEME_PRESETS: { id: string; label: string; theme: BrandTheme }[] = [
-  { id: 'emerald', label: 'Emerald & gold', theme: {
-    brand: '#0F3D2A', brandDark: '#0A2A1D', brandTint: '#155636',
-    primary: '#C9A227', primaryPressed: '#D4AF37', primarySurface: '#FBF3DE', primarySurfaceStrong: '#F5E6BC',
-  } },
-  { id: 'navy', label: 'Navy & sky', theme: {
-    brand: '#1B2A4A', brandDark: '#101A30', brandTint: '#25396B',
-    primary: '#4F8EF7', primaryPressed: '#3B76DD', primarySurface: '#EAF1FE', primarySurfaceStrong: '#D3E3FD',
-  } },
-  { id: 'wine', label: 'Wine & gold', theme: {
-    brand: '#5C1A1A', brandDark: '#3D1010', brandTint: '#7A2626',
-    primary: '#E0A62B', primaryPressed: '#C48F20', primarySurface: '#FDF3DF', primarySurfaceStrong: '#F8E4B8',
-  } },
-  { id: 'plum', label: 'Plum & rose', theme: {
-    brand: '#3B1D4A', brandDark: '#28132F', brandTint: '#512A66',
-    primary: '#E0679F', primaryPressed: '#C74F86', primarySurface: '#FCEAF3', primarySurfaceStrong: '#F7D2E5',
-  } },
+  {
+    id: 'emerald',
+    label: 'Emerald & gold',
+    theme: {
+      brand: '#0F3D2A',
+      brandDark: '#0A2A1D',
+      brandTint: '#155636',
+      primary: '#C9A227',
+      primaryPressed: '#D4AF37',
+      primarySurface: '#FBF3DE',
+      primarySurfaceStrong: '#F5E6BC',
+    },
+  },
+  {
+    id: 'navy',
+    label: 'Navy & sky',
+    theme: {
+      brand: '#1B2A4A',
+      brandDark: '#101A30',
+      brandTint: '#25396B',
+      primary: '#4F8EF7',
+      primaryPressed: '#3B76DD',
+      primarySurface: '#EAF1FE',
+      primarySurfaceStrong: '#D3E3FD',
+    },
+  },
+  {
+    id: 'wine',
+    label: 'Wine & gold',
+    theme: {
+      brand: '#5C1A1A',
+      brandDark: '#3D1010',
+      brandTint: '#7A2626',
+      primary: '#E0A62B',
+      primaryPressed: '#C48F20',
+      primarySurface: '#FDF3DF',
+      primarySurfaceStrong: '#F8E4B8',
+    },
+  },
+  {
+    id: 'plum',
+    label: 'Plum & rose',
+    theme: {
+      brand: '#3B1D4A',
+      brandDark: '#28132F',
+      brandTint: '#512A66',
+      primary: '#E0679F',
+      primaryPressed: '#C74F86',
+      primarySurface: '#FCEAF3',
+      primarySurfaceStrong: '#F7D2E5',
+    },
+  },
 ];
 
 // CompanySetupScreen -- Manager/Administrator only, reachable from
@@ -82,7 +116,9 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
 
   const [latitude, setLatitude] = useState(String(organization?.officeLocation?.latitude ?? ''));
   const [longitude, setLongitude] = useState(String(organization?.officeLocation?.longitude ?? ''));
-  const [radiusMeters, setRadiusMeters] = useState(String(organization?.officeLocation?.radiusMeters ?? '500'));
+  const [radiusMeters, setRadiusMeters] = useState(
+    String(organization?.officeLocation?.radiusMeters ?? '500'),
+  );
   const [savingLocation, setSavingLocation] = useState(false);
   const [locating, setLocating] = useState(false);
 
@@ -96,7 +132,9 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
         Alert.alert('Permission needed', 'Allow location access to use your current position.');
         return;
       }
-      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const position = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       setLatitude(String(position.coords.latitude));
       setLongitude(String(position.coords.longitude));
     } catch {
@@ -119,13 +157,15 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     }
     setSavingBrand(true);
     const result = await updateOrganization({
-      name: name.trim(), logoUrl: logoUrl.trim() || null, wifiNetworkName: wifiNetworkName.trim() || null,
+      name: name.trim(),
+      logoUrl: logoUrl.trim() || null,
+      wifiNetworkName: wifiNetworkName.trim() || null,
     });
     setSavingBrand(false);
     if (!result.ok) Alert.alert('Could not save', result.error);
   };
 
-  const onPickPreset = async (preset: typeof THEME_PRESETS[number]) => {
+  const onPickPreset = async (preset: (typeof THEME_PRESETS)[number]) => {
     setSavingBrand(true);
     const result = await updateOrganization({ theme: preset.theme });
     setSavingBrand(false);
@@ -139,7 +179,10 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     const lng = parseFloat(longitude);
     const radius = parseInt(radiusMeters, 10) || 500;
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
-      Alert.alert('Almost there', 'Tap "Use my current location" while standing at the office first.');
+      Alert.alert(
+        'Almost there',
+        'Tap "Use my current location" while standing at the office first.',
+      );
       return;
     }
     setSavingLocation(true);
@@ -160,27 +203,44 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
 
       {/* Company code */}
       <Card accent="info">
-        <Text variant="caption" color={colors.textSecondary}>Company code</Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          Company code
+        </Text>
         <View style={styles.codeRow}>
           <Text style={[styles.code, { color: colors.brand }]}>{organization?.code}</Text>
-          <Pressable onPress={onShareCode} style={[styles.shareBtn, { backgroundColor: colors.primarySurface }]}>
+          <Pressable
+            onPress={onShareCode}
+            style={[styles.shareBtn, { backgroundColor: colors.primarySurface }]}
+          >
             <Ionicons name="share-outline" size={16} color={colors.primary} />
-            <Text variant="caption" color={colors.brand} style={{ marginLeft: 4 }}>Share</Text>
+            <Text variant="caption" color={colors.brand} style={{ marginLeft: 4 }}>
+              Share
+            </Text>
           </Pressable>
         </View>
         <Text variant="caption" color={colors.textMuted}>
-          Give this to your staff and post it wherever you invite visitors -- they enter it when they sign up.
+          Give this to your staff and post it wherever you invite visitors -- they enter it when
+          they sign up.
         </Text>
       </Card>
 
       {/* Branding */}
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>Branding</Text>
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Branding
+      </Text>
       <Card>
         <Input label="Company name" value={name} onChangeText={setName} icon="business-outline" />
 
-        <Text variant="label" color={colors.textSecondary} style={styles.logoLabel}>Logo</Text>
+        <Text variant="label" color={colors.textSecondary} style={styles.logoLabel}>
+          Logo
+        </Text>
         <Pressable onPress={onPickLogo} disabled={pickingLogo} style={styles.logoRow}>
-          <View style={[styles.logoPreview, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}>
+          <View
+            style={[
+              styles.logoPreview,
+              { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+            ]}
+          >
             {logoUrl ? (
               <Image source={{ uri: logoUrl }} style={styles.logoImage} resizeMode="cover" />
             ) : (
@@ -191,22 +251,45 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
             <Text variant="bodySemibold" color={colors.brand}>
               {pickingLogo ? 'Opening photos...' : logoUrl ? 'Change logo' : 'Upload a logo'}
             </Text>
-            <Text variant="caption" color={colors.textMuted}>From your device's photo library</Text>
+            <Text variant="caption" color={colors.textMuted}>
+              From your device's photo library
+            </Text>
           </View>
         </Pressable>
 
-        <Input label="...or paste a logo URL" value={logoUrl} onChangeText={setLogoUrl}
-          placeholder="https://..." icon="link-outline" autoCapitalize="none" />
-        <Input label="WiFi network name" value={wifiNetworkName} onChangeText={setWifiNetworkName}
-          placeholder="e.g. Office-WiFi" icon="wifi-outline" />
-        <Text variant="caption" color={colors.textMuted} style={{ marginTop: -6, marginBottom: spacing.sm }}>
+        <Input
+          label="...or paste a logo URL"
+          value={logoUrl}
+          onChangeText={setLogoUrl}
+          placeholder="https://..."
+          icon="link-outline"
+          autoCapitalize="none"
+        />
+        <Input
+          label="WiFi network name"
+          value={wifiNetworkName}
+          onChangeText={setWifiNetworkName}
+          placeholder="e.g. Office-WiFi"
+          icon="wifi-outline"
+        />
+        <Text
+          variant="caption"
+          color={colors.textMuted}
+          style={{ marginTop: -6, marginBottom: spacing.sm }}
+        >
           Shown to staff as a reminder of which network to join before clocking in.
         </Text>
-        <Button label={savingBrand ? 'Saving...' : 'Save'} onPress={onSaveBrand} disabled={savingBrand} />
+        <Button
+          label={savingBrand ? 'Saving...' : 'Save'}
+          onPress={onSaveBrand}
+          disabled={savingBrand}
+        />
       </Card>
 
       <Card style={{ marginTop: spacing.sm }}>
-        <Text variant="bodySemibold" style={{ marginBottom: spacing.sm }}>Color theme</Text>
+        <Text variant="bodySemibold" style={{ marginBottom: spacing.sm }}>
+          Color theme
+        </Text>
         <View style={styles.presetGrid}>
           {THEME_PRESETS.map((p) => (
             <Pressable key={p.id} onPress={() => onPickPreset(p)} style={styles.presetItem}>
@@ -214,7 +297,9 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
                 <View style={[styles.swatch, { backgroundColor: p.theme.brand }]} />
                 <View style={[styles.swatch, { backgroundColor: p.theme.primary }]} />
               </View>
-              <Text variant="caption" color={colors.textSecondary}>{p.label}</Text>
+              <Text variant="caption" color={colors.textSecondary}>
+                {p.label}
+              </Text>
             </Pressable>
           ))}
         </View>
@@ -246,9 +331,19 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
             {locationIsSet ? 'Location set' : 'No location set yet'}
           </Text>
         </View>
-        <Input label="Radius (meters)" value={radiusMeters} onChangeText={setRadiusMeters}
-          placeholder="e.g. 500" icon="radio-outline" keyboardType="number-pad" />
-        <Button label={savingLocation ? 'Saving...' : 'Save location'} onPress={onSaveLocation} disabled={savingLocation} />
+        <Input
+          label="Radius (meters)"
+          value={radiusMeters}
+          onChangeText={setRadiusMeters}
+          placeholder="e.g. 500"
+          icon="radio-outline"
+          keyboardType="number-pad"
+        />
+        <Button
+          label={savingLocation ? 'Saving...' : 'Save location'}
+          onPress={onSaveLocation}
+          disabled={savingLocation}
+        />
       </Card>
 
       {/* Staff & rooms */}
@@ -256,22 +351,42 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
         Staff & rooms
       </Text>
       <Card padded={false}>
-        <LinkRow icon="people-outline" title="Staff roster" sub="Add employees & set their roles"
-          onPress={() => navigation.navigate('Directory')} />
+        <LinkRow
+          icon="people-outline"
+          title="Staff roster"
+          sub="Add employees & set their roles"
+          onPress={() => navigation.navigate('Directory')}
+        />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        <LinkRow icon="business-outline" title="Meeting rooms" sub="Add or remove bookable rooms"
-          onPress={() => navigation.navigate('MeetingRooms')} />
+        <LinkRow
+          icon="business-outline"
+          title="Meeting rooms"
+          sub="Add or remove bookable rooms"
+          onPress={() => navigation.navigate('MeetingRooms')}
+        />
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-        <LinkRow icon="document-text-outline" title="Legal agreement" sub="The subscription terms your company agreed to"
-          onPress={() => navigation.navigate('LegalAgreement')} />
+        <LinkRow
+          icon="document-text-outline"
+          title="Legal agreement"
+          sub="The subscription terms your company agreed to"
+          onPress={() => navigation.navigate('LegalAgreement')}
+        />
       </Card>
     </Screen>
   );
 }
 
 function LinkRow({
-  icon, title, sub, onPress,
-}: { icon: IoniconName; title: string; sub: string; onPress: () => void }) {
+  icon,
+  title,
+  sub,
+  onPress,
+}: {
+  icon: IoniconName;
+  title: string;
+  sub: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <Pressable style={styles.linkRow} onPress={onPress}>
@@ -280,7 +395,9 @@ function LinkRow({
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="bodySemibold">{title}</Text>
-        <Text variant="caption" color={colors.textSecondary}>{sub}</Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          {sub}
+        </Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </Pressable>
@@ -292,27 +409,55 @@ const styles = StyleSheet.create({
   logoLabel: { marginBottom: 6 },
   logoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   logoPreview: {
-    width: 56, height: 56, borderRadius: radius.md,
-    borderWidth: 1, alignItems: 'center', justifyContent: 'center',
+    width: 56,
+    height: 56,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     overflow: 'hidden',
   },
   logoImage: { width: '100%', height: '100%' },
-  codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 4 },
+  codeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: 4,
+  },
   code: { fontSize: 22, fontWeight: '700', letterSpacing: 1 },
-  shareBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.pill },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
   presetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   presetItem: { alignItems: 'center', width: 70 },
   presetSwatches: { flexDirection: 'row', marginBottom: 4 },
-  swatch: { width: 22, height: 22, borderRadius: 11, marginHorizontal: -4, borderWidth: 2, borderColor: '#fff' },
+  swatch: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    marginHorizontal: -4,
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
   linkRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
   linkIcon: {
-    width: 32, height: 32, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing.sm,
   },
   divider: { height: 1, marginLeft: spacing.md + 32 + spacing.sm },
   locationStatus: {
-    flexDirection: 'row', alignItems: 'center',
-    borderRadius: radius.md, padding: spacing.sm, marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
   },
 });

@@ -7,7 +7,8 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
 const pad = (n: number): string => String(n).padStart(2, '0');
-const toDateStr = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const toDateStr = (d: Date): string =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 interface DateChipsProps {
@@ -30,7 +31,8 @@ export function DateChips({ value, onChange, days = 10 }: DateChipsProps) {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
       const dateStr = toDateStr(d);
-      const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${WEEKDAYS[d.getDay()]} ${d.getDate()}`;
+      const label =
+        i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${WEEKDAYS[d.getDay()]} ${d.getDate()}`;
       return { dateStr, label };
     });
   }, [days]);
@@ -44,7 +46,10 @@ export function DateChips({ value, onChange, days = 10 }: DateChipsProps) {
           return (
             <Pressable
               key={opt.dateStr}
-              onPress={() => { onChange(opt.dateStr); setCustomOpen(false); }}
+              onPress={() => {
+                onChange(opt.dateStr);
+                setCustomOpen(false);
+              }}
               style={[
                 styles.chip,
                 { borderColor: colors.border, backgroundColor: colors.surface },
@@ -63,17 +68,20 @@ export function DateChips({ value, onChange, days = 10 }: DateChipsProps) {
         style={[
           styles.customToggle,
           { borderColor: colors.border, backgroundColor: colors.surface },
-          (customOpen || !isQuickPick) && { backgroundColor: colors.primary, borderColor: colors.primary },
+          (customOpen || !isQuickPick) && {
+            backgroundColor: colors.primary,
+            borderColor: colors.primary,
+          },
         ]}
       >
         <Ionicons
           name="calendar-outline"
           size={16}
-          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
+          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
         />
         <Text
           variant="label"
-          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
+          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
           style={{ marginLeft: 6 }}
         >
           Pick a date
@@ -103,7 +111,13 @@ interface TimeChipsProps {
 // Same idea for time -- half-hour slots across the working day as
 // chips, plus a tap-to-open hour/minute stepper (up/down arrows) for
 // anything off the half-hour grid.
-export function TimeChips({ value, onChange, startHour = 7, endHour = 19, stepMinutes = 30 }: TimeChipsProps) {
+export function TimeChips({
+  value,
+  onChange,
+  startHour = 7,
+  endHour = 19,
+  stepMinutes = 30,
+}: TimeChipsProps) {
   const { colors } = useTheme();
   const [customOpen, setCustomOpen] = useState(false);
   const options = useMemo(() => {
@@ -123,7 +137,10 @@ export function TimeChips({ value, onChange, startHour = 7, endHour = 19, stepMi
           return (
             <Pressable
               key={t}
-              onPress={() => { onChange(t); setCustomOpen(false); }}
+              onPress={() => {
+                onChange(t);
+                setCustomOpen(false);
+              }}
               style={[
                 styles.chip,
                 { borderColor: colors.border, backgroundColor: colors.surface },
@@ -142,17 +159,20 @@ export function TimeChips({ value, onChange, startHour = 7, endHour = 19, stepMi
         style={[
           styles.customToggle,
           { borderColor: colors.border, backgroundColor: colors.surface },
-          (customOpen || !isQuickPick) && { backgroundColor: colors.primary, borderColor: colors.primary },
+          (customOpen || !isQuickPick) && {
+            backgroundColor: colors.primary,
+            borderColor: colors.primary,
+          },
         ]}
       >
         <Ionicons
           name="time-outline"
           size={16}
-          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
+          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
         />
         <Text
           variant="label"
-          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
+          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
           style={{ marginLeft: 6 }}
         >
           Pick a time
@@ -174,23 +194,51 @@ function TimeStepper({ value, onChange }: { value: string; onChange: (t: string)
 
   return (
     <View style={[stepperStyles.wrap, { borderColor: colors.border }]}>
-      <StepperColumn value={pad(h)} onUp={() => setHour(h + 1)} onDown={() => setHour(h - 1)} colors={colors} />
-      <Text variant="h2" style={stepperStyles.colon}>:</Text>
-      <StepperColumn value={pad(m)} onUp={() => setMinute(m + 1)} onDown={() => setMinute(m - 1)} colors={colors} />
+      <StepperColumn
+        value={pad(h)}
+        onUp={() => setHour(h + 1)}
+        onDown={() => setHour(h - 1)}
+        colors={colors}
+      />
+      <Text variant="h2" style={stepperStyles.colon}>
+        :
+      </Text>
+      <StepperColumn
+        value={pad(m)}
+        onUp={() => setMinute(m + 1)}
+        onDown={() => setMinute(m - 1)}
+        colors={colors}
+      />
     </View>
   );
 }
 
 function StepperColumn({
-  value, onUp, onDown, colors,
-}: { value: string; onUp: () => void; onDown: () => void; colors: { primarySurface: string; primary: string } }) {
+  value,
+  onUp,
+  onDown,
+  colors,
+}: {
+  value: string;
+  onUp: () => void;
+  onDown: () => void;
+  colors: { primarySurface: string; primary: string };
+}) {
   return (
     <View style={stepperStyles.col}>
-      <Pressable onPress={onUp} style={[stepperStyles.btn, { backgroundColor: colors.primarySurface }]}>
+      <Pressable
+        onPress={onUp}
+        style={[stepperStyles.btn, { backgroundColor: colors.primarySurface }]}
+      >
         <Ionicons name="chevron-up" size={18} color={colors.primary} />
       </Pressable>
-      <Text variant="h2" style={stepperStyles.value}>{value}</Text>
-      <Pressable onPress={onDown} style={[stepperStyles.btn, { backgroundColor: colors.primarySurface }]}>
+      <Text variant="h2" style={stepperStyles.value}>
+        {value}
+      </Text>
+      <Pressable
+        onPress={onDown}
+        style={[stepperStyles.btn, { backgroundColor: colors.primarySurface }]}
+      >
         <Ionicons name="chevron-down" size={18} color={colors.primary} />
       </Pressable>
     </View>
@@ -229,7 +277,13 @@ const stepperStyles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   col: { alignItems: 'center', width: 64 },
-  btn: { width: 44, height: 32, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  btn: {
+    width: 44,
+    height: 32,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   value: { marginVertical: 4 },
   colon: { marginHorizontal: spacing.sm },
 });

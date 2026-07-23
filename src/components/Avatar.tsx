@@ -7,7 +7,16 @@ import { fonts } from '../theme/typography';
 // Shows a photo when `uri` is given, otherwise coloured initials. The
 // colour is derived from the name so the same person is always the same
 // hue across the app.
-const TINTS = ['#0E9F8E', '#2563EB', '#7C3AED', '#DB2777', '#D97706', '#0891B2', '#4F46E5', '#059669'];
+const TINTS = [
+  '#0E9F8E',
+  '#2563EB',
+  '#7C3AED',
+  '#DB2777',
+  '#D97706',
+  '#0891B2',
+  '#4F46E5',
+  '#059669',
+];
 
 function initials(name = ''): string {
   const parts = name.trim().split(/\s+/);
@@ -33,7 +42,9 @@ export default function Avatar({ name = '', uri, size = 44 }: AvatarProps) {
   const dim = { width: size, height: size, borderRadius: size / 2 };
 
   if (uri) {
-    return <Image source={{ uri }} style={[dim, styles.img, { backgroundColor: colors.surfaceAlt }]} />;
+    return (
+      <Image source={{ uri }} style={[dim, styles.img, { backgroundColor: colors.surfaceAlt }]} />
+    );
   }
 
   const tint = tintFor(name);

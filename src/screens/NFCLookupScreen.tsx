@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Button, Input, Badge, Avatar,
-} from '../components';
+import { Screen, Header, Text, Card, Button, Input, Badge, Avatar } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -71,21 +69,28 @@ export default function NFCLookupScreen({ navigation }: NFCLookupScreenProps) {
           <Row icon="card-outline" label="NFC code" value={found.nfcCode || 'Not yet issued'} />
           <Row icon="call-outline" label="Phone" value={found.visitorPhone} />
           <Row icon="briefcase-outline" label="Purpose" value={found.purpose} />
-          <Row icon="people-outline" label="Host"
-            value={employeeById(found.hostId)?.name || '--'} />
-          <Row icon="time-outline" label="Scheduled"
-            value={fmtDateTime(found.scheduledAt)} />
+          <Row
+            icon="people-outline"
+            label="Host"
+            value={employeeById(found.hostId)?.name || '--'}
+          />
+          <Row icon="time-outline" label="Scheduled" value={fmtDateTime(found.scheduledAt)} />
 
           {found.status === 'pending' && (
-            <Button label="Admit & check in"
+            <Button
+              label="Admit & check in"
               icon="checkmark-circle-outline"
               onPress={async () => {
                 try {
                   const v = await admitAppointment(found);
                   Alert.alert('Admitted', `${v.fullName} (${v.badgeId}) is on-site.`);
-                  setFound(null); setCode('');
+                  setFound(null);
+                  setCode('');
                 } catch (err) {
-                  Alert.alert('Could not admit visitor', err instanceof ApiError ? err.message : 'Something went wrong.');
+                  Alert.alert(
+                    'Could not admit visitor',
+                    err instanceof ApiError ? err.message : 'Something went wrong.',
+                  );
                 }
               }}
               style={{ marginTop: spacing.sm }}
@@ -105,7 +110,9 @@ function Row({ icon, label, value }: { icon: IoniconName; label: string; value: 
       <Text variant="caption" color={colors.textSecondary} style={{ width: 80 }}>
         {label}
       </Text>
-      <Text variant="bodySemibold" style={{ flex: 1 }}>{value}</Text>
+      <Text variant="bodySemibold" style={{ flex: 1 }}>
+        {value}
+      </Text>
     </View>
   );
 }

@@ -1,9 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 // SplashScreen -- shown for a fixed window on cold start (see App.js,
-// which owns the 7s timer). A solid dark background rather than the
+// which owns the 7s timer). A solid dark-cyan field rather than the
 // login photo, by design -- Login/Signup/RegisterCompany keep the
 // photo background (see assets/login-bg.jpg). assets/logo.png already
 // bakes in the icon, "VisiLog" wordmark, and tagline as one image, so
@@ -13,11 +13,7 @@ export default function SplashScreen() {
     <View style={styles.bg}>
       <StatusBar style="light" />
       <View style={styles.center}>
-        <Image
-          source={require('../../assets/logo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       </View>
     </View>
   );

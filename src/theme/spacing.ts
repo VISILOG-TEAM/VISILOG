@@ -1,4 +1,4 @@
-// 4-based spacing scale — keep all gaps/padding on these steps.
+// 4-based spacing scale -- keep all gaps/padding on these steps.
 export const spacing = {
   xxs: 4,
   xs: 8,

@@ -50,10 +50,7 @@ export default function Card({
 
   if (onPress) {
     return (
-      <Pressable
-        onPress={onPress}
-        style={({ pressed }) => (pressed ? styles.pressed : null)}
-      >
+      <Pressable onPress={onPress} style={({ pressed }) => (pressed ? styles.pressed : null)}>
         {inner}
       </Pressable>
     );

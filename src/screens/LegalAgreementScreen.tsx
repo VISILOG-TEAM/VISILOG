@@ -10,16 +10,16 @@ import type { RootStackScreenProps } from '../types/navigation';
 // LegalAgreementScreen has two modes, driven by whether `pending` (the
 // not-yet-submitted company registration form) was passed in:
 //
-//   - Registration flow: RegisterCompanyScreen collects the form, then
-//     pushes here with `pending` set. A company can't use VisiLog until
-//     this screen's subscription is agreed to and "paid" for -- there's
-//     no real payment processor in this build, so this is a placeholder
-//     checkout step, but registerCompany() (the call that actually
-//     creates the org and hands back a company code) only fires from
-//     the button on *this* screen, never from the form screen itself.
-//   - Review flow: reachable anytime afterwards from Company Setup (the
-//     paying manager's own screen), with no `pending` data -- read-only,
-//     no checkbox or payment section, just the terms.
+// - Registration flow: RegisterCompanyScreen collects the form, then
+// pushes here with `pending` set. A company can't use VisiLog until
+// this screen's subscription is agreed to and "paid" for -- there's
+// no real payment processor in this build, so this is a placeholder
+// checkout step, but registerCompany() (the call that actually
+// creates the org and hands back a company code) only fires from
+// the button on *this* screen, never from the form screen itself.
+// - Review flow: reachable anytime afterwards from Company Setup (the
+// paying manager's own screen), with no `pending` data -- read-only,
+// no checkbox or payment section, just the terms.
 // Every self-serve signup lands on the Starter plan (see
 // AuthService.registerCompany) -- match its real price so this isn't a
 // disconnected placeholder figure. Administrators can switch plans
@@ -47,7 +47,10 @@ You may cancel future renewals at any time from Billing & Subscription in Settin
 
 By continuing, you confirm you have the authority to enter into this agreement on behalf of your organization.`;
 
-export default function LegalAgreementScreen({ navigation, route }: RootStackScreenProps<'LegalAgreement'>) {
+export default function LegalAgreementScreen({
+  navigation,
+  route,
+}: RootStackScreenProps<'LegalAgreement'>) {
   const { colors } = useTheme();
   const { registerCompany } = useAuth();
   const pending = route?.params?.pending || null;
@@ -60,7 +63,10 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
     if (!agreed || submitting || !pending) return;
     setSubmitting(true);
     const result = await registerCompany(
-      pending.companyName, pending.adminName, pending.adminEmail, pending.password
+      pending.companyName,
+      pending.adminName,
+      pending.adminEmail,
+      pending.password,
     );
     setSubmitting(false);
     if (!result.ok) {
@@ -70,19 +76,21 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
     Alert.alert(
       "You're all set",
       `${result.organization!.name} is registered and active for the next ${TERM_YEARS} years. Your company code is ${result.organization!.code} -- share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`,
-      [{
-        text: 'Continue',
-        onPress: () => {
-          // The root navigator swaps to the signed-in stack once `user` is
-          // set, but "LegalAgreement" is a valid screen name in *both*
-          // stacks (it's also reachable from Company Setup post-login), so
-          // React Navigation has no reason to redirect on its own -- it just
-          // keeps rendering the same screen name across the swap. Reset
-          // explicitly to the new stack's actual landing screen instead of
-          // relying on that swap to also navigate.
-          navigation.reset({ index: 0, routes: [{ name: 'ManagerTabs' }] });
+      [
+        {
+          text: 'Continue',
+          onPress: () => {
+            // The root navigator swaps to the signed-in stack once `user` is
+            // set, but "LegalAgreement" is a valid screen name in *both*
+            // stacks (it's also reachable from Company Setup post-login), so
+            // React Navigation has no reason to redirect on its own -- it just
+            // keeps rendering the same screen name across the swap. Reset
+            // explicitly to the new stack's actual landing screen instead of
+            // relying on that swap to also navigate.
+            navigation.reset({ index: 0, routes: [{ name: 'ManagerTabs' }] });
+          },
         },
-      }]
+      ],
     );
   };
 
@@ -91,9 +99,11 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
       <Header
         eyebrow={viewOnly ? 'Company Setup' : 'Before you activate'}
         title="Legal agreement"
-        subtitle={viewOnly
-          ? 'The terms your organization agreed to when it registered.'
-          : "Read and agree to continue -- you're a couple of taps from a company code."}
+        subtitle={
+          viewOnly
+            ? 'The terms your organization agreed to when it registered.'
+            : "Read and agree to continue -- you're a couple of taps from a company code."
+        }
         onBackPress={() => navigation.goBack()}
       />
 
@@ -110,7 +120,7 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
               <View>
                 <Text variant="bodySemibold">VisiLog subscription</Text>
                 <Text variant="caption" color={colors.textSecondary}>
-                  {TERM_YEARS}-year term Â· billed once
+                  {TERM_YEARS}-year term - billed once
                 </Text>
               </View>
               <Text variant="h2" color={colors.brand}>
@@ -118,16 +128,19 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
               </Text>
             </View>
             <Text variant="caption" color={colors.textMuted} style={{ marginTop: spacing.xs }}>
-              This is a demo build -- no real payment is processed and no card details are collected. Agreeing below activates your subscription immediately.
+              This is a demo build -- no real payment is processed and no card details are
+              collected. Agreeing below activates your subscription immediately.
             </Text>
           </Card>
 
           <Pressable onPress={() => setAgreed((a) => !a)} style={styles.agreeRow}>
-            <View style={[
-              styles.checkbox,
-              { borderColor: colors.borderStrong },
-              agreed && { backgroundColor: colors.primary, borderColor: colors.primary },
-            ]}>
+            <View
+              style={[
+                styles.checkbox,
+                { borderColor: colors.borderStrong },
+                agreed && { backgroundColor: colors.primary, borderColor: colors.primary },
+              ]}
+            >
               {agreed ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
             </View>
             <Text variant="bodyMd" style={{ flex: 1, marginLeft: spacing.xs }}>
@@ -152,12 +165,17 @@ const styles = StyleSheet.create({
   terms: { lineHeight: 20 },
   planRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   agreeRow: {
-    flexDirection: 'row', alignItems: 'center',
-    marginTop: spacing.md, paddingVertical: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingVertical: spacing.xs,
   },
   checkbox: {
-    width: 20, height: 20, borderRadius: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 6,
     borderWidth: 1.5,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

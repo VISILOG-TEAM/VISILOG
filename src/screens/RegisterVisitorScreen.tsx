@@ -1,9 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Button, Input, Select, Badge,
-} from '../components';
+import { Screen, Header, Text, Card, Button, Input, Select, Badge } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -26,10 +24,10 @@ interface RegisterVisitorErrors {
 
 // RegisterVisitorScreen -- modal opened from the visitors tab + dashboard.
 // Implements the Check-In form from VisiLog spec + User Guide:
-//   - First/Last name, phone, company, purpose (dropdown), host (dropdown)
-//   - Badge number auto-generated and shown read-only
-//   - Optional photo placeholder
-//   - Optional consent / signature toggle
+// - First/Last name, phone, company, purpose (dropdown), host (dropdown)
+// - Badge number auto-generated and shown read-only
+// - Optional photo placeholder
+// - Optional consent / signature toggle
 // Submitting registers AND checks the visitor in (single click flow).
 export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScreenProps) {
   const { colors } = useTheme();
@@ -76,17 +74,22 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
     setSubmitting(true);
     try {
       const visitor = await registerAndCheckIn({
-        firstName, lastName, phone, email, company,
+        firstName,
+        lastName,
+        phone,
+        email,
+        company,
         purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
         hostId: hostId as string,
       });
-      Alert.alert(
-        'Checked in',
-        `${visitor.fullName} (${visitor.badgeId}) is now on-site.`,
-        [{ text: 'Done', onPress: () => navigation.goBack() }]
-      );
+      Alert.alert('Checked in', `${visitor.fullName} (${visitor.badgeId}) is now on-site.`, [
+        { text: 'Done', onPress: () => navigation.goBack() },
+      ]);
     } catch (err) {
-      Alert.alert('Could not check in visitor', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not check in visitor',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -105,13 +108,17 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
 
       <Card>
         {/* Photo placeholder -- tappable square that toggles a "photo added"
-            state. A real build would launch expo-image-picker here. */}
+ state. A real build would launch expo-image-picker here. */}
         <Pressable
           onPress={() => setPhotoAdded((p) => !p)}
           style={[
             styles.photo,
             { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
-            photoAdded && { borderStyle: 'solid', borderColor: colors.status.success.solid, backgroundColor: colors.status.success.bg },
+            photoAdded && {
+              borderStyle: 'solid',
+              borderColor: colors.status.success.solid,
+              backgroundColor: colors.status.success.bg,
+            },
           ]}
         >
           <Ionicons
@@ -220,11 +227,14 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
         </View>
 
         {/* Consent / digital signature */}
-        <Pressable
-          onPress={() => setConsent((c) => !c)}
-          style={styles.consent}
-        >
-          <View style={[styles.checkbox, { borderColor: colors.borderStrong }, consent && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+        <Pressable onPress={() => setConsent((c) => !c)} style={styles.consent}>
+          <View
+            style={[
+              styles.checkbox,
+              { borderColor: colors.borderStrong },
+              consent && { backgroundColor: colors.primary, borderColor: colors.primary },
+            ]}
+          >
             {consent ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
           </View>
           <View style={{ flex: 1, marginLeft: spacing.xs }}>
@@ -235,7 +245,11 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
           </View>
         </Pressable>
         {errors.consent ? (
-          <Text variant="caption" color={colors.status.error.solid} style={{ marginTop: -8, marginBottom: 8 }}>
+          <Text
+            variant="caption"
+            color={colors.status.error.solid}
+            style={{ marginTop: -8, marginBottom: 8 }}
+          >
             {errors.consent}
           </Text>
         ) : null}
@@ -282,8 +296,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   checkbox: {
-    width: 20, height: 20, borderRadius: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 6,
     borderWidth: 1.5,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

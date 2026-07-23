@@ -67,14 +67,12 @@ export default function Select<T>({
         </Text>
       ) : null}
 
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-      >
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={[styles.sheet, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
+          <Pressable
+            style={[styles.sheet, { backgroundColor: colors.surface }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
             {label ? (
               <Text variant="h3" style={{ marginBottom: spacing.sm }}>
@@ -85,7 +83,9 @@ export default function Select<T>({
             <FlatList
               data={options}
               keyExtractor={(item) => String(item.value)}
-              ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.border }]} />}
+              ItemSeparatorComponent={() => (
+                <View style={[styles.sep, { backgroundColor: colors.border }]} />
+              )}
               renderItem={({ item }) => {
                 const active = item.value === value;
                 return (
@@ -141,12 +141,15 @@ const styles = StyleSheet.create({
     maxHeight: '70%',
   },
   handle: {
-    width: 36, height: 4, borderRadius: 2,
+    width: 36,
+    height: 4,
+    borderRadius: 2,
     alignSelf: 'center',
     marginBottom: spacing.sm,
   },
   row: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: spacing.sm,
   },
   sep: { height: 1 },

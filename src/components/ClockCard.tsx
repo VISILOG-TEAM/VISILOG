@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import {
-  View, StyleSheet, Alert, Modal, TextInput, Pressable,
+  View,
+  StyleSheet,
+  Alert,
+  Modal,
+  TextInput,
+  Pressable,
   KeyboardAvoidingView,
 } from 'react-native';
 import * as LocalAuthentication from 'expo-local-authentication';
@@ -30,7 +35,10 @@ import { ApiError } from '../api/client';
 // once today. None of this stops someone who genuinely knows a
 // coworker's password/has their fingerprint, but it blocks the far
 // more common case of clocking in from a phone someone else left
-// signed in and unattended. Clocking OUT never blocks.
+// signed in and unattended. Clocking OUT only needs a plain
+// "are you sure" confirmation -- there's no fraud risk in accidentally
+// clocking yourself out early, just annoyance, so a lightweight confirm
+// is enough (no biometric/password re-check).
 export default function ClockCard() {
   const { colors } = useTheme();
   const { user, organization, verifyPassword } = useAuth();
@@ -50,14 +58,20 @@ export default function ClockCard() {
       const r = await clockIn(employeeId, user!.name);
       Alert.alert('Checked in', `Welcome. Clocked in at ${fmtTime(r.timestamp)}.`);
     } catch (err) {
-      Alert.alert('Could not clock in', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not clock in',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     }
   };
 
   const toggle = async () => {
     if (!clockedIn) {
       if (hasClockedInToday(employeeId)) {
-        Alert.alert('Already clocked in today', 'You can only clock in once per day -- see you tomorrow.');
+        Alert.alert(
+          'Already clocked in today',
+          'You can only clock in once per day -- see you tomorrow.',
+        );
         return;
       }
       setChecking(true);
@@ -75,7 +89,7 @@ export default function ClockCard() {
       }
 
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      const isEnrolled = hasHardware && await LocalAuthentication.isEnrolledAsync();
+      const isEnrolled = hasHardware && (await LocalAuthentication.isEnrolledAsync());
       if (isEnrolled) {
         const result = await LocalAuthentication.authenticateAsync({
           promptMessage: 'Confirm it is you to clock in',
@@ -99,12 +113,24 @@ export default function ClockCard() {
       setPassword('');
       setConfirmVisible(true);
     } else {
-      try {
-        const r = await clockOut(employeeId, user!.name);
-        Alert.alert('Checked out', `See you next time. Clocked out at ${fmtTime(r.timestamp)}.`);
-      } catch (err) {
-        Alert.alert('Could not clock out', err instanceof ApiError ? err.message : 'Something went wrong.');
-      }
+      Alert.alert('Clock out?', "You'll be marked off the clock.", [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clock out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const r = await clockOut(employeeId, user!.name);
+              Alert.alert('Checked out', `See you next time. Clocked out at ${fmtTime(r.timestamp)}.`);
+            } catch (err) {
+              Alert.alert(
+                'Could not clock out',
+                err instanceof ApiError ? err.message : 'Something went wrong.',
+              );
+            }
+          },
+        },
+      ]);
     }
   };
 
@@ -127,7 +153,9 @@ export default function ClockCard() {
     <Card accent={clockedIn ? 'onsite' : 'neutral'}>
       <View style={styles.row}>
         <View style={{ flex: 1 }}>
-          <Text variant="caption" color={colors.textSecondary}>Work status</Text>
+          <Text variant="caption" color={colors.textSecondary}>
+            Work status
+          </Text>
           <Text variant="h2">{clockedIn ? 'On the clock' : 'Off the clock'}</Text>
           {clockedIn && lastRecord ? (
             <Text variant="caption" color={colors.textMuted}>
@@ -140,7 +168,15 @@ export default function ClockCard() {
           ) : null}
         </View>
         <Button
-          label={checking ? 'Checking...' : clockedIn ? 'Check out' : doneForToday ? 'Done for today' : 'Check in'}
+          label={
+            checking
+              ? 'Checking...'
+              : clockedIn
+                ? 'Check out'
+                : doneForToday
+                  ? 'Done for today'
+                  : 'Check in'
+          }
           icon={clockedIn ? 'log-out-outline' : 'log-in-outline'}
           variant={clockedIn ? 'danger' : 'primary'}
           onPress={toggle}
@@ -153,7 +189,10 @@ export default function ClockCard() {
         password={password}
         onChangePassword={setPassword}
         confirming={confirming}
-        onCancel={() => { setConfirmVisible(false); setPassword(''); }}
+        onCancel={() => {
+          setConfirmVisible(false);
+          setPassword('');
+        }}
         onConfirm={onConfirmClockIn}
       />
     </Card>
@@ -173,15 +212,17 @@ interface ConfirmClockInModalProps {
 // biometric prompt itself was cancelled/failed) -- see the note on
 // ClockCard above.
 function ConfirmClockInModal({
-  visible, password, onChangePassword, confirming, onCancel, onConfirm,
+  visible,
+  password,
+  onChangePassword,
+  confirming,
+  onCancel,
+  onConfirm,
 }: ConfirmClockInModalProps) {
   const { colors } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <KeyboardAvoidingView
-        style={styles.modalWrap}
-        behavior="padding"
-      >
+      <KeyboardAvoidingView style={styles.modalWrap} behavior="padding">
         <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Confirm it's you</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
@@ -197,8 +238,13 @@ function ConfirmClockInModal({
             style={[styles.modalInput, { borderColor: colors.border, color: colors.textPrimary }]}
           />
           <View style={styles.modalRow}>
-            <Pressable onPress={onCancel} style={[styles.modalBtn, { backgroundColor: colors.surfaceAlt }]}>
-              <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
+            <Pressable
+              onPress={onCancel}
+              style={[styles.modalBtn, { backgroundColor: colors.surfaceAlt }]}
+            >
+              <Text variant="bodySemibold" color={colors.textSecondary}>
+                Cancel
+              </Text>
             </Pressable>
             <Pressable
               onPress={onConfirm}
@@ -222,20 +268,33 @@ function ConfirmClockInModal({
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   modalWrap: {
-    flex: 1, backgroundColor: 'rgba(10,42,29,0.55)',
-    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+    flex: 1,
+    backgroundColor: 'rgba(10,42,29,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
   },
   modalCard: {
-    width: '100%', maxWidth: 360,
+    width: '100%',
+    maxWidth: 360,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   modalInput: {
-    borderWidth: 1, borderRadius: radius.md,
-    paddingHorizontal: spacing.sm, paddingVertical: 10,
-    fontFamily: fonts.regular, fontSize: 14,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 10,
+    fontFamily: fonts.regular,
+    fontSize: 14,
     marginBottom: spacing.sm,
   },
   modalRow: { flexDirection: 'row', marginTop: spacing.xs, gap: spacing.sm },
-  modalBtn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  modalBtn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

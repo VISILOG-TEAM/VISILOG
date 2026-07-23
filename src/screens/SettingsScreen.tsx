@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Switch, Alert, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Button, Input, Avatar, Badge,
-} from '../components';
+import { Screen, Header, Text, Card, Button, Input, Avatar, Badge } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -44,14 +42,23 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
       return;
     }
     Alert.alert('Password updated', 'Your password has been changed.');
-    setCurrentPw(''); setNewPw(''); setConfirmPw('');
+    setCurrentPw('');
+    setNewPw('');
+    setConfirmPw('');
     setEditingPassword(false);
   };
 
   const onLogout = () => {
     Alert.alert('Sign out?', "You'll need to sign in again to access VisiLog.", [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => { logout(); setOrgTheme(null); } },
+      {
+        text: 'Sign out',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+          setOrgTheme(null);
+        },
+      },
     ]);
   };
 
@@ -87,18 +94,43 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
       <Card>
         {editingPassword ? (
           <>
-            <Input label="Current password" value={currentPw} onChangeText={setCurrentPw}
-              placeholder="Current password" icon="lock-closed-outline" secureTextEntry />
-            <Input label="New password" value={newPw} onChangeText={setNewPw}
-              placeholder="New password" icon="key-outline" secureTextEntry
-              hint="Must be at least 8 characters." />
-            <Input label="Confirm new password" value={confirmPw} onChangeText={setConfirmPw}
-              placeholder="Repeat new password" icon="shield-checkmark-outline" secureTextEntry />
+            <Input
+              label="Current password"
+              value={currentPw}
+              onChangeText={setCurrentPw}
+              placeholder="Current password"
+              icon="lock-closed-outline"
+              secureTextEntry
+            />
+            <Input
+              label="New password"
+              value={newPw}
+              onChangeText={setNewPw}
+              placeholder="New password"
+              icon="key-outline"
+              secureTextEntry
+              hint="Must be at least 8 characters."
+            />
+            <Input
+              label="Confirm new password"
+              value={confirmPw}
+              onChangeText={setConfirmPw}
+              placeholder="Repeat new password"
+              icon="shield-checkmark-outline"
+              secureTextEntry
+            />
             <View style={{ flexDirection: 'row' }}>
-              <Button label="Cancel" variant="ghost" onPress={() => setEditingPassword(false)}
-                style={{ flex: 1, marginRight: spacing.xs }} />
-              <Button label="Save" onPress={onSavePassword}
-                style={{ flex: 1, marginLeft: spacing.xs }} />
+              <Button
+                label="Cancel"
+                variant="ghost"
+                onPress={() => setEditingPassword(false)}
+                style={{ flex: 1, marginRight: spacing.xs }}
+              />
+              <Button
+                label="Save"
+                onPress={onSavePassword}
+                style={{ flex: 1, marginLeft: spacing.xs }}
+              />
             </View>
           </>
         ) : (
@@ -125,14 +157,15 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
         <ToggleRow
           label="Dark mode"
           sub="Use a dark color scheme throughout the app."
-          value={dark} onChange={setDarkOverride}
+          value={dark}
+          onChange={setDarkOverride}
         />
       </Card>
 
       {/* Notifications -- these toggles are about staff workflow (someone
-          else pre-booking, missing a call, a card being tapped), which
-          means nothing to a visitor account, so this whole section is
-          staff-only. */}
+ else pre-booking, missing a call, a card being tapped), which
+ means nothing to a visitor account, so this whole section is
+ staff-only. */}
       {user?.role !== 'visitor' ? (
         <>
           <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
@@ -142,43 +175,51 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             <ToggleRow
               label="New appointment alerts"
               sub="Notify me when a visitor pre-books."
-              value={notifyAppts} onChange={setNotifyAppts}
+              value={notifyAppts}
+              onChange={setNotifyAppts}
             />
             <Divider />
             <ToggleRow
               label="Missed call alerts"
               sub="Push a reminder for unreturned calls."
-              value={notifyCalls} onChange={setNotifyCalls}
+              value={notifyCalls}
+              onChange={setNotifyCalls}
             />
             <Divider />
             <ToggleRow
               label="NFC access events"
               sub="Notify on revoked or denied card taps."
-              value={notifyNfc} onChange={setNotifyNfc}
+              value={notifyNfc}
+              onChange={setNotifyNfc}
             />
           </Card>
         </>
       ) : null}
 
       {/* Organisation -- administration for the whole tenant, so only the
-          Manager/Administrator who owns that org sees it. Everyone else's
-          settings are about their own account, not the company's. */}
+ Manager/Administrator who owns that org sees it. Everyone else's
+ settings are about their own account, not the company's. */}
       {user?.role === 'manager' ? (
         <>
           <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
             Organisation
           </Text>
           <Card padded={false}>
-            <LinkRow icon="card-outline" title="Billing & subscription"
-              sub={`${user.organizationName} Â· manage plan & invoices`}
-              onPress={() => navigation.navigate('Billing')} />
+            <LinkRow
+              icon="card-outline"
+              title="Billing & subscription"
+              sub={`${user.organizationName} - manage plan & invoices`}
+              onPress={() => navigation.navigate('Billing')}
+            />
             <Divider />
-            <LinkRow icon="business-outline" title="Company Setup"
+            <LinkRow
+              icon="business-outline"
+              title="Company Setup"
               sub="Branding, office location, staff & rooms"
-              onPress={() => navigation.navigate('CompanySetup')} />
+              onPress={() => navigation.navigate('CompanySetup')}
+            />
             <Divider />
-            <LinkRow icon="globe-outline" title="Languages"
-              sub="English (default)" />
+            <LinkRow icon="globe-outline" title="Languages" sub="English (default)" />
           </Card>
         </>
       ) : null}
@@ -188,31 +229,52 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
         About
       </Text>
       <Card padded={false}>
-        <LinkRow icon="information-circle-outline" title="VisiLog"
+        <LinkRow
+          icon="information-circle-outline"
+          title="VisiLog"
           sub="Build 1.0.0 - Reception + NFC"
-          onPress={() => Alert.alert(
-            'VisiLog',
-            'Build 1.0.0 -- Reception + NFC\n\nVisitor management, staff attendance, and meeting-room booking for ' +
-            (user?.organizationName || 'your organization') + '.'
-          )} />
+          onPress={() =>
+            Alert.alert(
+              'VisiLog',
+              'Build 1.0.0 -- Reception + NFC\n\nVisitor management, staff attendance, and meeting-room booking for ' +
+                (user?.organizationName || 'your organization') +
+                '.',
+            )
+          }
+        />
         <Divider />
-        <LinkRow icon="help-circle-outline" title="Help & support"
-          sub={user?.role === 'manager' ? 'Contact the VisiLog help desk' : 'Contact your VisiLog administrator'}
-          onPress={() => Alert.alert(
-            'Help & support',
+        <LinkRow
+          icon="help-circle-outline"
+          title="Help & support"
+          sub={
             user?.role === 'manager'
-              ? "As the Administrator, reach the VisiLog help desk directly for anything you can't resolve in Company Setup:\n\nPhone: 0509343709\nEmail: voldyabbey@gmail.com"
-              : "For access issues, incorrect roster entries, or anything else you need changed, contact your organization's Administrator -- they manage your staff roster and company settings in Company Setup."
-          )} />
+              ? 'Contact the VisiLog help desk'
+              : 'Contact your VisiLog administrator'
+          }
+          onPress={() =>
+            Alert.alert(
+              'Help & support',
+              user?.role === 'manager'
+                ? "As the Administrator, reach the VisiLog help desk directly for anything you can't resolve in Company Setup:\n\nPhone: 0509343709\nEmail: voldyabbey@gmail.com"
+                : "For access issues, incorrect roster entries, or anything else you need changed, contact your organization's Administrator -- they manage your staff roster and company settings in Company Setup.",
+            )
+          }
+        />
         <Divider />
-        <LinkRow icon="document-text-outline" title="Privacy policy"
+        <LinkRow
+          icon="document-text-outline"
+          title="Privacy policy"
           sub="How visitor data is collected & stored"
-          onPress={() => Alert.alert(
-            'Privacy policy',
-            'Visitor and staff data you enter (name, phone, purpose of visit, badge/NFC activity) is stored for ' +
-            (user?.organizationName || 'your organization') + ' only, and is never shared with other companies using VisiLog. ' +
-            "It's used solely to run reception, attendance, and meeting-room booking for your organization."
-          )} />
+          onPress={() =>
+            Alert.alert(
+              'Privacy policy',
+              'Visitor and staff data you enter (name, phone, purpose of visit, badge/NFC activity) is stored for ' +
+                (user?.organizationName || 'your organization') +
+                ' only, and is never shared with other companies using VisiLog. ' +
+                "It's used solely to run reception, attendance, and meeting-room booking for your organization.",
+            )
+          }
+        />
       </Card>
 
       <Button
@@ -227,14 +289,24 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 }
 
 function ToggleRow({
-  label, sub, value, onChange,
-}: { label: string; sub: string; value: boolean; onChange: (value: boolean) => void }) {
+  label,
+  sub,
+  value,
+  onChange,
+}: {
+  label: string;
+  sub: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+}) {
   const { colors } = useTheme();
   return (
     <View style={styles.toggleRow}>
       <View style={{ flex: 1, marginRight: spacing.sm }}>
         <Text variant="bodySemibold">{label}</Text>
-        <Text variant="caption" color={colors.textSecondary}>{sub}</Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          {sub}
+        </Text>
       </View>
       <Switch
         value={value}
@@ -247,8 +319,16 @@ function ToggleRow({
 }
 
 function LinkRow({
-  icon, title, sub, onPress,
-}: { icon: IoniconName; title: string; sub?: string; onPress?: () => void }) {
+  icon,
+  title,
+  sub,
+  onPress,
+}: {
+  icon: IoniconName;
+  title: string;
+  sub?: string;
+  onPress?: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <Pressable style={styles.linkRow} onPress={onPress}>
@@ -257,7 +337,11 @@ function LinkRow({
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="bodySemibold">{title}</Text>
-        {sub ? <Text variant="caption" color={colors.textSecondary}>{sub}</Text> : null}
+        {sub ? (
+          <Text variant="caption" color={colors.textSecondary}>
+            {sub}
+          </Text>
+        ) : null}
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </Pressable>
@@ -273,16 +357,21 @@ const styles = StyleSheet.create({
   profileRow: { flexDirection: 'row', alignItems: 'center' },
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   toggleRow: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing.md,
   },
   linkRow: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing.md,
   },
   linkIcon: {
-    width: 32, height: 32, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing.sm,
   },
   divider: { height: 1, marginLeft: spacing.md + 32 + spacing.sm },

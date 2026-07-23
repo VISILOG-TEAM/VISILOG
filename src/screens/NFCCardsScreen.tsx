@@ -2,7 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, FlatList, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, Segmented, EmptyState, Avatar, Button,
+  Screen,
+  Header,
+  Text,
+  Card,
+  Badge,
+  Segmented,
+  EmptyState,
+  Avatar,
+  Button,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
@@ -38,16 +46,16 @@ export default function NFCCardsScreen({ navigation }: NFCCardsScreenProps) {
   }, [nfcCards, filter, employeeById]);
 
   const onRevoke = (card: NfcCardType) => {
-    Alert.alert(
-      'Revoke NFC card?',
-      `Card ${card.tokenHash} will no longer grant access.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Revoke', style: 'destructive', onPress: () => {
+    Alert.alert('Revoke NFC card?', `Card ${card.tokenHash} will no longer grant access.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Revoke',
+        style: 'destructive',
+        onPress: () => {
           Alert.alert('Demo only', 'Card revocation hits the NFC service in production.');
-        }},
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   return (
@@ -82,26 +90,30 @@ export default function NFCCardsScreen({ navigation }: NFCCardsScreenProps) {
             message="Issued NFC cards will appear in this list."
           />
         }
-        renderItem={({ item }) => (
-          <NfcCard card={item} onRevoke={() => onRevoke(item)} />
-        )}
+        renderItem={({ item }) => <NfcCard card={item} onRevoke={() => onRevoke(item)} />}
       />
     </Screen>
   );
 }
 
 function NfcCard({
-  card, onRevoke,
-}: { card: NfcCardType & { holderName: string }; onRevoke: () => void }) {
+  card,
+  onRevoke,
+}: {
+  card: NfcCardType & { holderName: string };
+  onRevoke: () => void;
+}) {
   const { colors } = useTheme();
   const isActive = card.status === 'active';
   return (
-    <Card
-      accent={isActive ? 'onsite' : 'rejected'}
-      style={{ marginHorizontal: spacing.md }}
-    >
+    <Card accent={isActive ? 'onsite' : 'rejected'} style={{ marginHorizontal: spacing.md }}>
       <View style={styles.cardHead}>
-        <View style={[styles.chip, { backgroundColor: isActive ? colors.primarySurface : colors.status.rejected.bg }]}>
+        <View
+          style={[
+            styles.chip,
+            { backgroundColor: isActive ? colors.primarySurface : colors.status.rejected.bg },
+          ]}
+        >
           <Ionicons
             name="card"
             size={20}
@@ -118,17 +130,23 @@ function NfcCard({
       </View>
 
       <View style={[styles.tokenRow, { backgroundColor: colors.surfaceAlt }]}>
-        <Text variant="caption" color={colors.textMuted}>Token</Text>
+        <Text variant="caption" color={colors.textMuted}>
+          Token
+        </Text>
         <Text style={[styles.token, { color: colors.brand }]}>{card.tokenHash}</Text>
       </View>
 
       <View style={styles.dateRow}>
         <View style={{ flex: 1 }}>
-          <Text variant="caption" color={colors.textMuted}>Issued</Text>
+          <Text variant="caption" color={colors.textMuted}>
+            Issued
+          </Text>
           <Text variant="bodyMd">{fmtDate(card.issuedAt)}</Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant="caption" color={colors.textMuted}>Expires</Text>
+          <Text variant="caption" color={colors.textMuted}>
+            Expires
+          </Text>
           <Text variant="bodyMd">{fmtDate(card.expiresAt)}</Text>
         </View>
       </View>
@@ -151,8 +169,11 @@ const styles = StyleSheet.create({
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
   cardHead: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm },
   chip: {
-    width: 44, height: 44, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tokenRow: {
     borderRadius: radius.sm,

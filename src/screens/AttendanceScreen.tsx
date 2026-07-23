@@ -2,13 +2,27 @@ import React, { useState } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile, ExportModal,
+  Screen,
+  Header,
+  Text,
+  Card,
+  Badge,
+  EmptyState,
+  Avatar,
+  StatTile,
+  ExportModal,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { fmtTime, fmtDateTime, fmtRelative } from '../data/format';
-import { toCsv, toHtmlTable, exportCsvFile, exportPdfFile, type ExportColumn } from '../data/export';
+import {
+  toCsv,
+  toHtmlTable,
+  exportCsvFile,
+  exportPdfFile,
+  type ExportColumn,
+} from '../data/export';
 import type { RootStackNavigation } from '../types/navigation';
 import type { ClockRecord, ClockType, Employee } from '../types';
 
@@ -25,7 +39,7 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
   const [exporting, setExporting] = useState(false);
 
   const sorted = [...clockRecords].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
   );
 
   const exportColumns: ExportColumn<ClockRecord>[] = [
@@ -34,8 +48,13 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
     { header: 'Type', get: (t) => (t.type === 'in' ? 'Tap in' : 'Tap out') },
     { header: 'Time', get: (t) => fmtDateTime(t.timestamp) },
   ];
-  const onExportCsv = () => exportCsvFile(`attendance-${Date.now()}.csv`, toCsv(sorted, exportColumns));
-  const onExportPdf = () => exportPdfFile(`attendance-${Date.now()}.pdf`, toHtmlTable('Attendance log', sorted, exportColumns));
+  const onExportCsv = () =>
+    exportCsvFile(`attendance-${Date.now()}.csv`, toCsv(sorted, exportColumns));
+  const onExportPdf = () =>
+    exportPdfFile(
+      `attendance-${Date.now()}.pdf`,
+      toHtmlTable('Attendance log', sorted, exportColumns),
+    );
 
   // Stat: how many distinct employees are currently signed in (based on
   // their last record of the day being 'in').
@@ -61,16 +80,17 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
           subtitle="Clock-in/out log & punctuality"
           rightActions={[
             { icon: 'download-outline', onPress: () => setExporting(true) },
-            { icon: 'time-outline', onPress: () => navigation.navigate('History', { tab: 'clock' }) },
+            {
+              icon: 'time-outline',
+              onPress: () => navigation.navigate('History', { tab: 'clock' }),
+            },
             { icon: 'close', onPress: () => navigation.goBack() },
           ]}
         />
         <View style={{ flexDirection: 'row' }}>
-          <StatTile icon="people" tint="primary"
-            label="Employees on-site" value={onsiteCount} />
+          <StatTile icon="people" tint="primary" label="Employees on-site" value={onsiteCount} />
           <View style={{ width: spacing.sm }} />
-          <StatTile icon="alarm" tint="pending"
-            label="Late arrivals" value={lateCount} />
+          <StatTile icon="alarm" tint="pending" label="Late arrivals" value={lateCount} />
         </View>
       </View>
 
@@ -86,9 +106,7 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
             message="Clock-in/out activity will appear here as it happens."
           />
         }
-        renderItem={({ item }) => (
-          <TapRow tap={item} employee={employeeById(item.employeeId)} />
-        )}
+        renderItem={({ item }) => <TapRow tap={item} employee={employeeById(item.employeeId)} />}
       />
 
       <ExportModal
@@ -118,7 +136,11 @@ function TapRow({ tap, employee }: { tap: ClockRecord; employee?: Employee }) {
           </Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Badge label={isIn ? 'Tap in' : 'Tap out'} status={isIn ? 'success' : 'neutral'} size="sm" />
+          <Badge
+            label={isIn ? 'Tap in' : 'Tap out'}
+            status={isIn ? 'success' : 'neutral'}
+            size="sm"
+          />
           <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
             {fmtTime(tap.timestamp)} - {fmtRelative(tap.timestamp)}
           </Text>

@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, SectionList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState,
-} from '../components';
+import { Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -41,10 +39,7 @@ export default function CallLogScreen({ navigation }: CallLogScreenProps) {
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [calls, query, filter, employeeById]);
 
-  const sections = useMemo(
-    () => splitRecentOlder(filtered, (c) => c.timestamp),
-    [filtered]
-  );
+  const sections = useMemo(() => splitRecentOlder(filtered, (c) => c.timestamp), [filtered]);
 
   return (
     <Screen scroll={false} padded={false}>
@@ -79,7 +74,11 @@ export default function CallLogScreen({ navigation }: CallLogScreenProps) {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         renderSectionHeader={({ section }) => (
-          <Text variant="eyebrow" color={colors.textMuted} style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+          <Text
+            variant="eyebrow"
+            color={colors.textMuted}
+            style={[styles.sectionHeader, { backgroundColor: colors.background }]}
+          >
             {section.title}
           </Text>
         )}
@@ -103,27 +102,25 @@ function CallRow({ call }: { call: Call }) {
   const { employeeById } = useData();
   const host = employeeById(call.hostId);
   const icon: 'call' | 'call-outline' | 'call-sharp' =
-    call.callType === 'Incoming' ? 'call' :
-    call.callType === 'Outgoing' ? 'call-outline' :
-    'call-sharp';
+    call.callType === 'Incoming'
+      ? 'call'
+      : call.callType === 'Outgoing'
+        ? 'call-outline'
+        : 'call-sharp';
   const badgeStatus: StatusKey =
-    call.callType === 'Missed' ? 'rejected' :
-    call.callType === 'Incoming' ? 'success' :
-    'info';
+    call.callType === 'Missed' ? 'rejected' : call.callType === 'Incoming' ? 'success' : 'info';
 
   return (
     <Card padded={false} style={{ marginHorizontal: spacing.md }}>
       <View style={styles.row}>
         <View style={[styles.iconWrap, { backgroundColor: colors.status[badgeStatus].bg }]}>
-          <Ionicons
-            name={icon}
-            size={18}
-            color={colors.status[badgeStatus].solid}
-          />
+          <Ionicons name={icon} size={18} color={colors.status[badgeStatus].solid} />
         </View>
         <View style={{ flex: 1, marginLeft: spacing.sm }}>
           <View style={styles.rowTop}>
-            <Text variant="bodySemibold" numberOfLines={1}>{call.callerName}</Text>
+            <Text variant="bodySemibold" numberOfLines={1}>
+              {call.callerName}
+            </Text>
             <Badge label={call.callType} status={badgeStatus} size="sm" dot={false} />
           </View>
           <Text variant="caption" color={colors.textSecondary} numberOfLines={1}>
@@ -133,7 +130,12 @@ function CallRow({ call }: { call: Call }) {
             {fmtDateTime(call.timestamp)} - {call.durationMinutes}m - {call.purpose}
           </Text>
           {call.notes ? (
-            <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }} numberOfLines={2}>
+            <Text
+              variant="caption"
+              color={colors.textSecondary}
+              style={{ marginTop: 2 }}
+              numberOfLines={2}
+            >
               "{call.notes}"
             </Text>
           ) : null}
@@ -149,8 +151,11 @@ const styles = StyleSheet.create({
   sectionHeader: { paddingVertical: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'flex-start', padding: spacing.md },
   iconWrap: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
 });

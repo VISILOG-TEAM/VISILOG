@@ -1,12 +1,29 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  View, FlatList, StyleSheet, Alert, Modal, TextInput, Pressable, KeyboardAvoidingView, ScrollView,
+  View,
+  FlatList,
+  StyleSheet,
+  Alert,
+  Modal,
+  TextInput,
+  Pressable,
+  KeyboardAvoidingView,
+  ScrollView,
   RefreshControl,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, Button, Segmented, EmptyState, Avatar, RescheduleModal,
+  Screen,
+  Header,
+  Text,
+  Card,
+  Badge,
+  Button,
+  Segmented,
+  EmptyState,
+  Avatar,
+  RescheduleModal,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
@@ -17,7 +34,12 @@ import { fmtTime, fmtDate } from '../data/format';
 import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
 import type {
-  Appointment, AppointmentStatus, IoniconName, MeetingRoom, RoomBooking, StatusKey,
+  Appointment,
+  AppointmentStatus,
+  IoniconName,
+  MeetingRoom,
+  RoomBooking,
+  StatusKey,
 } from '../types';
 
 interface AppointmentsScreenProps {
@@ -28,9 +50,9 @@ type AppointmentsView = 'appointments' | 'rooms';
 
 // AppointmentsScreen
 // Pre-scheduled visits with three statuses from the spec:
-//   - Pending  (needs receptionist action)
-//   - Admitted (already approved + checked in)
-//   - Rejected (denied entry)
+// - Pending (needs receptionist action)
+// - Admitted (already approved + checked in)
+// - Rejected (denied entry)
 // Each pending row has one-tap Admit / Reject buttons. A top-level
 // slider also switches over to a Meeting Rooms view (available /
 // booked / in-use), since reception manages both from one screen.
@@ -42,9 +64,17 @@ export default function AppointmentsScreen({ navigation }: AppointmentsScreenPro
       <View style={styles.head}>
         <Header
           title={view === 'appointments' ? 'Appointments' : 'Meetings'}
-          subtitle={view === 'appointments' ? 'Pre-booked visits & approvals' : 'Everything booked, on-site or outside'}
+          subtitle={
+            view === 'appointments'
+              ? 'Pre-booked visits & approvals'
+              : 'Everything booked, on-site or outside'
+          }
           rightIcon="time-outline"
-          onRightPress={() => navigation.navigate('History', { tab: view === 'appointments' ? 'appointments' : 'meetings' })}
+          onRightPress={() =>
+            navigation.navigate('History', {
+              tab: view === 'appointments' ? 'appointments' : 'meetings',
+            })
+          }
         />
         <Segmented
           value={view}
@@ -94,36 +124,36 @@ function AppointmentsList() {
   const admittingRef = useRef(new Set<string>());
 
   const filtered = useMemo(
-    () => appointments
-      .filter((a) => filter === 'all' || a.status === filter)
-      .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
-    [appointments, filter]
+    () =>
+      appointments
+        .filter((a) => filter === 'all' || a.status === filter)
+        .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
+    [appointments, filter],
   );
 
   const onAdmit = (appt: Appointment) => {
     if (admittingRef.current.has(appt.id)) return;
-    Alert.alert(
-      'Admit visitor?',
-      `${appt.visitorName} will be registered and checked in.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Admit',
-          onPress: async () => {
-            if (admittingRef.current.has(appt.id)) return;
-            admittingRef.current.add(appt.id);
-            try {
-              const v = await admitAppointment(appt);
-              Alert.alert('Admitted', `${v.fullName} - ${v.badgeId}`);
-            } catch (err) {
-              Alert.alert('Could not admit visitor', err instanceof ApiError ? err.message : 'Something went wrong.');
-            } finally {
-              admittingRef.current.delete(appt.id);
-            }
-          },
+    Alert.alert('Admit visitor?', `${appt.visitorName} will be registered and checked in.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Admit',
+        onPress: async () => {
+          if (admittingRef.current.has(appt.id)) return;
+          admittingRef.current.add(appt.id);
+          try {
+            const v = await admitAppointment(appt);
+            Alert.alert('Admitted', `${v.fullName} - ${v.badgeId}`);
+          } catch (err) {
+            Alert.alert(
+              'Could not admit visitor',
+              err instanceof ApiError ? err.message : 'Something went wrong.',
+            );
+          } finally {
+            admittingRef.current.delete(appt.id);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const onReject = (appt: Appointment) => setRejecting(appt);
@@ -134,7 +164,10 @@ function AppointmentsList() {
       await updateAppointmentStatus(rejecting.id, 'rejected', reason);
       setRejecting(null);
     } catch (err) {
-      Alert.alert('Could not reject', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not reject',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     }
   };
 
@@ -211,18 +244,28 @@ interface AppointmentRowProps {
   onReschedule: (() => void) | null;
 }
 
-function AppointmentRow({ appointment, canAct, onAdmit, onReject, onReschedule }: AppointmentRowProps) {
+function AppointmentRow({
+  appointment,
+  canAct,
+  onAdmit,
+  onReject,
+  onReschedule,
+}: AppointmentRowProps) {
   const { colors } = useTheme();
   const { employeeById } = useData();
   const host = employeeById(appointment.hostId);
   const accent: StatusKey =
-    appointment.status === 'admitted' ? 'success' :
-    appointment.status === 'rejected' ? 'rejected' :
-    'pending';
+    appointment.status === 'admitted'
+      ? 'success'
+      : appointment.status === 'rejected'
+        ? 'rejected'
+        : 'pending';
   const badgeStatus: StatusKey =
-    appointment.status === 'admitted' ? 'success' :
-    appointment.status === 'rejected' ? 'rejected' :
-    'pending';
+    appointment.status === 'admitted'
+      ? 'success'
+      : appointment.status === 'rejected'
+        ? 'rejected'
+        : 'pending';
 
   return (
     <Card accent={accent} style={{ marginHorizontal: spacing.md }}>
@@ -245,10 +288,13 @@ function AppointmentRow({ appointment, canAct, onAdmit, onReject, onReschedule }
           text={`${fmtDate(appointment.scheduledAt)} - ${fmtTime(appointment.scheduledAt)}`}
         />
         {/* NFC code, visible so reception can read it aloud if a card fails --
-            only assigned once admitted, see AppointmentService.admit */}
+ only assigned once admitted, see AppointmentService.admit */}
         <MetaRow icon="card-outline" text={`Code: ${appointment.nfcCode || 'Not yet issued'}`} />
         {appointment.rescheduleReason ? (
-          <MetaRow icon="swap-horizontal-outline" text={`Rescheduled: ${appointment.rescheduleReason}`} />
+          <MetaRow
+            icon="swap-horizontal-outline"
+            text={`Rescheduled: ${appointment.rescheduleReason}`}
+          />
         ) : null}
         {appointment.rejectReason ? (
           <MetaRow icon="close-circle-outline" text={`Rejected: ${appointment.rejectReason}`} />
@@ -300,7 +346,12 @@ interface RejectReasonModalProps {
 // why -- and if the real issue is just bad timing, "Reschedule instead"
 // routes to RescheduleModal rather than turning the visitor away.
 function RejectReasonModal({
-  visible, visitorName, canReschedule, onCancel, onConfirm, onRescheduleInstead,
+  visible,
+  visitorName,
+  canReschedule,
+  onCancel,
+  onConfirm,
+  onRescheduleInstead,
 }: RejectReasonModalProps) {
   const { colors } = useTheme();
   const [reason, setReason] = useState('');
@@ -339,11 +390,21 @@ function RejectReasonModal({
             </Pressable>
           ) : null}
           <View style={rejectStyles.row}>
-            <Pressable onPress={onCancel} style={[rejectStyles.btn, { backgroundColor: colors.surfaceAlt }]}>
-              <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
+            <Pressable
+              onPress={onCancel}
+              style={[rejectStyles.btn, { backgroundColor: colors.surfaceAlt }]}
+            >
+              <Text variant="bodySemibold" color={colors.textSecondary}>
+                Cancel
+              </Text>
             </Pressable>
-            <Pressable onPress={onSubmit} style={[rejectStyles.btn, { backgroundColor: colors.brand }]}>
-              <Text variant="bodySemibold" color={colors.textInverse}>Reject</Text>
+            <Pressable
+              onPress={onSubmit}
+              style={[rejectStyles.btn, { backgroundColor: colors.brand }]}
+            >
+              <Text variant="bodySemibold" color={colors.textInverse}>
+                Reject
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -369,12 +430,13 @@ function MetaRow({ icon, text }: { icon: IoniconName; text: string }) {
 type RoomStatus = 'available' | 'booked' | 'inuse';
 
 function roomStatus(
-  room: MeetingRoom, roomBookings: RoomBooking[]
+  room: MeetingRoom,
+  roomBookings: RoomBooking[],
 ): { status: RoomStatus; booking: RoomBooking | null } {
   const now = Date.now();
   const forRoom = roomBookings.filter((b) => b.roomId === room.id);
   const live = forRoom.find(
-    (b) => new Date(b.startTime).getTime() <= now && new Date(b.endTime).getTime() > now
+    (b) => new Date(b.startTime).getTime() <= now && new Date(b.endTime).getTime() > now,
   );
   if (live) return { status: 'inuse', booking: live };
   const upcoming = forRoom
@@ -408,14 +470,19 @@ function responseSummary(responses: RoomBooking['responses']): string {
   if (acknowledged) parts.push(`${acknowledged} seen`);
   if (declined) parts.push(`${declined} declined`);
   if (pending) parts.push(`${pending} pending`);
-  return parts.join(' Â· ') || 'No responses yet';
+  return parts.join(' - ') || 'No responses yet';
 }
 
 function MeetingsView() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const {
-    roomBookings, meetingRooms, employeeById, roomById, refreshRoomBookings, markParticipantAbsent,
+    roomBookings,
+    meetingRooms,
+    employeeById,
+    roomById,
+    refreshRoomBookings,
+    markParticipantAbsent,
   } = useData();
   const [attendanceForId, setAttendanceForId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -423,7 +490,7 @@ function MeetingsView() {
   useFocusEffect(
     useCallback(() => {
       refreshRoomBookings().catch(() => {});
-    }, [])
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -439,14 +506,17 @@ function MeetingsView() {
 
   const onToggleAbsent = (employeeId: string, absent: boolean) => {
     if (!attendanceForId) return;
-    markParticipantAbsent(attendanceForId, employeeId, absent).catch(
-      (err) => Alert.alert('Could not update attendance', err instanceof ApiError ? err.message : 'Something went wrong.')
+    markParticipantAbsent(attendanceForId, employeeId, absent).catch((err) =>
+      Alert.alert(
+        'Could not update attendance',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      ),
     );
   };
 
   const rooms = useMemo(
     () => meetingRooms.map((r) => ({ room: r, ...roomStatus(r, roomBookings) })),
-    [roomBookings, meetingRooms]
+    [roomBookings, meetingRooms],
   );
 
   // Not filtered by time at all -- BookMeetingForm defaults to today's
@@ -456,117 +526,133 @@ function MeetingsView() {
   // find it. Newest-booked first, so whatever you just booked is right
   // at the top regardless of what time you picked.
   const sortedMeetings = useMemo(
-    () => [...roomBookings].sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime()),
-    [roomBookings]
+    () =>
+      [...roomBookings].sort(
+        (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+      ),
+    [roomBookings],
   );
 
   return (
     <>
-    <FlatList
-      data={sortedMeetings}
-      keyExtractor={(b) => b.id}
-      contentContainerStyle={styles.list}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
-      ListHeaderComponent={
-        <>
-          {rooms.length > 0 ? (
-            <>
-              <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionLabel}>
-                Rooms
-              </Text>
-              {rooms.map(({ room, status, booking }) => {
-                const meta = ROOM_STATUS_META[status];
-                return (
-                  <Card key={room.id} style={{ marginBottom: spacing.sm }}>
-                    <View style={styles.headRow}>
-                      <View style={[styles.roomIcon, { backgroundColor: colors.primarySurface }]}>
-                        <Ionicons name="business" size={20} color={colors.primary} />
-                      </View>
-                      <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                        <Text variant="bodySemibold">{room.name}</Text>
-                        <Text variant="caption" color={colors.textSecondary}>
-                          {room.floor} Â· Capacity {room.capacity}
-                        </Text>
-                      </View>
-                      <Badge label={meta.label} status={meta.badge} size="sm" />
-                    </View>
-                    {booking && status !== 'available' ? (
-                      <MetaRow icon="time-outline"
-                        text={`Next: ${fmtTime(booking.startTime)} â†’ ${fmtTime(booking.endTime)}`} />
-                    ) : null}
-                  </Card>
-                );
-              })}
-            </>
-          ) : null}
-          <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionLabel}>
-            All meetings
-          </Text>
-        </>
-      }
-      ListEmptyComponent={
-        <EmptyState
-          icon="calendar-outline"
-          title="No meetings booked"
-          message="Meetings booked from Book a meeting will show up here, whether they're in a room or an outside location."
-        />
-      }
-      renderItem={({ item }) => {
-        const organiser = employeeById(item.organiserId);
-        const room = item.roomId ? roomById(item.roomId) : null;
-        return (
-          <Card style={{ marginHorizontal: spacing.md }}>
-            <View style={styles.headRow}>
-              <View style={{ flex: 1 }}>
-                <Text variant="bodySemibold">{item.title}</Text>
-                <Text variant="caption" color={colors.textSecondary}>
-                  {room ? room.name : item.location || 'Outside location'}
+      <FlatList
+        data={sortedMeetings}
+        keyExtractor={(b) => b.id}
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        ListHeaderComponent={
+          <>
+            {rooms.length > 0 ? (
+              <>
+                <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionLabel}>
+                  Rooms
                 </Text>
+                {rooms.map(({ room, status, booking }) => {
+                  const meta = ROOM_STATUS_META[status];
+                  return (
+                    <Card key={room.id} style={{ marginBottom: spacing.sm }}>
+                      <View style={styles.headRow}>
+                        <View style={[styles.roomIcon, { backgroundColor: colors.primarySurface }]}>
+                          <Ionicons name="business" size={20} color={colors.primary} />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                          <Text variant="bodySemibold">{room.name}</Text>
+                          <Text variant="caption" color={colors.textSecondary}>
+                            {room.floor} - Capacity {room.capacity}
+                          </Text>
+                        </View>
+                        <Badge label={meta.label} status={meta.badge} size="sm" />
+                      </View>
+                      {booking && status !== 'available' ? (
+                        <MetaRow
+                          icon="time-outline"
+                          text={`Next: ${fmtTime(booking.startTime)} - ${fmtTime(booking.endTime)}`}
+                        />
+                      ) : null}
+                    </Card>
+                  );
+                })}
+              </>
+            ) : null}
+            <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionLabel}>
+              All meetings
+            </Text>
+          </>
+        }
+        ListEmptyComponent={
+          <EmptyState
+            icon="calendar-outline"
+            title="No meetings booked"
+            message="Meetings booked from Book a meeting will show up here, whether they're in a room or an outside location."
+          />
+        }
+        renderItem={({ item }) => {
+          const organiser = employeeById(item.organiserId);
+          const room = item.roomId ? roomById(item.roomId) : null;
+          return (
+            <Card style={{ marginHorizontal: spacing.md }}>
+              <View style={styles.headRow}>
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodySemibold">{item.title}</Text>
+                  <Text variant="caption" color={colors.textSecondary}>
+                    {room ? room.name : item.location || 'Outside location'}
+                  </Text>
+                </View>
+                {item.priority !== 'normal' ? (
+                  <Badge
+                    label={item.priority === 'urgent' ? 'Urgent' : 'Important'}
+                    status={item.priority === 'urgent' ? 'rejected' : 'pending'}
+                    size="sm"
+                    dot={false}
+                  />
+                ) : null}
               </View>
-              {item.priority !== 'normal' ? (
-                <Badge
-                  label={item.priority === 'urgent' ? 'Urgent' : 'Important'}
-                  status={item.priority === 'urgent' ? 'rejected' : 'pending'}
-                  size="sm"
-                  dot={false}
+              <View style={styles.metaList}>
+                <MetaRow
+                  icon="time-outline"
+                  text={`${fmtDate(item.startTime)} - ${fmtTime(item.startTime)} - ${fmtTime(item.endTime)}`}
+                />
+                <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
+                {item.participantIds?.length ? (
+                  <MetaRow
+                    icon="people-outline"
+                    text={`${item.participantIds.length} staff invited`}
+                  />
+                ) : null}
+                {item.externalGuests?.length ? (
+                  <MetaRow
+                    icon="person-add-outline"
+                    text={`Guests: ${item.externalGuests
+                      .map((g) => g.name)
+                      .filter(Boolean)
+                      .join(', ')}`}
+                  />
+                ) : null}
+                {item.responses?.length ? (
+                  <MetaRow icon="checkmark-done-outline" text={responseSummary(item.responses)} />
+                ) : null}
+              </View>
+              {item.organiserId === user?.employeeId &&
+              item.participantIds?.length &&
+              new Date(item.endTime).getTime() < Date.now() ? (
+                <Button
+                  label="Mark attendance"
+                  variant="secondary"
+                  icon="checkmark-circle-outline"
+                  onPress={() => setAttendanceForId(item.id)}
                 />
               ) : null}
-            </View>
-            <View style={styles.metaList}>
-              <MetaRow icon="time-outline"
-                text={`${fmtDate(item.startTime)} Â· ${fmtTime(item.startTime)} â†’ ${fmtTime(item.endTime)}`} />
-              <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
-              {item.participantIds?.length ? (
-                <MetaRow icon="people-outline" text={`${item.participantIds.length} staff invited`} />
-              ) : null}
-              {item.externalGuests?.length ? (
-                <MetaRow icon="person-add-outline"
-                  text={`Guests: ${item.externalGuests.map((g) => g.name).filter(Boolean).join(', ')}`} />
-              ) : null}
-              {item.responses?.length ? (
-                <MetaRow icon="checkmark-done-outline" text={responseSummary(item.responses)} />
-              ) : null}
-            </View>
-            {item.organiserId === user?.employeeId && item.participantIds?.length
-              && new Date(item.endTime).getTime() < Date.now() ? (
-              <Button
-                label="Mark attendance"
-                variant="secondary"
-                icon="checkmark-circle-outline"
-                onPress={() => setAttendanceForId(item.id)}
-              />
-            ) : null}
-          </Card>
-        );
-      }}
-    />
-    <MarkAttendanceModal
-      visible={!!attendanceForId}
-      booking={attendanceBooking}
-      onClose={() => setAttendanceForId(null)}
-      onToggle={onToggleAbsent}
-    />
+            </Card>
+          );
+        }}
+      />
+      <MarkAttendanceModal
+        visible={!!attendanceForId}
+        booking={attendanceBooking}
+        onClose={() => setAttendanceForId(null)}
+        onToggle={onToggleAbsent}
+      />
     </>
   );
 }
@@ -604,7 +690,9 @@ function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttend
               const absent = response?.absent || false;
               return (
                 <View key={id} style={[attendanceStyles.row, { borderBottomColor: colors.border }]}>
-                  <Text variant="bodySemibold" style={{ flex: 1 }}>{employee?.name || 'Unknown'}</Text>
+                  <Text variant="bodySemibold" style={{ flex: 1 }}>
+                    {employee?.name || 'Unknown'}
+                  </Text>
                   <Pressable
                     onPress={() => onToggle(id, !absent)}
                     style={[
@@ -620,7 +708,12 @@ function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttend
               );
             })}
           </ScrollView>
-          <Button label="Done" variant="secondary" onPress={onClose} style={{ marginTop: spacing.md }} />
+          <Button
+            label="Done"
+            variant="secondary"
+            onPress={onClose}
+            style={{ marginTop: spacing.md }}
+          />
         </View>
       </View>
     </Modal>
@@ -636,38 +729,60 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center' },
   actionRow: { flexDirection: 'row', marginTop: spacing.xs },
   roomIcon: {
-    width: 44, height: 44, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionLabel: { marginBottom: spacing.sm, marginTop: spacing.xs },
 });
 
 const rejectStyles = StyleSheet.create({
   wrap: {
-    flex: 1, backgroundColor: 'rgba(10,42,29,0.55)',
-    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+    flex: 1,
+    backgroundColor: 'rgba(10,42,29,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
   },
   card: {
-    width: '100%', maxWidth: 360,
+    width: '100%',
+    maxWidth: 360,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   input: {
-    borderWidth: 1, borderRadius: radius.md,
-    paddingHorizontal: spacing.sm, paddingVertical: 10, minHeight: 44,
-    fontFamily: fonts.regular, fontSize: 14,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 10,
+    minHeight: 44,
+    fontFamily: fonts.regular,
+    fontSize: 14,
   },
   rescheduleLink: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
   row: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
-  btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  btn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
 
 const attendanceStyles = StyleSheet.create({
   row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: spacing.sm, borderBottomWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
   },
   pill: {
-    paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radius.md,
   },
 });

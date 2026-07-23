@@ -1,6 +1,13 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View, FlatList, Pressable, StyleSheet, Modal, TextInput, KeyboardAvoidingView, Alert,
+  View,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,7 +49,11 @@ interface NotificationsScreenProps {
 export default function NotificationsScreen({ navigation }: NotificationsScreenProps) {
   const { user } = useAuth();
   const {
-    notifications, refreshNotifications, markNotificationRead, roomBookings, respondToMeeting,
+    notifications,
+    refreshNotifications,
+    markNotificationRead,
+    roomBookings,
+    respondToMeeting,
   } = useData();
   const [refreshing, setRefreshing] = useState(false);
   const [declining, setDeclining] = useState<AppNotification | null>(null);
@@ -50,7 +61,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
   useFocusEffect(
     useCallback(() => {
       refreshNotifications();
-    }, [])
+    }, []),
   );
 
   const onRefresh = async () => {
@@ -63,7 +74,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
   };
 
   const sorted = [...notifications].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
 
   // A participant's own response row for the meeting a notification
@@ -81,7 +92,10 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
       await respondToMeeting(n.relatedId, 'acknowledged');
       markNotificationRead(n.id);
     } catch (err) {
-      Alert.alert('Could not respond', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not respond',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     }
   };
 
@@ -92,7 +106,10 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
       markNotificationRead(declining.id);
       setDeclining(null);
     } catch (err) {
-      Alert.alert('Could not decline', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not decline',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     }
   };
 
@@ -141,7 +158,11 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
 }
 
 function NotificationRow({
-  notification, myResponse, onPress, onAcknowledge, onDecline,
+  notification,
+  myResponse,
+  onPress,
+  onAcknowledge,
+  onDecline,
 }: {
   notification: AppNotification;
   myResponse: RoomBookingResponse | undefined;
@@ -165,12 +186,16 @@ function NotificationRow({
           </View>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <View style={styles.rowTop}>
-              <Text variant="bodySemibold" numberOfLines={1}>{notification.title}</Text>
+              <Text variant="bodySemibold" numberOfLines={1}>
+                {notification.title}
+              </Text>
               {!notification.read ? (
                 <View style={[styles.unreadDot, { backgroundColor: themeColors.palette.red600 }]} />
               ) : null}
             </View>
-            <Text variant="body" color={themeColors.textSecondary}>{notification.body}</Text>
+            <Text variant="body" color={themeColors.textSecondary}>
+              {notification.body}
+            </Text>
             <Text variant="caption" color={themeColors.textMuted} style={{ marginTop: 2 }}>
               {fmtRelative(notification.createdAt)}
             </Text>
@@ -204,7 +229,11 @@ function NotificationRow({
             ) : myResponse?.status === 'declined' ? (
               <View style={styles.respondedRow}>
                 <Ionicons name="close-circle" size={14} color={themeColors.status.rejected.solid} />
-                <Text variant="caption" color={themeColors.status.rejected.solid} style={{ marginLeft: 4 }}>
+                <Text
+                  variant="caption"
+                  color={themeColors.status.rejected.solid}
+                  style={{ marginLeft: 4 }}
+                >
                   You declined
                 </Text>
               </View>
@@ -220,8 +249,14 @@ function NotificationRow({
 // and Android has no built-in Alert.prompt, so this is a small custom
 // modal -- same pattern as RescheduleModal's reason field.
 function DeclineReasonModal({
-  visible, onCancel, onConfirm,
-}: { visible: boolean; onCancel: () => void; onConfirm: (reason: string) => void }) {
+  visible,
+  onCancel,
+  onConfirm,
+}: {
+  visible: boolean;
+  onCancel: () => void;
+  onConfirm: (reason: string) => void;
+}) {
   const { colors } = useTheme();
   const [reason, setReason] = useState('');
 
@@ -251,11 +286,21 @@ function DeclineReasonModal({
             multiline
           />
           <View style={modalStyles.row}>
-            <Pressable onPress={onCancel} style={[modalStyles.btn, { backgroundColor: colors.surfaceAlt }]}>
-              <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
+            <Pressable
+              onPress={onCancel}
+              style={[modalStyles.btn, { backgroundColor: colors.surfaceAlt }]}
+            >
+              <Text variant="bodySemibold" color={colors.textSecondary}>
+                Cancel
+              </Text>
             </Pressable>
-            <Pressable onPress={onSubmit} style={[modalStyles.btn, { backgroundColor: colors.brand }]}>
-              <Text variant="bodySemibold" color={colors.textInverse}>Send</Text>
+            <Pressable
+              onPress={onSubmit}
+              style={[modalStyles.btn, { backgroundColor: colors.brand }]}
+            >
+              <Text variant="bodySemibold" color={colors.textInverse}>
+                Send
+              </Text>
             </Pressable>
           </View>
         </View>
@@ -269,12 +314,17 @@ const styles = StyleSheet.create({
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
   row: { flexDirection: 'row', alignItems: 'flex-start', padding: spacing.md },
   iconWrap: {
-    width: 40, height: 40, borderRadius: radius.md,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   unreadDot: {
-    width: 8, height: 8, borderRadius: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   actionRow: { flexDirection: 'row', marginTop: spacing.sm },
   respondedRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
@@ -282,19 +332,34 @@ const styles = StyleSheet.create({
 
 const modalStyles = StyleSheet.create({
   wrap: {
-    flex: 1, backgroundColor: 'rgba(10,42,29,0.55)',
-    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+    flex: 1,
+    backgroundColor: 'rgba(10,42,29,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
   },
   card: {
-    width: '100%', maxWidth: 360,
+    width: '100%',
+    maxWidth: 360,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   input: {
-    borderWidth: 1, borderRadius: radius.md,
-    paddingHorizontal: spacing.sm, paddingVertical: 10, minHeight: 80, textAlignVertical: 'top',
-    fontFamily: fonts.regular, fontSize: 14,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 10,
+    minHeight: 80,
+    textAlignVertical: 'top',
+    fontFamily: fonts.regular,
+    fontSize: 14,
   },
   row: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
-  btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  btn: {
+    flex: 1,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

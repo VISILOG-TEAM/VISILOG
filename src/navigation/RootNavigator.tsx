@@ -65,9 +65,7 @@ export default function RootNavigator() {
       ) : (
         // ---------- Signed-in, role-resolved stack ----------
         <Stack.Group>
-          {user.role === 'receptionist' && (
-            <Stack.Screen name="Tabs" component={TabNavigator} />
-          )}
+          {user.role === 'receptionist' && <Stack.Screen name="Tabs" component={TabNavigator} />}
           {user.role === 'visitor' && (
             <Stack.Screen name="VisitorTabs" component={VisitorTabNavigator} />
           )}
@@ -86,7 +84,7 @@ export default function RootNavigator() {
           </Stack.Group>
 
           {/* Pushed detail / sub-module screens, reachable from Quick
-              Actions and various rows rather than living in a tab bar */}
+ Actions and various rows rather than living in a tab bar */}
           <Stack.Screen name="Visitors" component={VisitorsScreen} />
           <Stack.Screen name="Directory" component={DirectoryScreen} />
           <Stack.Screen name="VisitorDetail" component={VisitorDetailScreen} />

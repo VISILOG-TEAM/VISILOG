@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import {
-  Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard,
-} from '../components';
+import { Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -20,10 +18,12 @@ interface ManagerHomeScreenProps {
 export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps) {
   const { colors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
-  const {
-    stats, visitors, calls, employees, employeeById, unreadNotificationCount, refreshAll,
-  } = useData();
-  const onLogout = () => { logout(); setOrgTheme(null); };
+  const { stats, visitors, calls, employees, employeeById, unreadNotificationCount, refreshAll } =
+    useData();
+  const onLogout = () => {
+    logout();
+    setOrgTheme(null);
+  };
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
     setRefreshing(true);
@@ -51,7 +51,11 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
         title="Overview"
         subtitle="Insight & attendance across the organisation"
         rightActions={[
-          { icon: 'notifications-outline', onPress: () => navigation.navigate('Notifications'), badge: unreadNotificationCount },
+          {
+            icon: 'notifications-outline',
+            onPress: () => navigation.navigate('Notifications'),
+            badge: unreadNotificationCount,
+          },
           { icon: 'log-out-outline', onPress: onLogout },
         ]}
       />
@@ -66,7 +70,12 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
       <View style={{ flexDirection: 'row', marginTop: spacing.sm }}>
         <StatTile icon="call" tint="info" label="Calls today" value={stats.callsToday} />
         <View style={{ width: spacing.sm }} />
-        <StatTile icon="calendar" tint="pending" label="This month" value={stats.visitorsThisMonth} />
+        <StatTile
+          icon="calendar"
+          tint="pending"
+          label="This month"
+          value={stats.visitorsThisMonth}
+        />
       </View>
 
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
@@ -75,7 +84,9 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
       <Card>
         {topHosts.map((h, i) => (
           <View key={h.employee?.id || i} style={styles.row}>
-            <Text variant="bodySemibold" style={{ width: 24 }}>{i + 1}</Text>
+            <Text variant="bodySemibold" style={{ width: 24 }}>
+              {i + 1}
+            </Text>
             <Avatar name={h.employee?.name || '?'} size={36} />
             <View style={{ flex: 1, marginLeft: spacing.sm }}>
               <Text variant="bodySemibold">{h.employee?.name || 'Unknown'}</Text>
@@ -93,21 +104,25 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
           Currently on-site
         </Text>
         <Pressable onPress={() => navigation.navigate('Visitors')}>
-          <Text variant="label" color={colors.primary}>View all visitors</Text>
+          <Text variant="label" color={colors.primary}>
+            View all visitors
+          </Text>
         </Pressable>
       </View>
       <Card>
-        {visitors.filter((v) => v.status === 'onsite').map((v) => (
-          <View key={v.id} style={styles.row}>
-            <Avatar name={v.fullName} size={36} />
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Text variant="bodySemibold">{v.fullName}</Text>
-              <Text variant="caption" color={colors.textSecondary}>
-                {employeeById(v.hostId)?.name} - {fmtTime(v.checkInAt)}
-              </Text>
+        {visitors
+          .filter((v) => v.status === 'onsite')
+          .map((v) => (
+            <View key={v.id} style={styles.row}>
+              <Avatar name={v.fullName} size={36} />
+              <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                <Text variant="bodySemibold">{v.fullName}</Text>
+                <Text variant="caption" color={colors.textSecondary}>
+                  {employeeById(v.hostId)?.name} - {fmtTime(v.checkInAt)}
+                </Text>
+              </View>
             </View>
-          </View>
-        ))}
+          ))}
       </Card>
     </Screen>
   );
@@ -117,7 +132,10 @@ const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
   sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginTop: spacing.xl, marginBottom: spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
   },
 });

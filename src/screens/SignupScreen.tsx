@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, ImageBackground, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, ScrollView, Alert,
+  View,
+  ImageBackground,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -65,10 +72,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
       <StatusBar style="light" />
       <View style={styles.wash} />
       <SafeAreaView style={styles.safe}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior="padding"
-        >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <ScrollView
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
@@ -96,22 +100,50 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
                 />
 
                 <Text style={styles.heading}>Create account</Text>
-                <Text style={styles.subheading}>
-                  Request access to the reception system.
-                </Text>
+                <Text style={styles.subheading}>Request access to the reception system.</Text>
 
-                <Field icon="business-outline" placeholder="Company code" value={companyCode} onChangeText={setCompanyCode}
-                  autoCapitalize="characters" />
-                <Field icon="person-outline" placeholder="Full name" value={fullName} onChangeText={setFullName} />
-                <Field icon="mail-outline" placeholder="Email address" value={email} onChangeText={setEmail}
-                  autoCapitalize="none" keyboardType="email-address" />
-                <Field icon="lock-closed-outline" placeholder="Password" value={password} onChangeText={setPassword}
-                  secureTextEntry />
+                <Field
+                  icon="business-outline"
+                  placeholder="Company code"
+                  value={companyCode}
+                  onChangeText={setCompanyCode}
+                  autoCapitalize="characters"
+                />
+                <Field
+                  icon="person-outline"
+                  placeholder="Full name"
+                  value={fullName}
+                  onChangeText={setFullName}
+                />
+                <Field
+                  icon="mail-outline"
+                  placeholder="Email address"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+                <Field
+                  icon="lock-closed-outline"
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
                 <Text style={styles.passwordHint}>Must be at least 8 characters.</Text>
-                <Field icon="shield-checkmark-outline" placeholder="Confirm password" value={confirm} onChangeText={setConfirm}
-                  secureTextEntry />
+                <Field
+                  icon="shield-checkmark-outline"
+                  placeholder="Confirm password"
+                  value={confirm}
+                  onChangeText={setConfirm}
+                  secureTextEntry
+                />
 
-                <Pressable onPress={onSubmit} disabled={submitting} style={({ pressed }) => [{ opacity: pressed || submitting ? 0.85 : 1 }]}>
+                <Pressable
+                  onPress={onSubmit}
+                  disabled={submitting}
+                  style={({ pressed }) => [{ opacity: pressed || submitting ? 0.85 : 1 }]}
+                >
                   <LinearGradient
                     colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
                     start={{ x: 0, y: 0 }}
@@ -142,7 +174,9 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 // Small internal field component to keep the JSX above readable. Local
 // because it's only used on this screen.
 function Field({
-  icon, secureTextEntry, ...inputProps
+  icon,
+  secureTextEntry,
+  ...inputProps
 }: { icon: IoniconName; secureTextEntry?: boolean } & React.ComponentProps<typeof TextInput>) {
   const [revealed, setRevealed] = useState(false);
   return (
@@ -171,19 +205,42 @@ const styles = StyleSheet.create({
   bg: { flex: 1, backgroundColor: '#0E4E55' },
   wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
   safe: { flex: 1 },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.xxl },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xxl,
+  },
 
   back: { position: 'absolute', top: spacing.sm, left: spacing.sm, padding: 8, zIndex: 1 },
 
-  card: { borderRadius: radius.xl, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
+  card: {
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
   cardInner: {
     padding: spacing.xl,
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+    backgroundColor:
+      Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
   },
 
-  wordmark: { fontFamily: fonts.displayExtra, fontSize: 28, lineHeight: 36, color: '#FFFFFF', textAlign: 'center', marginBottom: spacing.md },
+  wordmark: {
+    fontFamily: fonts.displayExtra,
+    fontSize: 28,
+    lineHeight: 36,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
   heading: { fontFamily: fonts.displayBold, fontSize: 24, color: '#FFFFFF' },
-  subheading: { fontFamily: fonts.regular, fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.lg },
+  subheading: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.85)',
+    marginBottom: spacing.lg,
+  },
 
   fieldRow: {
     flexDirection: 'row',
@@ -197,16 +254,26 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   input: {
-    flex: 1, fontFamily: fonts.regular, fontSize: 15, color: '#FFFFFF',
-    marginHorizontal: 8, paddingVertical: 0,
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: '#FFFFFF',
+    marginHorizontal: 8,
+    paddingVertical: 0,
   },
   passwordHint: {
-    fontFamily: fonts.regular, fontSize: 11, color: 'rgba(255,255,255,0.7)',
-    marginTop: -6, marginBottom: spacing.sm,
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: -6,
+    marginBottom: spacing.sm,
   },
 
   signupBtn: {
-    height: 50, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center',
+    height: 50,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: spacing.sm,
   },
   signupBtnText: { fontFamily: fonts.bold, fontSize: 16, color: '#FFFFFF', letterSpacing: 0.3 },

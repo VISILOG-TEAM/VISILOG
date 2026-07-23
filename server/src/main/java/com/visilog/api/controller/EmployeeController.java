@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 // The staff directory. Reading it is open to any signed-in user in the
 // org (host pickers on Book screens etc. need it); creating/editing/
-// deleting entries — including who gets which role — is manager-only.
+// deleting entries -- including who gets which role -- is manager-only.
 @RestController
 @RequestMapping("/api/v1/employees")
 public class EmployeeController {
@@ -38,7 +38,7 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.create(me.organizationId(), request));
     }
 
-    // CSV bulk import from Company Setup — parsed client-side, sent
+    // CSV bulk import from Company Setup -- parsed client-side, sent
     // here as plain JSON rows. Row-by-row result so a few bad rows
     // don't block the rest of a large roster.
     @PreAuthorize("hasRole('MANAGER')")
@@ -60,5 +60,15 @@ public class EmployeeController {
     public ResponseEntity<Void> delete(@CurrentUser AuthPrincipal me, @PathVariable UUID id) {
         employeeService.delete(me.organizationId(), id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Clears the phone linked to this employee's clock-ins (see
+    // ClockRecordService) -- for when someone genuinely gets a new
+    // phone. Deliberately manager-only so it can't be self-service
+    // reset by whoever's trying to clock in from an unrecognised device.
+    @PreAuthorize("hasRole('MANAGER')")
+    @PostMapping("/{id}/reset-device")
+    public ResponseEntity<EmployeeDto> resetDevice(@CurrentUser AuthPrincipal me, @PathVariable UUID id) {
+        return ResponseEntity.ok(employeeService.resetDevice(me.organizationId(), id));
     }
 }

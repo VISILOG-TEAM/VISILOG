@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-import {
-  View, Modal, StyleSheet, Alert, ActivityIndicator, ScrollView,
-} from 'react-native';
+import { View, Modal, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import Text from './Text';
@@ -27,7 +25,12 @@ interface CsvImportModalProps<T> {
 // MeetingRoomService.bulkCreate) -- a CSV can have typos a single-add
 // form would never let through.
 export default function CsvImportModal<T>({
-  visible, onClose, title, columnsHint, mapRow, onImport,
+  visible,
+  onClose,
+  title,
+  columnsHint,
+  mapRow,
+  onImport,
 }: CsvImportModalProps<T>) {
   const { colors } = useTheme();
   const [busy, setBusy] = useState(false);
@@ -55,7 +58,8 @@ export default function CsvImportModal<T>({
       const res = await onImport(rows);
       setResult(res);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Check the file is a valid CSV and try again.';
+      const message =
+        err instanceof ApiError ? err.message : 'Check the file is a valid CSV and try again.';
       Alert.alert('Could not import', message);
     } finally {
       setBusy(false);
@@ -83,7 +87,11 @@ export default function CsvImportModal<T>({
               </Text>
               {result.errors.length > 0 ? (
                 <>
-                  <Text variant="bodySemibold" color={colors.status.rejected.solid} style={{ marginTop: spacing.sm }}>
+                  <Text
+                    variant="bodySemibold"
+                    color={colors.status.rejected.solid}
+                    style={{ marginTop: spacing.sm }}
+                  >
                     {result.errors.length} skipped
                   </Text>
                   {result.errors.map((e) => (
@@ -116,11 +124,15 @@ export default function CsvImportModal<T>({
 
 const styles = StyleSheet.create({
   wrap: {
-    flex: 1, backgroundColor: 'rgba(10,42,29,0.55)',
-    alignItems: 'center', justifyContent: 'center', padding: spacing.lg,
+    flex: 1,
+    backgroundColor: 'rgba(10,42,29,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
   },
   card: {
-    width: '100%', maxWidth: 380,
+    width: '100%',
+    maxWidth: 380,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },

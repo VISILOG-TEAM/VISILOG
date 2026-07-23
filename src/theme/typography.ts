@@ -2,10 +2,10 @@ import type { TextStyle } from 'react-native';
 
 // VisiLog type system
 // -------------------------------------------------------------
-// Display face: Sora — geometric, confident, modern. Used for screen
-//   titles and big numbers, with restraint.
-// UI / body face: Inter — chosen for its crisp figures, which matter a
-//   lot in a data-heavy reception app (timestamps, counts, logs).
+// Display face: Sora -- geometric, confident, modern. Used for screen
+// titles and big numbers, with restraint.
+// UI / body face: Inter -- chosen for its crisp figures, which matter a
+// lot in a data-heavy reception app (timestamps, counts, logs).
 
 export const fonts = {
   // display / headings
@@ -20,11 +20,19 @@ export const fonts = {
 };
 
 export type TypeScaleVariant =
-  | 'display' | 'h1' | 'h2' | 'h3'
-  | 'bodyLg' | 'body' | 'bodyMd' | 'bodySemibold'
-  | 'label' | 'caption' | 'eyebrow';
+  | 'display'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'bodyLg'
+  | 'body'
+  | 'bodyMd'
+  | 'bodySemibold'
+  | 'label'
+  | 'caption'
+  | 'eyebrow';
 
-// variant -> text style. Use via <Text variant="h1">…</Text>
+// variant -> text style. Use via <Text variant="h1">...</Text>
 export const typeScale: Record<TypeScaleVariant, TextStyle> = {
   display: { fontFamily: fonts.displayExtra, fontSize: 34, lineHeight: 40, letterSpacing: -0.5 },
   h1: { fontFamily: fonts.displayBold, fontSize: 26, lineHeight: 32, letterSpacing: -0.3 },

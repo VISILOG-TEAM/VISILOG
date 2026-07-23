@@ -1,9 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Button, Segmented, StatTile, Badge,
-} from '../components';
+import { Screen, Header, Text, Card, Button, Segmented, StatTile, Badge } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -68,7 +66,9 @@ export default function ReportsScreen({ navigation }: ReportsScreenProps) {
     const completed = windowVisitors.filter((v) => v.checkOutAt);
     if (!completed.length) return '--';
     const totalMin = completed.reduce((sum, v) => {
-      return sum + (new Date(v.checkOutAt as string).getTime() - new Date(v.checkInAt).getTime()) / 60000;
+      return (
+        sum + (new Date(v.checkOutAt as string).getTime() - new Date(v.checkInAt).getTime()) / 60000
+      );
     }, 0);
     const avg = Math.round(totalMin / completed.length);
     const h = Math.floor(avg / 60);
@@ -97,14 +97,24 @@ export default function ReportsScreen({ navigation }: ReportsScreenProps) {
 
       {/* Headline numbers */}
       <View style={[styles.statRow, { marginTop: spacing.md }]}>
-        <StatTile icon="people" label="Total visitors" value={windowVisitors.length} tint="primary" />
+        <StatTile
+          icon="people"
+          label="Total visitors"
+          value={windowVisitors.length}
+          tint="primary"
+        />
         <View style={{ width: spacing.sm }} />
         <StatTile icon="time" label="Avg. duration" value={avgDuration} tint="info" />
       </View>
       <View style={[styles.statRow, { marginTop: spacing.sm }]}>
         <StatTile icon="call" label="Calls handled" value={windowCalls.length} tint="success" />
         <View style={{ width: spacing.sm }} />
-        <StatTile icon="checkmark-done" label="Completed" value={windowVisitors.filter((v) => v.status === 'completed').length} tint="pending" />
+        <StatTile
+          icon="checkmark-done"
+          label="Completed"
+          value={windowVisitors.filter((v) => v.status === 'completed').length}
+          tint="pending"
+        />
       </View>
 
       {/* Daily bar chart - drawn as a row of flexed Views */}
@@ -118,7 +128,12 @@ export default function ReportsScreen({ navigation }: ReportsScreenProps) {
             return (
               <View key={i} style={styles.barCol}>
                 <View style={styles.barTrack}>
-                  <View style={[styles.bar, { height: Math.max(2, h), backgroundColor: colors.primary }]} />
+                  <View
+                    style={[
+                      styles.bar,
+                      { height: Math.max(2, h), backgroundColor: colors.primary },
+                    ]}
+                  />
                 </View>
                 <Text variant="caption" color={colors.textSecondary} style={styles.barLabel}>
                   {b.label}
@@ -193,16 +208,21 @@ const styles = StyleSheet.create({
   barCol: { flex: 1, alignItems: 'center' },
   barTrack: { width: '100%', height: 120, justifyContent: 'flex-end' },
   bar: {
-    width: '70%', alignSelf: 'center',
-    borderTopLeftRadius: 4, borderTopRightRadius: 4,
+    width: '70%',
+    alignSelf: 'center',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
   },
   barLabel: { marginTop: 4 },
   barValue: { fontFamily: fonts.semibold, fontSize: 11 },
 
   hostRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
   rank: {
-    width: 28, height: 28, borderRadius: 14,
-    alignItems: 'center', justifyContent: 'center',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   rankNum: { fontFamily: fonts.displayBold, fontSize: 13 },
 });

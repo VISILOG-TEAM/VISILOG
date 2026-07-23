@@ -1,9 +1,7 @@
 import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import {
-  Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile,
-} from '../components';
+import { Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -23,12 +21,15 @@ export default function ManagerClockInsScreen() {
   useFocusEffect(
     useCallback(() => {
       refreshClockRecords().catch(() => {});
-    }, [])
+    }, []),
   );
 
   const sorted = useMemo(
-    () => [...clockRecords].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-    [clockRecords]
+    () =>
+      [...clockRecords].sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      ),
+    [clockRecords],
   );
 
   const onsiteCount = useMemo(() => {
@@ -66,8 +67,12 @@ export default function ManagerClockInsScreen() {
             <View style={styles.row}>
               <Avatar name={item.employeeName || 'Unknown'} size={40} />
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
-                <Text variant="bodySemibold" numberOfLines={1}>{item.employeeName || 'Unknown'}</Text>
-                <Text variant="caption" color={colors.textSecondary}>{fmtDate(item.timestamp)}</Text>
+                <Text variant="bodySemibold" numberOfLines={1}>
+                  {item.employeeName || 'Unknown'}
+                </Text>
+                <Text variant="caption" color={colors.textSecondary}>
+                  {fmtDate(item.timestamp)}
+                </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Badge

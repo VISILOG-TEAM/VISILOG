@@ -11,13 +11,13 @@ interface AddEmployeeScreenProps {
   navigation: RootStackNavigation;
 }
 
-// AddEmployeeScreen — single-entry form mentioned in the User Guide.
+// AddEmployeeScreen -- single-entry form mentioned in the User Guide.
 // (Bulk CSV import is referenced as a future enhancement.)
 //
 // Role matters here in a way it didn't before: this roster is exactly
 // what AuthService.signup checks emails against, so the role picked
 // here is what someone gets automatically the moment they sign up with
-// this email — no picker step for them at all.
+// this email -- no picker step for them at all.
 export default function AddEmployeeScreen({ navigation }: AddEmployeeScreenProps) {
   const { addEmployee } = useData();
 
@@ -39,7 +39,10 @@ export default function AddEmployeeScreen({ navigation }: AddEmployeeScreenProps
         { text: 'Done', onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
-      Alert.alert('Could not add employee', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not add employee',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     }
   };
 
@@ -54,17 +57,45 @@ export default function AddEmployeeScreen({ navigation }: AddEmployeeScreenProps
       />
 
       <Card>
-        <Input label="Employee ID" value={employeeId} onChangeText={setEmployeeId}
-          placeholder="e.g. VRA-1009" icon="card-outline" autoCapitalize="characters" />
-        <Input label="Full name" value={name} onChangeText={setName}
-          placeholder="e.g. Yaw Boateng" icon="person-outline" />
-        <Input label="Department" value={department} onChangeText={setDepartment}
-          placeholder="e.g. IT" icon="business-outline" />
-        <Input label="Personal phone" value={phone} onChangeText={setPhone}
-          placeholder="+233 ..." icon="call-outline" keyboardType="phone-pad" />
-        <Input label="Email" value={email} onChangeText={setEmail}
-          placeholder="name@vra.com" icon="mail-outline"
-          autoCapitalize="none" keyboardType="email-address" />
+        <Input
+          label="Employee ID"
+          value={employeeId}
+          onChangeText={setEmployeeId}
+          placeholder="e.g. VRA-1009"
+          icon="card-outline"
+          autoCapitalize="characters"
+        />
+        <Input
+          label="Full name"
+          value={name}
+          onChangeText={setName}
+          placeholder="e.g. Yaw Boateng"
+          icon="person-outline"
+        />
+        <Input
+          label="Department"
+          value={department}
+          onChangeText={setDepartment}
+          placeholder="e.g. IT"
+          icon="business-outline"
+        />
+        <Input
+          label="Personal phone"
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="+233 ..."
+          icon="call-outline"
+          keyboardType="phone-pad"
+        />
+        <Input
+          label="Email"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="name@vra.com"
+          icon="mail-outline"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
         <Select
           label="Role"
           value={role}
@@ -78,10 +109,18 @@ export default function AddEmployeeScreen({ navigation }: AddEmployeeScreenProps
         />
       </Card>
 
-      <Button label="Add to directory" icon="checkmark-outline" onPress={onSubmit}
-        style={{ marginTop: spacing.md }} />
-      <Button label="Cancel" variant="ghost" onPress={() => navigation.goBack()}
-        style={{ marginTop: spacing.xs }} />
+      <Button
+        label="Add to directory"
+        icon="checkmark-outline"
+        onPress={onSubmit}
+        style={{ marginTop: spacing.md }}
+      />
+      <Button
+        label="Cancel"
+        variant="ghost"
+        onPress={() => navigation.goBack()}
+        style={{ marginTop: spacing.xs }}
+      />
     </Screen>
   );
 }

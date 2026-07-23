@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard,
-} from '../components';
+import { Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -18,15 +16,16 @@ interface DashboardScreenProps {
 
 // DashboardScreen -- the receptionist's landing page.
 // Implements the four headline stats from the VisiLog User Guide:
-//   1. Visitors Today
-//   2. Currently Checked-In
-//   3. Calls Today
-//   4. Visitors This Month
+// 1. Visitors Today
+// 2. Currently Checked-In
+// 3. Calls Today
+// 4. Visitors This Month
 // Plus pending appointment approvals and a Recent Visitor Logs preview.
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   const { colors } = useTheme();
   const { user } = useAuth();
-  const { stats, visitors, appointments, employeeById, unreadNotificationCount, refreshAll } = useData();
+  const { stats, visitors, appointments, employeeById, unreadNotificationCount, refreshAll } =
+    useData();
   const [refreshing, setRefreshing] = useState(false);
 
   // Previously the only way to see something that changed server-side
@@ -59,9 +58,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <Header
-        eyebrow="VisiLog Â· Reception"
+        eyebrow="VisiLog - Reception"
         title={`${greeting},`}
-        subtitle={`${user?.name?.split(' ')[0] || 'there'} Â· Front desk`}
+        subtitle={`${user?.name?.split(' ')[0] || 'there'} - Front desk`}
         rightIcon="notifications-outline"
         onRightPress={() => navigation.navigate('Notifications')}
         badge={unreadNotificationCount}
@@ -73,19 +72,33 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
       <View style={[styles.statsRow, { marginTop: spacing.md }]}>
         <StatTile icon="people" tint="primary" label="Visitors today" value={stats.visitorsToday} />
         <View style={{ width: spacing.sm }} />
-        <StatTile icon="checkmark-circle" tint="success" label="Currently on-site" value={stats.onsite} />
+        <StatTile
+          icon="checkmark-circle"
+          tint="success"
+          label="Currently on-site"
+          value={stats.onsite}
+        />
       </View>
       <View style={[styles.statsRow, { marginTop: spacing.sm }]}>
         <StatTile icon="call" tint="info" label="Calls today" value={stats.callsToday} />
         <View style={{ width: spacing.sm }} />
-        <StatTile icon="calendar" tint="pending" label="Visitors this month" value={stats.visitorsThisMonth} />
+        <StatTile
+          icon="calendar"
+          tint="pending"
+          label="Visitors this month"
+          value={stats.visitorsThisMonth}
+        />
       </View>
 
       {/* Pending approvals call-out - only shown when there are some */}
       {pending.length > 0 && (
         <Pressable
           onPress={() => navigation.navigate('Appointments')}
-          style={({ pressed }) => [styles.alert, { backgroundColor: colors.status.pending.bg }, pressed && { opacity: 0.9 }]}
+          style={({ pressed }) => [
+            styles.alert,
+            { backgroundColor: colors.status.pending.bg },
+            pressed && { opacity: 0.9 },
+          ]}
         >
           <View style={styles.alertIcon}>
             <Ionicons name="time-outline" size={18} color={colors.status.pending.solid} />
@@ -103,46 +116,55 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
       )}
 
       {/* Quick actions -- Visitors, Directory, NFC lookup/cards & Call
-          log all live here now instead of as their own tabs/More menu,
-          since the bottom bar shrank to 4 tabs. */}
+ log all live here now instead of as their own tabs/More menu,
+ since the bottom bar shrank to 4 tabs. */}
       <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionEyebrow}>
         Quick actions
       </Text>
       <View style={styles.quickGrid}>
         <QuickAction
-          icon="person-add" label="Register visitor"
+          icon="person-add"
+          label="Register visitor"
           onPress={() => navigation.navigate('RegisterVisitor')}
         />
         <QuickAction
-          icon="people-outline" label="Visitors"
+          icon="people-outline"
+          label="Visitors"
           onPress={() => navigation.navigate('Visitors')}
         />
         <QuickAction
-          icon="book-outline" label="Directory"
+          icon="book-outline"
+          label="Directory"
           onPress={() => navigation.navigate('Directory')}
         />
         <QuickAction
-          icon="call-outline" label="Call log"
+          icon="call-outline"
+          label="Call log"
           onPress={() => navigation.navigate('CallLog')}
         />
         <QuickAction
-          icon="scan-outline" label="NFC lookup"
+          icon="scan-outline"
+          label="NFC lookup"
           onPress={() => navigation.navigate('NFCLookup')}
         />
         <QuickAction
-          icon="card-outline" label="NFC cards"
+          icon="card-outline"
+          label="NFC cards"
           onPress={() => navigation.navigate('NFCCards')}
         />
         <QuickAction
-          icon="finger-print-outline" label="Attendance"
+          icon="finger-print-outline"
+          label="Attendance"
           onPress={() => navigation.navigate('Attendance')}
         />
         <QuickAction
-          icon="document-text-outline" label="Reports"
+          icon="document-text-outline"
+          label="Reports"
           onPress={() => navigation.navigate('Reports')}
         />
         <QuickAction
-          icon="time-outline" label="History"
+          icon="time-outline"
+          label="History"
           onPress={() => navigation.navigate('History')}
         />
       </View>
@@ -177,7 +199,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                 chevron
                 onPress={() => navigation.navigate('VisitorDetail', { visitorId: v.id })}
               />
-              {i < recent.length - 1 ? <View style={[styles.sep, { backgroundColor: colors.border }]} /> : null}
+              {i < recent.length - 1 ? (
+                <View style={[styles.sep, { backgroundColor: colors.border }]} />
+              ) : null}
             </View>
           );
         })}
@@ -188,13 +212,23 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 
 // Local quick-action button - vertical icon-over-label tile.
 function QuickAction({
-  icon, label, onPress,
-}: { icon: IoniconName; label: string; onPress: () => void }) {
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IoniconName;
+  label: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.qa, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85 }]}
+      style={({ pressed }) => [
+        styles.qa,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        pressed && { opacity: 0.85 },
+      ]}
     >
       <View style={[styles.qaIcon, { backgroundColor: colors.primarySurface }]}>
         <Ionicons name={icon} size={22} color={colors.primary} />
@@ -217,9 +251,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   alertIcon: {
-    width: 32, height: 32, borderRadius: 16,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#FFFFFF',
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing.sm,
   },
 
@@ -234,14 +271,20 @@ const styles = StyleSheet.create({
     minHeight: 84,
   },
   qaIcon: {
-    width: 36, height: 36, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 6,
   },
 
   sectionHeader: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
-    marginTop: spacing.xl, marginBottom: spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
   },
   sep: { height: 1, marginLeft: spacing.md + 40 + spacing.sm },
 });

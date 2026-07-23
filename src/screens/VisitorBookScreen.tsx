@@ -2,7 +2,15 @@ import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Button, Input, Select, DateChips, TimeChips,
+  Screen,
+  Header,
+  Text,
+  Card,
+  Button,
+  Input,
+  Select,
+  DateChips,
+  TimeChips,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
@@ -58,17 +66,24 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
     setSubmitting(true);
     try {
       await bookVisit({
-        visitorName: name, visitorPhone: phone, visitorEmail: email, visitorCompany: company,
-        purpose: purpose === 'Other' ? otherPurpose.trim() : purpose, hostId,
+        visitorName: name,
+        visitorPhone: phone,
+        visitorEmail: email,
+        visitorCompany: company,
+        purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
+        hostId,
         scheduledAt: toInstant(date, time),
       });
       Alert.alert(
         'Booked',
         "Your visit request has been sent. You'll get a notification with your pass code once your host approves it.",
-        [{ text: 'Done', onPress: () => navigation.navigate('Home') }]
+        [{ text: 'Done', onPress: () => navigation.navigate('Home') }],
       );
     } catch (err) {
-      Alert.alert('Could not book visit', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not book visit',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -84,44 +99,78 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
       />
 
       <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
-        1 Â· Your details
+        1 - Your details
       </Text>
       <Card>
         <Input label="Full name" value={name} onChangeText={setName} icon="person-outline" />
-        <Input label="Phone" value={phone} onChangeText={setPhone}
-          icon="call-outline" keyboardType="phone-pad" />
-        <Input label="Email (optional)" value={email} onChangeText={setEmail}
-          icon="mail-outline" autoCapitalize="none" keyboardType="email-address" />
-        <Input label="Company (optional)" value={company} onChangeText={setCompany}
-          icon="business-outline" />
+        <Input
+          label="Phone"
+          value={phone}
+          onChangeText={setPhone}
+          icon="call-outline"
+          keyboardType="phone-pad"
+        />
+        <Input
+          label="Email (optional)"
+          value={email}
+          onChangeText={setEmail}
+          icon="mail-outline"
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <Input
+          label="Company (optional)"
+          value={company}
+          onChangeText={setCompany}
+          icon="business-outline"
+        />
       </Card>
 
       <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
-        2 Â· Visit details
+        2 - Visit details
       </Text>
       <Card>
-        <Select label="Purpose" value={purpose} onChange={setPurpose}
+        <Select
+          label="Purpose"
+          value={purpose}
+          onChange={setPurpose}
           icon="briefcase-outline"
-          options={visitPurposes.map((p) => ({ label: p, value: p }))} />
+          options={visitPurposes.map((p) => ({ label: p, value: p }))}
+        />
         {purpose === 'Other' ? (
-          <Input label="Please specify" value={otherPurpose} onChangeText={setOtherPurpose}
-            placeholder="What's the purpose of your visit?" icon="create-outline" />
+          <Input
+            label="Please specify"
+            value={otherPurpose}
+            onChangeText={setOtherPurpose}
+            placeholder="What's the purpose of your visit?"
+            icon="create-outline"
+          />
         ) : null}
-        <Select label="Who are you visiting?" value={hostId} onChange={setHostId}
-          icon="people-outline" placeholder="Pick a host..."
+        <Select
+          label="Who are you visiting?"
+          value={hostId}
+          onChange={setHostId}
+          icon="people-outline"
+          placeholder="Pick a host..."
           options={employees.map((e) => ({
-            label: e.name, value: e.id,
+            label: e.name,
+            value: e.id,
             sublabel: e.department,
-          }))} />
+          }))}
+        />
       </Card>
 
       <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
-        3 Â· When
+        3 - When
       </Text>
       <Card>
-        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Date</Text>
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
+          Date
+        </Text>
         <DateChips value={date} onChange={setDate} />
-        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Time</Text>
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
+          Time
+        </Text>
         <TimeChips value={time} onChange={setTime} />
       </Card>
 
@@ -132,8 +181,13 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
         </Text>
       </View>
 
-      <Button label="Submit booking" icon="checkmark-circle-outline"
-        onPress={onSubmit} loading={submitting} style={{ marginTop: spacing.sm }} />
+      <Button
+        label="Submit booking"
+        icon="checkmark-circle-outline"
+        onPress={onSubmit}
+        loading={submitting}
+        style={{ marginTop: spacing.sm }}
+      />
     </Screen>
   );
 }

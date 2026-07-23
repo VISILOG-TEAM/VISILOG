@@ -83,10 +83,7 @@ export default function ListItem({
     return (
       <Pressable
         onPress={onPress}
-        style={({ pressed }) => [
-          styles.row,
-          pressed && { backgroundColor: colors.surfaceAlt },
-        ]}
+        style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceAlt }]}
       >
         {content}
       </Pressable>
@@ -106,8 +103,11 @@ const styles = StyleSheet.create({
     minHeight: 56,
   },
   iconWrap: {
-    width: 40, height: 40, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   middle: { flex: 1, marginHorizontal: spacing.xs },
   rightCol: { flexDirection: 'row', alignItems: 'center' },

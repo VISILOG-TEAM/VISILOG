@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// The Administrator's staff roster — managed in Company Setup. This is
+// The Administrator's staff roster -- managed in Company Setup. This is
 // the source of truth AuthService checks at signup: an AppUser whose
 // email matches an Employee row here inherits that row's role and gets
 // linked to it; no match falls back to Role.VISITOR.
@@ -43,4 +43,9 @@ public class Employee {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private Role role;
+
+    // The device this employee last clocked in from -- null until their
+    // first clock-in. See ClockRecordService.checkDeviceBinding.
+    @Column(name = "bound_device_id")
+    private String boundDeviceId;
 }

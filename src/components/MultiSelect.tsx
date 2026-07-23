@@ -29,9 +29,7 @@ export default function MultiSelect<T>({
 }: MultiSelectProps<T>) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
-  const selectedLabels = options
-    .filter((o) => values.includes(o.value))
-    .map((o) => o.label);
+  const selectedLabels = options.filter((o) => values.includes(o.value)).map((o) => o.label);
 
   const toggle = (value: T) => {
     if (values.includes(value)) {
@@ -41,11 +39,12 @@ export default function MultiSelect<T>({
     }
   };
 
-  const summary = selectedLabels.length === 0
-    ? placeholder
-    : selectedLabels.length <= 2
-      ? selectedLabels.join(', ')
-      : `${selectedLabels.length} people selected`;
+  const summary =
+    selectedLabels.length === 0
+      ? placeholder
+      : selectedLabels.length <= 2
+        ? selectedLabels.join(', ')
+        : `${selectedLabels.length} people selected`;
 
   return (
     <View style={{ marginBottom: spacing.md }}>
@@ -73,14 +72,12 @@ export default function MultiSelect<T>({
         <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
       </Pressable>
 
-      <Modal
-        visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
-      >
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={[styles.sheet, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
+          <Pressable
+            style={[styles.sheet, { backgroundColor: colors.surface }]}
+            onPress={(e) => e.stopPropagation()}
+          >
             <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
             {label ? (
               <Text variant="h3" style={{ marginBottom: spacing.sm }}>
@@ -91,7 +88,9 @@ export default function MultiSelect<T>({
             <FlatList
               data={options}
               keyExtractor={(item) => String(item.value)}
-              ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.border }]} />}
+              ItemSeparatorComponent={() => (
+                <View style={[styles.sep, { backgroundColor: colors.border }]} />
+              )}
               renderItem={({ item }) => {
                 const active = values.includes(item.value);
                 return (
@@ -149,18 +148,24 @@ const styles = StyleSheet.create({
     maxHeight: '70%',
   },
   handle: {
-    width: 36, height: 4, borderRadius: 2,
+    width: 36,
+    height: 4,
+    borderRadius: 2,
     alignSelf: 'center',
     marginBottom: spacing.sm,
   },
   row: {
-    flexDirection: 'row', alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: spacing.sm,
   },
   checkbox: {
-    width: 20, height: 20, borderRadius: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 6,
     borderWidth: 1.5,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sep: { height: 1 },
 });

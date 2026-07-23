@@ -37,7 +37,14 @@ export interface StatusColorSet {
   fg: string;
 }
 
-export type StatusKey = 'onsite' | 'success' | 'pending' | 'rejected' | 'error' | 'info' | 'neutral';
+export type StatusKey =
+  | 'onsite'
+  | 'success'
+  | 'pending'
+  | 'rejected'
+  | 'error'
+  | 'info'
+  | 'neutral';
 
 export interface Colors extends BrandTheme {
   background: string;
@@ -85,10 +92,22 @@ const palette = {
 
   // Status families (high-clarity, conventional) -- solid/fg shared by
   // both modes, bg differs (see LIGHT_STATUS_BG/DARK_STATUS_BG below).
-  green600: '#16A34A', green100: '#DCFCE7', greenDarkBg: '#123322', greenDarkFg: '#4ADE80',
-  amber600: '#D97706', amber100: '#FEF3C7', amberDarkBg: '#3A2A0C', amberDarkFg: '#FBBF24',
-  red600: '#DC2626', red100: '#FEE2E2', redDarkBg: '#3A1414', redDarkFg: '#F87171',
-  blue600: '#2563EB', blue100: '#DBEAFE', blueDarkBg: '#122A4A', blueDarkFg: '#60A5FA',
+  green600: '#16A34A',
+  green100: '#DCFCE7',
+  greenDarkBg: '#123322',
+  greenDarkFg: '#4ADE80',
+  amber600: '#D97706',
+  amber100: '#FEF3C7',
+  amberDarkBg: '#3A2A0C',
+  amberDarkFg: '#FBBF24',
+  red600: '#DC2626',
+  red100: '#FEE2E2',
+  redDarkBg: '#3A1414',
+  redDarkFg: '#F87171',
+  blue600: '#2563EB',
+  blue100: '#DBEAFE',
+  blueDarkBg: '#122A4A',
+  blueDarkFg: '#60A5FA',
 
   // Deep, near-black neutrals (dark mode) -- slightly green-tinted to
   // stay consistent with the brand rather than reading as pure grey.
@@ -128,7 +147,9 @@ const mix = (hexA: string, hexB: string, weight: number): string => {
   const blend = (i: number) => {
     const av = parseInt(a[i], 16);
     const bv = parseInt(b[i], 16);
-    return Math.round(av * weight + bv * (1 - weight)).toString(16).padStart(2, '0');
+    return Math.round(av * weight + bv * (1 - weight))
+      .toString(16)
+      .padStart(2, '0');
   };
   return `#${blend(1)}${blend(2)}${blend(3)}`;
 };

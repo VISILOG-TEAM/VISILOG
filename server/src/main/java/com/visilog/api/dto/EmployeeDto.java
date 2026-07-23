@@ -5,11 +5,11 @@ import java.util.UUID;
 
 public record EmployeeDto(
         UUID id, String employeeCode, String name, String department,
-        String phone, String email, String role
+        String phone, String email, String role, boolean deviceBound
 ) {
     public static EmployeeDto from(Employee e) {
         return new EmployeeDto(
                 e.getId(), e.getEmployeeCode(), e.getName(), e.getDepartment(),
-                e.getPhone(), e.getEmail(), e.getRole().name());
+                e.getPhone(), e.getEmail(), e.getRole().name(), e.getBoundDeviceId() != null);
     }
 }

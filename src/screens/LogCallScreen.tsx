@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Alert } from 'react-native';
-import {
-  Screen, Header, Card, Button, Input, Select,
-} from '../components';
+import { Screen, Header, Card, Button, Input, Select } from '../components';
 import { spacing } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { callTypes } from '../data/mockData';
@@ -19,7 +17,7 @@ interface LogCallErrors {
   hostId?: string;
 }
 
-// LogCallScreen — record a new call.
+// LogCallScreen -- record a new call.
 // Per the User Guide: caller name, phone, duration, notes, host, call type, purpose.
 export default function LogCallScreen({ navigation }: LogCallScreenProps) {
   const { employees, logCall } = useData();
@@ -44,13 +42,22 @@ export default function LogCallScreen({ navigation }: LogCallScreenProps) {
 
     try {
       const call = await logCall({
-        callerName, callerPhone, hostId: hostId as string, callType, purpose, durationMinutes, notes,
+        callerName,
+        callerPhone,
+        hostId: hostId as string,
+        callType,
+        purpose,
+        durationMinutes,
+        notes,
       });
       Alert.alert('Call logged', `${call.callType} from ${call.callerName}.`, [
         { text: 'Done', onPress: () => navigation.goBack() },
       ]);
     } catch (err) {
-      Alert.alert('Could not log call', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not log call',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     }
   };
 

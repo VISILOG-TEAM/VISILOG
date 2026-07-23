@@ -1,6 +1,11 @@
 import React from 'react';
 import {
-  Pressable, ActivityIndicator, View, StyleSheet, type StyleProp, type ViewStyle,
+  Pressable,
+  ActivityIndicator,
+  View,
+  StyleSheet,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { IoniconName } from '../types';
@@ -43,10 +48,30 @@ export default function Button({
   // Built per-render (cheap, a handful of keys) so a signed-in org's
   // brand color flows straight into every button without a reload.
   const VARIANTS = {
-    primary: { bg: colors.primary, fg: colors.textInverse, border: 'transparent', pressed: colors.primaryPressed },
-    secondary: { bg: colors.surface, fg: colors.brand, border: colors.border, pressed: colors.surfaceAlt },
-    ghost: { bg: 'transparent', fg: colors.primary, border: 'transparent', pressed: colors.primarySurface },
-    danger: { bg: colors.status.error.solid, fg: colors.textInverse, border: 'transparent', pressed: '#B91C1C' },
+    primary: {
+      bg: colors.primary,
+      fg: colors.textInverse,
+      border: 'transparent',
+      pressed: colors.primaryPressed,
+    },
+    secondary: {
+      bg: colors.surface,
+      fg: colors.brand,
+      border: colors.border,
+      pressed: colors.surfaceAlt,
+    },
+    ghost: {
+      bg: 'transparent',
+      fg: colors.primary,
+      border: 'transparent',
+      pressed: colors.primarySurface,
+    },
+    danger: {
+      bg: colors.status.error.solid,
+      fg: colors.textInverse,
+      border: 'transparent',
+      pressed: '#B91C1C',
+    },
   };
   const v = VARIANTS[variant] || VARIANTS.primary;
   const isDisabled = disabled || loading;
@@ -61,7 +86,11 @@ export default function Button({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [
         styles.base,
-        { height, backgroundColor: pressed && !isDisabled ? v.pressed : v.bg, borderColor: v.border },
+        {
+          height,
+          backgroundColor: pressed && !isDisabled ? v.pressed : v.bg,
+          borderColor: v.border,
+        },
         v.border !== 'transparent' && styles.bordered,
         fullWidth && styles.fullWidth,
         isDisabled && styles.disabled,

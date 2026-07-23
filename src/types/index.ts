@@ -54,6 +54,9 @@ export interface Employee {
   phone: string;
   email: string;
   role: Role;
+  // Whether this employee's clock-ins are locked to a phone yet -- see
+  // ClockRecordService.checkDeviceBinding on the backend.
+  deviceBound: boolean;
 }
 
 export type VisitorStatus = 'onsite' | 'completed';
@@ -159,9 +162,15 @@ export interface RoomBooking {
 }
 
 export type NotificationType =
-  | 'meeting_invite' | 'meeting_declined' | 'visit_admitted' | 'visit_rejected'
-  | 'visit_checked_out' | 'appointment_requested' | 'appointment_rescheduled'
-  | 'call_logged' | 'participant_absent';
+  | 'meeting_invite'
+  | 'meeting_declined'
+  | 'visit_admitted'
+  | 'visit_rejected'
+  | 'visit_checked_out'
+  | 'appointment_requested'
+  | 'appointment_rescheduled'
+  | 'call_logged'
+  | 'participant_absent';
 
 export interface AppNotification {
   id: string;

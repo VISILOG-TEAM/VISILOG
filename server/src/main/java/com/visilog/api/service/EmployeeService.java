@@ -19,12 +19,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // Company Setup > staff roster. This is what AuthService.signup checks
-// against â€” adding someone here with role=RECEPTIONIST/MANAGER/EMPLOYEE
+// against -- adding someone here with role=RECEPTIONIST/MANAGER/EMPLOYEE
 // is what lets them get that role automatically when they sign up with
 // a matching email, instead of the old free role-picker.
 //
 // Note: editing an Employee's role here does NOT retroactively change
-// any AppUser who already signed up â€” role is fixed at signup time by
+// any AppUser who already signed up -- role is fixed at signup time by
 // design (see AuthService). This only affects people who sign up after
 // the change.
 @Service
@@ -92,7 +92,7 @@ public class EmployeeService {
         return EmployeeDto.from(employeeRepository.save(e));
     }
 
-    // CSV bulk import from Company Setup â€” succeeds row by row rather
+    // CSV bulk import from Company Setup -- succeeds row by row rather
     // than all-or-nothing, so a duplicate code or a missing email on
     // one row doesn't block the rest of a large roster upload. Not
     // @Transactional itself, deliberately: each employeeRepository.save()
@@ -134,6 +134,16 @@ public class EmployeeService {
         Employee e = employeeRepository.findByOrganizationIdAndId(organizationId, employeeId)
                 .orElseThrow(() -> ApiException.notFound("Employee not found."));
         employeeRepository.delete(e);
+    }
+
+    // See ClockRecordService.checkDeviceBinding -- clears the link so
+    // the next clock-in from any device re-binds fresh.
+    @Transactional
+    public EmployeeDto resetDevice(UUID organizationId, UUID employeeId) {
+        Employee e = employeeRepository.findByOrganizationIdAndId(organizationId, employeeId)
+                .orElseThrow(() -> ApiException.notFound("Employee not found."));
+        e.setBoundDeviceId(null);
+        return EmployeeDto.from(employeeRepository.save(e));
     }
 
     private void applyRequest(Employee e, EmployeeRequest req) {

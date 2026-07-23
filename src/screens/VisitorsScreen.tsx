@@ -2,13 +2,28 @@ import React, { useMemo, useState } from 'react';
 import { View, SectionList, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
-  Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState, Avatar, ExportModal,
+  Screen,
+  Header,
+  Text,
+  Card,
+  Badge,
+  Input,
+  Segmented,
+  EmptyState,
+  Avatar,
+  ExportModal,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { fmtTime, fmtDateTime, fmtDuration, splitRecentOlder } from '../data/format';
-import { toCsv, toHtmlTable, exportCsvFile, exportPdfFile, type ExportColumn } from '../data/export';
+import {
+  toCsv,
+  toHtmlTable,
+  exportCsvFile,
+  exportPdfFile,
+  type ExportColumn,
+} from '../data/export';
 import type { RootStackNavigation } from '../types/navigation';
 import type { Visitor } from '../types';
 
@@ -20,10 +35,10 @@ type StatusFilter = 'all' | 'onsite' | 'completed';
 
 // VisitorsScreen -- the live visitor log.
 // Implements the "Visitor Logs" page from the User Guide:
-//   - search by name, badge number, or host
-//   - status filter: All / On-site / Completed
-//   - badge IDs are auto-generated (VIS-YYYY-NNN)
-//   - each row links into a detail page where check-out happens
+// - search by name, badge number, or host
+// - status filter: All / On-site / Completed
+// - badge IDs are auto-generated (VIS-YYYY-NNN)
+// - each row links into a detail page where check-out happens
 // A floating "Register" button opens the registration modal.
 export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
   const { colors } = useTheme();
@@ -49,10 +64,7 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
       .sort((a, b) => new Date(b.checkInAt).getTime() - new Date(a.checkInAt).getTime());
   }, [visitors, query, status]);
 
-  const sections = useMemo(
-    () => splitRecentOlder(filtered, (v) => v.checkInAt),
-    [filtered]
-  );
+  const sections = useMemo(() => splitRecentOlder(filtered, (v) => v.checkInAt), [filtered]);
 
   // Exports whatever the search/status filters currently show, so
   // "export" always matches what's on screen rather than the whole log.
@@ -66,8 +78,13 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
     { header: 'Check-in', get: (v) => fmtDateTime(v.checkInAt) },
     { header: 'Check-out', get: (v) => (v.checkOutAt ? fmtDateTime(v.checkOutAt) : '') },
   ];
-  const onExportCsv = () => exportCsvFile(`visitors-${Date.now()}.csv`, toCsv(filtered, exportColumns));
-  const onExportPdf = () => exportPdfFile(`visitors-${Date.now()}.pdf`, toHtmlTable('Visitor log', filtered, exportColumns));
+  const onExportCsv = () =>
+    exportCsvFile(`visitors-${Date.now()}.csv`, toCsv(filtered, exportColumns));
+  const onExportPdf = () =>
+    exportPdfFile(
+      `visitors-${Date.now()}.pdf`,
+      toHtmlTable('Visitor log', filtered, exportColumns),
+    );
 
   return (
     <Screen scroll={false} padded={false}>
@@ -106,7 +123,11 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         renderSectionHeader={({ section }) => (
-          <Text variant="eyebrow" color={colors.textMuted} style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+          <Text
+            variant="eyebrow"
+            color={colors.textMuted}
+            style={[styles.sectionHeader, { backgroundColor: colors.background }]}
+          >
             {section.title}
           </Text>
         )}
@@ -149,8 +170,14 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
 // Single row inside the visitor list. Status drives the card's accent
 // stripe (on the leading edge) AND a pill badge on the right.
 function VisitorRow({
-  visitor, hostName, onPress,
-}: { visitor: Visitor; hostName?: string; onPress: () => void }) {
+  visitor,
+  hostName,
+  onPress,
+}: {
+  visitor: Visitor;
+  hostName?: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
   const isOnsite = visitor.status === 'onsite';
   const accent = isOnsite ? 'onsite' : 'neutral';
@@ -160,7 +187,9 @@ function VisitorRow({
         <Avatar name={visitor.fullName} size={44} />
         <View style={styles.middle}>
           <View style={styles.titleRow}>
-            <Text variant="bodySemibold" numberOfLines={1}>{visitor.fullName}</Text>
+            <Text variant="bodySemibold" numberOfLines={1}>
+              {visitor.fullName}
+            </Text>
             <Badge
               label={isOnsite ? 'On-site' : 'Completed'}
               status={isOnsite ? 'onsite' : 'neutral'}
@@ -180,7 +209,7 @@ function VisitorRow({
             <Text variant="caption" color={colors.textMuted} style={{ marginLeft: 4 }}>
               {isOnsite
                 ? `In - ${fmtTime(visitor.checkInAt)} - ${fmtDuration(visitor.checkInAt)}`
-                : `${fmtTime(visitor.checkInAt)} â†’ ${fmtTime(visitor.checkOutAt)}`}
+                : `${fmtTime(visitor.checkInAt)} - ${fmtTime(visitor.checkOutAt)}`}
             </Text>
           </View>
         </View>
@@ -196,11 +225,16 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
   middle: { flex: 1, marginLeft: spacing.sm },
   titleRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   dot: {
-    width: 3, height: 3, borderRadius: 2,
+    width: 3,
+    height: 3,
+    borderRadius: 2,
     marginHorizontal: 8,
   },
 });

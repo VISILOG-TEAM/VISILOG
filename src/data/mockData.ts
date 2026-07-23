@@ -22,7 +22,7 @@ export const visitPurposes = [
 export const callTypes = ['Incoming', 'Outgoing', 'Missed'];
 
 // Auto-generated badge IDs use a "VIS-YYYY-NNN" format, mirroring the
-// pattern the backend itself generates (CodeGenerator.nextBadgeId) —
+// pattern the backend itself generates (CodeGenerator.nextBadgeId) --
 // used here only for the read-only preview on RegisterVisitorScreen
 // before the real badge is assigned server-side.
 export const nextBadgeId = (existing: Array<{ badgeId?: string | null }> = []): string => {

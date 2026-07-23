@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Text, Card, Badge, Avatar, CompanyMapSection,
-} from '../components';
+import { Screen, Text, Card, Badge, Avatar, CompanyMapSection } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -87,13 +85,22 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               <View style={[styles.chip, { backgroundColor: colors.primary }]}>
                 <Ionicons name="hardware-chip" size={20} color={colors.brandDark} />
               </View>
-              <Ionicons name="wifi" size={22} color="rgba(255,255,255,0.6)" style={{ transform: [{ rotate: '90deg' }] }} />
+              <Ionicons
+                name="wifi"
+                size={22}
+                color="rgba(255,255,255,0.6)"
+                style={{ transform: [{ rotate: '90deg' }] }}
+              />
             </View>
 
             <Text style={styles.passEyebrow}>
-              {myBooking.nfcCode ? `VISITOR PASS - #${myBooking.nfcCode}` : 'VISITOR PASS - PENDING APPROVAL'}
+              {myBooking.nfcCode
+                ? `VISITOR PASS - #${myBooking.nfcCode}`
+                : 'VISITOR PASS - PENDING APPROVAL'}
             </Text>
-            <Text style={styles.passName} numberOfLines={1}>{user?.name || 'Visitor'}</Text>
+            <Text style={styles.passName} numberOfLines={1}>
+              {user?.name || 'Visitor'}
+            </Text>
 
             <View style={styles.passMetaRow}>
               <View style={{ flex: 1 }}>
@@ -105,7 +112,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               <View style={{ flex: 1 }}>
                 <Text style={styles.passMetaLabel}>Scheduled</Text>
                 <Text style={styles.passMetaValue} numberOfLines={1}>
-                  {fmtDate(myBooking.scheduledAt)} Â· {fmtTime(myBooking.scheduledAt)}
+                  {fmtDate(myBooking.scheduledAt)} - {fmtTime(myBooking.scheduledAt)}
                 </Text>
               </View>
             </View>
@@ -141,7 +148,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               done
               icon="checkmark"
               label="Details submitted"
-              sub={`${fmtDate(myBooking.scheduledAt)} Â· ${fmtTime(myBooking.scheduledAt)}`}
+              sub={`${fmtDate(myBooking.scheduledAt)} - ${fmtTime(myBooking.scheduledAt)}`}
               isLast={false}
             />
             {myBooking.status === 'rejected' ? (
@@ -157,7 +164,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               <TimelineStep
                 done
                 icon="checkmark"
-                label="Approved Â· card issued"
+                label="Approved - card issued"
                 sub="You're all set for your visit."
                 isLast
               />
@@ -195,7 +202,9 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   const { colors } = useTheme();
   return (
     <View style={styles.detailRow}>
-      <Text variant="body" color={colors.textSecondary}>{label}</Text>
+      <Text variant="body" color={colors.textSecondary}>
+        {label}
+      </Text>
       <Text variant="bodySemibold">{value}</Text>
     </View>
   );
@@ -212,20 +221,28 @@ interface TimelineStepProps {
 
 function TimelineStep({ done, negative, icon, label, sub, isLast }: TimelineStepProps) {
   const { colors } = useTheme();
-  const dotColor = negative ? colors.status.rejected.solid : done ? colors.status.success.solid : colors.borderStrong;
+  const dotColor = negative
+    ? colors.status.rejected.solid
+    : done
+      ? colors.status.success.solid
+      : colors.borderStrong;
   return (
     <View style={styles.timelineRow}>
       <View style={styles.timelineRail}>
         <View style={[styles.timelineDot, { backgroundColor: dotColor }]}>
           {done ? <Ionicons name={icon} size={12} color="#FFFFFF" /> : null}
         </View>
-        {!isLast ? <View style={[styles.timelineLine, { backgroundColor: colors.border }]} /> : null}
+        {!isLast ? (
+          <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />
+        ) : null}
       </View>
       <View style={{ flex: 1, paddingBottom: isLast ? 0 : spacing.md }}>
         <Text variant="bodySemibold" color={done ? colors.textPrimary : colors.textSecondary}>
           {label}
         </Text>
-        <Text variant="caption" color={colors.textMuted}>{sub}</Text>
+        <Text variant="caption" color={colors.textMuted}>
+          {sub}
+        </Text>
       </View>
     </View>
   );
@@ -233,17 +250,28 @@ function TimelineStep({ done, negative, icon, label, sub, isLast }: TimelineStep
 
 const styles = StyleSheet.create({
   topRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.md,
   },
   bellBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bellBadge: {
-    position: 'absolute', top: 2, right: 2,
-    minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 3,
-    alignItems: 'center', justifyContent: 'center',
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bellBadgeText: { fontSize: 10, lineHeight: 12 },
   welcome: { fontFamily: fonts.displayBold, fontSize: 22 },
@@ -255,28 +283,43 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   passHead: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.lg,
   },
   chip: {
-    width: 40, height: 28, borderRadius: 6,
-    alignItems: 'center', justifyContent: 'center',
+    width: 40,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   passEyebrow: {
-    fontFamily: fonts.semibold, fontSize: 11, letterSpacing: 1,
-    color: 'rgba(255,255,255,0.65)', marginBottom: 6,
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: 'rgba(255,255,255,0.65)',
+    marginBottom: 6,
   },
   passName: {
-    fontFamily: fonts.displayExtra, fontSize: 26, lineHeight: 32,
-    color: '#FFFFFF', marginBottom: spacing.md,
+    fontFamily: fonts.displayExtra,
+    fontSize: 26,
+    lineHeight: 32,
+    color: '#FFFFFF',
+    marginBottom: spacing.md,
   },
   passMetaRow: { flexDirection: 'row' },
   passMetaLabel: {
-    fontFamily: fonts.medium, fontSize: 11,
-    color: 'rgba(255,255,255,0.6)', marginBottom: 2,
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+    marginBottom: 2,
   },
   passMetaValue: {
-    fontFamily: fonts.semibold, fontSize: 14, color: '#FFFFFF',
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
   passDivider: { height: 1, marginVertical: spacing.md },
   passStatusRow: { flexDirection: 'row', alignItems: 'center' },
@@ -285,7 +328,9 @@ const styles = StyleSheet.create({
 
   // Details
   detailRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: spacing.xs,
   },
   hairline: { height: 1 },
@@ -294,8 +339,11 @@ const styles = StyleSheet.create({
   timelineRow: { flexDirection: 'row' },
   timelineRail: { alignItems: 'center', width: 24, marginRight: spacing.sm },
   timelineDot: {
-    width: 22, height: 22, borderRadius: 11,
-    alignItems: 'center', justifyContent: 'center',
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   timelineLine: { width: 2, flex: 1, marginVertical: 4 },
 

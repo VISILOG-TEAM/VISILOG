@@ -1,7 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, ImageBackground, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, ScrollView, Alert,
+  View,
+  ImageBackground,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -90,7 +97,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       responseType: AuthSession.ResponseType.IdToken,
       extraParams: { nonce },
     },
-    GOOGLE_DISCOVERY
+    GOOGLE_DISCOVERY,
   );
 
   const onSubmit = async () => {
@@ -141,24 +148,19 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       <StatusBar style="light" />
       <View style={styles.wash} />
       <SafeAreaView style={styles.safe}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior="padding"
-        >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <ScrollView
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             {/* The frosted glass card. expo-blur renders a real iOS-style
-                blur; on Android it falls back to a translucent fill. */}
+ blur; on Android it falls back to a translucent fill. */}
             <BlurView intensity={25} tint="light" style={styles.card}>
               <View style={styles.cardInner}>
                 {/* Wordmark -- used here instead of a separate logo image */}
                 <Text style={styles.wordmark}>VisiLog</Text>
-                <Text style={styles.tagline}>
-                  Visitor Management & Reception Operations
-                </Text>
+                <Text style={styles.tagline}>Visitor Management & Reception Operations</Text>
 
                 <Segmented
                   value="signin"
@@ -173,9 +175,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 />
 
                 <Text style={styles.heading}>Login</Text>
-                <Text style={styles.subheading}>
-                  Welcome back. Please sign in to continue.
-                </Text>
+                <Text style={styles.subheading}>Welcome back. Please sign in to continue.</Text>
 
                 {/* Company code -- resolves which organization this login is for */}
                 <View style={styles.fieldRow}>
@@ -238,9 +238,11 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 </View>
 
                 {/* Gradient login button */}
-                <Pressable onPress={onSubmit} disabled={submitting} style={({ pressed }) => [
-                  { opacity: pressed || submitting ? 0.85 : 1 },
-                ]}>
+                <Pressable
+                  onPress={onSubmit}
+                  disabled={submitting}
+                  style={({ pressed }) => [{ opacity: pressed || submitting ? 0.85 : 1 }]}
+                >
                   <LinearGradient
                     colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
                     start={{ x: 0, y: 0 }}
@@ -257,7 +259,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 <Pressable
                   onPress={onGoogleLogin}
                   disabled={!request || googleSubmitting}
-                  style={({ pressed }) => [styles.googleBtn, { opacity: pressed || googleSubmitting ? 0.85 : 1 }]}
+                  style={({ pressed }) => [
+                    styles.googleBtn,
+                    { opacity: pressed || googleSubmitting ? 0.85 : 1 },
+                  ]}
                 >
                   <Ionicons name="logo-google" size={18} color="#FFFFFF" />
                   <Text style={styles.googleBtnText}>
@@ -267,7 +272,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
                 {/* Signup */}
                 <View style={styles.signupRow}>
-                  <Text style={styles.signupHint}>Don&apos;t have an account?{' '}</Text>
+                  <Text style={styles.signupHint}>Don&apos;t have an account? </Text>
                   <Pressable onPress={() => navigation.navigate('Signup')} hitSlop={6}>
                     <Text style={styles.signupLink}>Signup</Text>
                   </Pressable>
@@ -275,7 +280,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
 
                 {/* New company */}
                 <View style={[styles.signupRow, styles.newCompanyRow]}>
-                  <Text style={styles.signupHint}>Setting up VisiLog for your company?{' '}</Text>
+                  <Text style={styles.signupHint}>Setting up VisiLog for your company? </Text>
                   <Pressable onPress={() => navigation.navigate('RegisterCompany')} hitSlop={6}>
                     <Text style={styles.signupLink}>Register your company</Text>
                   </Pressable>
@@ -283,7 +288,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
               </View>
             </BlurView>
 
-            <Text style={styles.footer}>VisiLog 2.0 · Secure visitor management</Text>
+            <Text style={styles.footer}>VisiLog 2.0 - Secure visitor management</Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -312,7 +317,8 @@ const styles = StyleSheet.create({
   cardInner: {
     padding: spacing.xl,
     // On Android BlurView is weaker, so we tint the inner panel too
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+    backgroundColor:
+      Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
   },
 
   // Branding inside the card
@@ -369,15 +375,26 @@ const styles = StyleSheet.create({
 
   // Remember me / Forgot password
   rememberRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginVertical: spacing.sm,
   },
   remember: { flexDirection: 'row', alignItems: 'center' },
-  forgotText: { fontFamily: fonts.medium, fontSize: 13, color: '#FFFFFF', textDecorationLine: 'underline' },
+  forgotText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: '#FFFFFF',
+    textDecorationLine: 'underline',
+  },
   checkbox: {
-    width: 18, height: 18, borderRadius: 5,
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.85)',
-    alignItems: 'center', justifyContent: 'center',
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 8,
   },
   checkboxOn: { backgroundColor: '#2E9E96', borderColor: '#2E9E96' },
@@ -417,13 +434,19 @@ const styles = StyleSheet.create({
   // company? Register your company") breaks onto its own centered line
   // on narrow phones instead of the two Text nodes bunching together.
   signupRow: {
-    flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center',
-    marginTop: spacing.lg, paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.sm,
   },
   newCompanyRow: { marginTop: spacing.sm },
   signupHint: {
-    fontFamily: fonts.regular, fontSize: 13, lineHeight: 20,
-    color: 'rgba(255,255,255,0.85)', textAlign: 'center',
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
   },
   signupLink: { fontFamily: fonts.bold, fontSize: 13, lineHeight: 20, color: '#FFFFFF' },
 

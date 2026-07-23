@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Button, Avatar, StatTile, ClockCard,
-} from '../components';
+import { Screen, Header, Text, Card, Button, Avatar, StatTile, ClockCard } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -21,9 +19,17 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
   const { colors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const {
-    appointments, calls, updateAppointmentStatus, admitAppointment, unreadNotificationCount, refreshAll,
+    appointments,
+    calls,
+    updateAppointmentStatus,
+    admitAppointment,
+    unreadNotificationCount,
+    refreshAll,
   } = useData();
-  const onLogout = () => { logout(); setOrgTheme(null); };
+  const onLogout = () => {
+    logout();
+    setOrgTheme(null);
+  };
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
     setRefreshing(true);
@@ -47,7 +53,11 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
         title={`Hi, ${user!.name?.split(' ')[0]}`}
         subtitle={user!.email}
         rightActions={[
-          { icon: 'notifications-outline', onPress: () => navigation.navigate('Notifications'), badge: unreadNotificationCount },
+          {
+            icon: 'notifications-outline',
+            onPress: () => navigation.navigate('Notifications'),
+            badge: unreadNotificationCount,
+          },
           { icon: 'log-out-outline', onPress: onLogout },
         ]}
       />
@@ -56,11 +66,9 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
 
       {/* Stats */}
       <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
-        <StatTile icon="people" tint="primary"
-          label="Pending visitors" value={myPending.length} />
+        <StatTile icon="people" tint="primary" label="Pending visitors" value={myPending.length} />
         <View style={{ width: spacing.sm }} />
-        <StatTile icon="call" tint="info"
-          label="Recent calls" value={myCalls.length} />
+        <StatTile icon="call" tint="info" label="Recent calls" value={myCalls.length} />
       </View>
 
       {/* Pending visitor requests */}
@@ -86,12 +94,17 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
               </View>
             </View>
             <View style={{ flexDirection: 'row', marginTop: spacing.sm }}>
-              <Button label="Decline" variant="secondary"
+              <Button
+                label="Decline"
+                variant="secondary"
                 onPress={() => updateAppointmentStatus(a.id, 'rejected')}
-                style={{ flex: 1, marginRight: spacing.xs }} />
-              <Button label="Accept"
+                style={{ flex: 1, marginRight: spacing.xs }}
+              />
+              <Button
+                label="Accept"
                 onPress={() => admitAppointment(a)}
-                style={{ flex: 1, marginLeft: spacing.xs }} />
+                style={{ flex: 1, marginLeft: spacing.xs }}
+              />
             </View>
           </Card>
         ))
@@ -103,7 +116,9 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
       </Text>
       <Card>
         {myCalls.length === 0 ? (
-          <Text variant="body" color={colors.textSecondary}>No recent calls.</Text>
+          <Text variant="body" color={colors.textSecondary}>
+            No recent calls.
+          </Text>
         ) : (
           myCalls.map((c) => (
             <View key={c.id} style={styles.callRow}>

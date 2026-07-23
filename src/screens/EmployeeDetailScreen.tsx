@@ -1,20 +1,35 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet, Pressable, Linking, Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Avatar, Button } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api/client';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { IoniconName } from '../types';
 
 // EmployeeDetailScreen -- single staff member's profile.
-export default function EmployeeDetailScreen({ route, navigation }: RootStackScreenProps<'EmployeeDetail'>) {
+export default function EmployeeDetailScreen({
+  route,
+  navigation,
+}: RootStackScreenProps<'EmployeeDetail'>) {
   const { colors } = useTheme();
   const { employeeId } = route.params;
-  const { employees, removeEmployee } = useData();
+  const { employees, removeEmployee, resetEmployeeDevice, refreshEmployees } = useData();
+  const { user } = useAuth();
   const employee = employees.find((e) => e.id === employeeId);
+
+  // deviceBound is set server-side the moment a staff member first
+  // clocks in -- refetch on focus so reopening this screen after that
+  // (or after a manager's own reset) shows the real, current state.
+  useFocusEffect(
+    useCallback(() => {
+      refreshEmployees().catch(() => {});
+    }, []),
+  );
 
   if (!employee) {
     return (
@@ -25,33 +40,53 @@ export default function EmployeeDetailScreen({ route, navigation }: RootStackScr
   }
 
   const onRemove = () => {
+    Alert.alert('Remove employee?', `${employee.name} will be removed from the directory.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await removeEmployee(employee.id);
+            navigation.goBack();
+          } catch (err) {
+            Alert.alert(
+              'Could not remove employee',
+              err instanceof ApiError ? err.message : 'Something went wrong.',
+            );
+          }
+        },
+      },
+    ]);
+  };
+
+  const onResetDevice = () => {
     Alert.alert(
-      'Remove employee?',
-      `${employee.name} will be removed from the directory.`,
+      'Reset clocked-in device?',
+      `${employee.name} will be able to clock in from a new phone. Only do this if they've genuinely switched devices.`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Remove', style: 'destructive',
+          text: 'Reset',
+          style: 'destructive',
           onPress: async () => {
             try {
-              await removeEmployee(employee.id);
-              navigation.goBack();
+              await resetEmployeeDevice(employee.id);
             } catch (err) {
-              Alert.alert('Could not remove employee', err instanceof ApiError ? err.message : 'Something went wrong.');
+              Alert.alert(
+                'Could not reset device',
+                err instanceof ApiError ? err.message : 'Something went wrong.',
+              );
             }
           },
         },
-      ]
+      ],
     );
   };
 
   return (
     <Screen>
-      <Header
-        title="Staff profile"
-        rightIcon="close"
-        onRightPress={() => navigation.goBack()}
-      />
+      <Header title="Staff profile" rightIcon="close" onRightPress={() => navigation.goBack()} />
 
       <Card>
         <View style={styles.headerRow}>
@@ -65,22 +100,65 @@ export default function EmployeeDetailScreen({ route, navigation }: RootStackScr
         </View>
 
         <View style={styles.actionRow}>
-          <ActionPill icon="call" label="Call"
-            onPress={() => Linking.openURL(`tel:${employee.phone}`)} />
-          <ActionPill icon="mail" label="Email"
-            onPress={() => Linking.openURL(`mailto:${employee.email}`)} />
-          <ActionPill icon="chatbubble-ellipses" label="Message"
-            onPress={() => Linking.openURL(`sms:${employee.phone}`)} />
+          <ActionPill
+            icon="call"
+            label="Call"
+            onPress={() => Linking.openURL(`tel:${employee.phone}`)}
+          />
+          <ActionPill
+            icon="mail"
+            label="Email"
+            onPress={() => Linking.openURL(`mailto:${employee.email}`)}
+          />
+          <ActionPill
+            icon="chatbubble-ellipses"
+            label="Message"
+            onPress={() => Linking.openURL(`sms:${employee.phone}`)}
+          />
         </View>
       </Card>
 
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>Contact</Text>
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Contact
+      </Text>
       <Card>
         <Row icon="call-outline" label="Personal phone" value={employee.phone} />
         <Divider />
         <Row icon="mail-outline" label="Email" value={employee.email} />
         <Divider />
         <Row icon="briefcase-outline" label="Department" value={employee.department} />
+      </Card>
+
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Clock-in device
+      </Text>
+      <Card>
+        <View style={styles.row}>
+          <View style={[styles.icon, { backgroundColor: colors.surfaceAlt }]}>
+            <Ionicons
+              name={employee.deviceBound ? 'phone-portrait' : 'phone-portrait-outline'}
+              size={18}
+              color={colors.brand}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text variant="caption" color={colors.textSecondary}>
+              Status
+            </Text>
+            <Text variant="bodySemibold">
+              {employee.deviceBound ? 'Locked to a phone' : 'Not yet locked'}
+            </Text>
+          </View>
+        </View>
+        {user?.role === 'manager' && employee.deviceBound && (
+          <Button
+            label="Reset device"
+            variant="secondary"
+            icon="refresh-outline"
+            onPress={onResetDevice}
+            style={{ marginTop: spacing.sm }}
+          />
+        )}
       </Card>
 
       <Button
@@ -102,7 +180,9 @@ function Row({ icon, label, value }: { icon: IoniconName; label: string; value: 
         <Ionicons name={icon} size={18} color={colors.brand} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text variant="caption" color={colors.textSecondary}>{label}</Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          {label}
+        </Text>
         <Text variant="bodySemibold">{value}</Text>
       </View>
     </View>
@@ -115,11 +195,24 @@ function Divider() {
 }
 
 function ActionPill({
-  icon, label, onPress,
-}: { icon: IoniconName; label: string; onPress: () => void }) {
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IoniconName;
+  label: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primarySurface }, pressed && { opacity: 0.85 }]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.pill,
+        { backgroundColor: colors.primarySurface },
+        pressed && { opacity: 0.85 },
+      ]}
+    >
       <Ionicons name={icon} size={18} color={colors.primary} />
       <Text variant="caption" color={colors.brand} style={{ marginTop: 2 }}>
         {label}
@@ -132,14 +225,19 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   actionRow: { flexDirection: 'row', gap: spacing.xs },
   pill: {
-    flex: 1, alignItems: 'center', paddingVertical: spacing.sm,
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
     borderRadius: radius.md,
   },
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
   icon: {
-    width: 32, height: 32, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing.sm,
   },
   divider: { height: 1, marginVertical: spacing.xs, marginLeft: 32 + spacing.sm },

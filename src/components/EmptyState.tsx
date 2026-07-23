@@ -39,12 +39,7 @@ export default function EmptyState({
         </Text>
       ) : null}
       {actionLabel ? (
-        <Button
-          label={actionLabel}
-          onPress={onAction}
-          fullWidth={false}
-          style={styles.action}
-        />
+        <Button label={actionLabel} onPress={onAction} fullWidth={false} style={styles.action} />
       ) : null}
     </View>
   );

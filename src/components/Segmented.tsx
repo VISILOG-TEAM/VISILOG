@@ -13,9 +13,14 @@ interface SegmentedProps<T extends string> {
 }
 
 // Pill-style filter group used at the top of list screens (e.g. Visitors:
-// All Â· On-site Â· Completed). Pass an array of { label, value } options
+// All - On-site - Completed). Pass an array of { label, value } options
 // and the selected value; emits the new value on press.
-export default function Segmented<T extends string>({ options, value, onChange, style }: SegmentedProps<T>) {
+export default function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+  style,
+}: SegmentedProps<T>) {
   const { colors } = useTheme();
   return (
     <View style={[styles.wrap, { backgroundColor: colors.surfaceAlt }, style]}>
@@ -27,10 +32,7 @@ export default function Segmented<T extends string>({ options, value, onChange, 
             onPress={() => onChange?.(opt.value)}
             style={[styles.btn, active && { backgroundColor: colors.brand }]}
           >
-            <Text
-              variant="bodyMd"
-              color={active ? colors.textInverse : colors.textSecondary}
-            >
+            <Text variant="bodyMd" color={active ? colors.textInverse : colors.textSecondary}>
               {opt.label}
             </Text>
           </Pressable>

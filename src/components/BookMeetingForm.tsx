@@ -57,13 +57,23 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
       return;
     }
     if (!guestEmail.trim() && !guestPhone.trim()) {
-      Alert.alert('Almost there', 'Add an email or phone number so the guest can actually be reached.');
+      Alert.alert(
+        'Almost there',
+        'Add an email or phone number so the guest can actually be reached.',
+      );
       return;
     }
-    setExternalGuests((gs) => [...gs, {
-      name: guestName.trim(), email: guestEmail.trim() || null, phone: guestPhone.trim() || null,
-    }]);
-    setGuestName(''); setGuestEmail(''); setGuestPhone('');
+    setExternalGuests((gs) => [
+      ...gs,
+      {
+        name: guestName.trim(),
+        email: guestEmail.trim() || null,
+        phone: guestPhone.trim() || null,
+      },
+    ]);
+    setGuestName('');
+    setGuestEmail('');
+    setGuestPhone('');
   };
 
   const onRemoveGuest = (index: number) => {
@@ -74,9 +84,12 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
     if (submittingRef.current) return;
     const hasPlace = locationType === 'room' ? !!roomId : !!outsideLocation.trim();
     if (!title.trim() || !hasPlace) {
-      Alert.alert('Almost there', locationType === 'room'
-        ? 'Give the meeting a title and pick a room.'
-        : 'Give the meeting a title and enter a location.');
+      Alert.alert(
+        'Almost there',
+        locationType === 'room'
+          ? 'Give the meeting a title and pick a room.'
+          : 'Give the meeting a title and enter a location.',
+      );
       return;
     }
     submittingRef.current = true;
@@ -92,11 +105,12 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
         externalGuests,
         priority,
       });
-      Alert.alert('Booked', `${title} is on the calendar.`, [
-        { text: 'Done', onPress: onDone },
-      ]);
+      Alert.alert('Booked', `${title} is on the calendar.`, [{ text: 'Done', onPress: onDone }]);
     } catch (err) {
-      Alert.alert('Could not book meeting', err instanceof ApiError ? err.message : 'Something went wrong.');
+      Alert.alert(
+        'Could not book meeting',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -116,7 +130,11 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
 
         <Segmented
           value={locationType}
-          onChange={(v) => { setLocationType(v); setRoomId(null); setOutsideLocation(''); }}
+          onChange={(v) => {
+            setLocationType(v);
+            setRoomId(null);
+            setOutsideLocation('');
+          }}
           options={[
             { label: 'Meeting room', value: 'room' },
             { label: 'Outside location', value: 'outside' },
@@ -143,7 +161,9 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             onChange={setRoomId}
             icon="business-outline"
             options={meetingRooms.map((r) => ({
-              label: r.name, value: r.id, sublabel: `${r.floor} Â· Capacity ${r.capacity}`,
+              label: r.name,
+              value: r.id,
+              sublabel: `${r.floor} - Capacity ${r.capacity}`,
             }))}
           />
         ) : (
@@ -163,7 +183,9 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
           onChange={setAttendeeIds}
           icon="people-outline"
           options={employees.map((e) => ({
-            label: e.name, value: e.id, sublabel: e.department,
+            label: e.name,
+            value: e.id,
+            sublabel: e.department,
           }))}
         />
 
@@ -192,13 +214,26 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
         />
         <View style={styles.guestContactRow}>
           <View style={{ flex: 1 }}>
-            <Input label="Email" value={guestEmail} onChangeText={setGuestEmail}
-              placeholder="them@example.com" icon="mail-outline" autoCapitalize="none" keyboardType="email-address" />
+            <Input
+              label="Email"
+              value={guestEmail}
+              onChangeText={setGuestEmail}
+              placeholder="them@example.com"
+              icon="mail-outline"
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
           </View>
           <View style={{ width: spacing.sm }} />
           <View style={{ flex: 1 }}>
-            <Input label="Phone" value={guestPhone} onChangeText={setGuestPhone}
-              placeholder="Optional" icon="call-outline" keyboardType="phone-pad" />
+            <Input
+              label="Phone"
+              value={guestPhone}
+              onChangeText={setGuestPhone}
+              placeholder="Optional"
+              icon="call-outline"
+              keyboardType="phone-pad"
+            />
           </View>
         </View>
         <Pressable
@@ -211,11 +246,17 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
           </Text>
         </Pressable>
 
-        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Date</Text>
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
+          Date
+        </Text>
         <DateChips value={date} onChange={setDate} />
-        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Start time</Text>
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
+          Start time
+        </Text>
         <TimeChips value={startTime} onChange={setStartTime} />
-        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>End time</Text>
+        <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
+          End time
+        </Text>
         <TimeChips value={endTime} onChange={setEndTime} />
       </Card>
 
@@ -249,15 +290,24 @@ function toInstant(dateStr: string, timeStr: string): string {
 const styles = StyleSheet.create({
   chipsLabel: { marginBottom: spacing.xs },
   guestRow: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    borderWidth: 1, borderRadius: radius.md,
-    paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.sm,
   },
   guestContactRow: { flexDirection: 'row' },
   addGuestBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderRadius: radius.md, borderStyle: 'dashed',
-    height: 44, marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    borderStyle: 'dashed',
+    height: 44,
+    marginBottom: spacing.md,
   },
 });

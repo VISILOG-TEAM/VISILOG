@@ -5,10 +5,16 @@ import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
-  Sora_400Regular, Sora_600SemiBold, Sora_700Bold, Sora_800ExtraBold,
+  Sora_400Regular,
+  Sora_600SemiBold,
+  Sora_700Bold,
+  Sora_800ExtraBold,
 } from '@expo-google-fonts/sora';
 import {
-  Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
 } from '@expo-google-fonts/inter';
 
 import { AuthProvider } from './src/context/AuthContext';
@@ -27,8 +33,14 @@ export default function App() {
   // a fixed window so the branding always gets its full 7 seconds even
   // if fonts load instantly (e.g. on web).
   const [fontsLoaded] = useFonts({
-    Sora_400Regular, Sora_600SemiBold, Sora_700Bold, Sora_800ExtraBold,
-    Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold,
+    Sora_400Regular,
+    Sora_600SemiBold,
+    Sora_700Bold,
+    Sora_800ExtraBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
   const [splashElapsed, setSplashElapsed] = useState(false);
 

@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Alert, Pressable, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import {
-  Screen, Header, Text, Card, Badge, Button, Input, Avatar,
-} from '../components';
+import { Screen, Header, Text, Card, Badge, Button, Input, Avatar } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -14,12 +12,15 @@ import type { IoniconName } from '../types';
 
 // VisitorDetailScreen -- the full record for one visitor.
 // Reachable by tapping any row in the Visitors list. Shows:
-//   - Identity block (avatar, name, badge ID, status)
-//   - Visit details (host, purpose, company, phone)
-//   - Timing (check-in, check-out, duration)
-//   - Notes (editable)
-//   - Check-out action (when on-site)
-export default function VisitorDetailScreen({ route, navigation }: RootStackScreenProps<'VisitorDetail'>) {
+// - Identity block (avatar, name, badge ID, status)
+// - Visit details (host, purpose, company, phone)
+// - Timing (check-in, check-out, duration)
+// - Notes (editable)
+// - Check-out action (when on-site)
+export default function VisitorDetailScreen({
+  route,
+  navigation,
+}: RootStackScreenProps<'VisitorDetail'>) {
   const { colors } = useTheme();
   const { visitorId } = route.params;
   const { visitors, checkOutVisitor, employeeById } = useData();
@@ -30,7 +31,11 @@ export default function VisitorDetailScreen({ route, navigation }: RootStackScre
   if (!visitor) {
     return (
       <Screen>
-        <Header title="Visitor not found" rightIcon="close" onRightPress={() => navigation.goBack()} />
+        <Header
+          title="Visitor not found"
+          rightIcon="close"
+          onRightPress={() => navigation.goBack()}
+        />
         <Text variant="body" color={colors.textSecondary}>
           This record may have been removed. Go back and try again.
         </Text>
@@ -42,25 +47,24 @@ export default function VisitorDetailScreen({ route, navigation }: RootStackScre
   const isOnsite = visitor.status === 'onsite';
 
   const onCheckOut = () => {
-    Alert.alert(
-      'Check out visitor?',
-      `${visitor.fullName} will be marked as departed.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Check out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await checkOutVisitor(visitor.id, note);
-              navigation.goBack();
-            } catch (err) {
-              Alert.alert('Could not check out', err instanceof ApiError ? err.message : 'Something went wrong.');
-            }
-          },
+    Alert.alert('Check out visitor?', `${visitor.fullName} will be marked as departed.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Check out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await checkOutVisitor(visitor.id, note);
+            navigation.goBack();
+          } catch (err) {
+            Alert.alert(
+              'Could not check out',
+              err instanceof ApiError ? err.message : 'Something went wrong.',
+            );
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -77,7 +81,9 @@ export default function VisitorDetailScreen({ route, navigation }: RootStackScre
         <View style={styles.identityRow}>
           <Avatar name={visitor.fullName} size={56} />
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
-            <Text variant="h2" numberOfLines={1}>{visitor.fullName}</Text>
+            <Text variant="h2" numberOfLines={1}>
+              {visitor.fullName}
+            </Text>
             <Text variant="caption" color={colors.textSecondary}>
               {visitor.company || 'No company on file'}
             </Text>
@@ -91,19 +97,36 @@ export default function VisitorDetailScreen({ route, navigation }: RootStackScre
 
       {/* Quick contact actions */}
       <View style={styles.actionsRow}>
-        <ActionPill icon="call" label="Call"
-          onPress={() => Linking.openURL(`tel:${visitor.phone}`)} />
-        <ActionPill icon="chatbubble-ellipses" label="Message"
-          onPress={() => Linking.openURL(`sms:${visitor.phone}`)} />
-        <ActionPill icon="mail" label="Email"
-          onPress={() => Alert.alert('No email on file', 'This visitor record has no email address.')} />
+        <ActionPill
+          icon="call"
+          label="Call"
+          onPress={() => Linking.openURL(`tel:${visitor.phone}`)}
+        />
+        <ActionPill
+          icon="chatbubble-ellipses"
+          label="Message"
+          onPress={() => Linking.openURL(`sms:${visitor.phone}`)}
+        />
+        <ActionPill
+          icon="mail"
+          label="Email"
+          onPress={() =>
+            Alert.alert('No email on file', 'This visitor record has no email address.')
+          }
+        />
       </View>
 
       {/* Visit details */}
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>Visit details</Text>
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Visit details
+      </Text>
       <Card>
-        <DetailRow icon="people-outline" label="Host" value={host?.name || 'Not assigned'}
-          sub={host ? host.department : undefined} />
+        <DetailRow
+          icon="people-outline"
+          label="Host"
+          value={host?.name || 'Not assigned'}
+          sub={host ? host.department : undefined}
+        />
         <Divider />
         <DetailRow icon="briefcase-outline" label="Purpose" value={visitor.purpose} />
         <Divider />
@@ -113,21 +136,35 @@ export default function VisitorDetailScreen({ route, navigation }: RootStackScre
       </Card>
 
       {/* Timing */}
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>Timing</Text>
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Timing
+      </Text>
       <Card>
-        <DetailRow icon="log-in-outline" label="Checked in"
-          value={fmtTime(visitor.checkInAt)} sub={fmtDate(visitor.checkInAt)} />
+        <DetailRow
+          icon="log-in-outline"
+          label="Checked in"
+          value={fmtTime(visitor.checkInAt)}
+          sub={fmtDate(visitor.checkInAt)}
+        />
         <Divider />
-        <DetailRow icon="log-out-outline" label="Checked out"
+        <DetailRow
+          icon="log-out-outline"
+          label="Checked out"
           value={visitor.checkOutAt ? fmtTime(visitor.checkOutAt) : 'Still on-site'}
-          sub={visitor.checkOutAt ? fmtDate(visitor.checkOutAt) : undefined} />
+          sub={visitor.checkOutAt ? fmtDate(visitor.checkOutAt) : undefined}
+        />
         <Divider />
-        <DetailRow icon="hourglass-outline" label="Duration"
-          value={fmtDuration(visitor.checkInAt, visitor.checkOutAt)} />
+        <DetailRow
+          icon="hourglass-outline"
+          label="Duration"
+          value={fmtDuration(visitor.checkInAt, visitor.checkOutAt)}
+        />
       </Card>
 
       {/* Notes */}
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>Notes</Text>
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Notes
+      </Text>
       {isOnsite ? (
         <Input
           placeholder="Check-out note (optional)"
@@ -159,8 +196,16 @@ export default function VisitorDetailScreen({ route, navigation }: RootStackScre
 // Small internal helpers
 
 function DetailRow({
-  icon, label, value, sub,
-}: { icon: IoniconName; label: string; value: string; sub?: string }) {
+  icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: IoniconName;
+  label: string;
+  value: string;
+  sub?: string;
+}) {
   const { colors } = useTheme();
   return (
     <View style={styles.detailRow}>
@@ -168,10 +213,14 @@ function DetailRow({
         <Ionicons name={icon} size={18} color={colors.brand} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text variant="caption" color={colors.textSecondary}>{label}</Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          {label}
+        </Text>
         <Text variant="bodySemibold">{value}</Text>
         {sub ? (
-          <Text variant="caption" color={colors.textMuted}>{sub}</Text>
+          <Text variant="caption" color={colors.textMuted}>
+            {sub}
+          </Text>
         ) : null}
       </View>
     </View>
@@ -184,11 +233,24 @@ function Divider() {
 }
 
 function ActionPill({
-  icon, label, onPress,
-}: { icon: IoniconName; label: string; onPress: () => void }) {
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IoniconName;
+  label: string;
+  onPress: () => void;
+}) {
   const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85 }]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.pill,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        pressed && { opacity: 0.85 },
+      ]}
+    >
       <Ionicons name={icon} size={18} color={colors.primary} />
       <Text variant="bodyMd" color={colors.brand} style={{ marginLeft: 6 }}>
         {label}
@@ -212,8 +274,11 @@ const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   detailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
   detailIcon: {
-    width: 32, height: 32, borderRadius: 10,
-    alignItems: 'center', justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing.sm,
   },
   divider: { height: 1, marginVertical: spacing.xs, marginLeft: 32 + spacing.sm },

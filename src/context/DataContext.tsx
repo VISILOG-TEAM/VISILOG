@@ -1,11 +1,42 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { apiClient } from '../api/client';
+import { getDeviceId } from '../api/deviceId';
 import { useAuth } from './AuthContext';
 import type {
-  Appointment, AppointmentStatus, AppNotification, Billing, BookRoomInput, BookVisitInput,
-  BulkImportResult, Call, ClockRecord, ClockType, Employee, EmployeeInput, Invoice, LogCallInput,
-  MeetingPriority, MeetingResponseStatus, MeetingRoom, MeetingRoomInput, NfcCard, NotificationType,
-  Plan, RegisterVisitorInput, Role, RoomBooking, RoomBookingResponse, Visitor, VisitorStatus,
+  Appointment,
+  AppointmentStatus,
+  AppNotification,
+  Billing,
+  BookRoomInput,
+  BookVisitInput,
+  BulkImportResult,
+  Call,
+  ClockRecord,
+  ClockType,
+  Employee,
+  EmployeeInput,
+  Invoice,
+  LogCallInput,
+  MeetingPriority,
+  MeetingResponseStatus,
+  MeetingRoom,
+  MeetingRoomInput,
+  NfcCard,
+  NotificationType,
+  Plan,
+  RegisterVisitorInput,
+  Role,
+  RoomBooking,
+  RoomBookingResponse,
+  Visitor,
+  VisitorStatus,
 } from '../types';
 
 // DataContext talks to the real VisiLog backend (see server/). Every
@@ -21,32 +52,68 @@ import type {
 
 // ---- raw backend DTO shapes (UPPERCASE enums, as they arrive on the wire) ----
 
-interface VisitorDto extends Omit<Visitor, 'status'> { status: string; }
-interface AppointmentDto extends Omit<Appointment, 'status'> { status: string; }
-interface CallDto extends Omit<Call, 'callType'> { callType: string; }
-interface EmployeeDto {
-  id: string; employeeCode: string; name: string;
-  department?: string | null; phone?: string | null; email?: string | null; role: string;
+interface VisitorDto extends Omit<Visitor, 'status'> {
+  status: string;
 }
-interface ClockRecordDto extends Omit<ClockRecord, 'type'> { type: string; }
-interface RoomBookingResponseDto extends Omit<RoomBookingResponse, 'status'> { status: string; }
-interface RoomBookingDto extends Omit<RoomBooking, 'location' | 'participantIds' | 'priority' | 'responses'> {
-  location?: string | null; participantIds?: string[] | null; priority?: string | null;
+interface AppointmentDto extends Omit<Appointment, 'status'> {
+  status: string;
+}
+interface CallDto extends Omit<Call, 'callType'> {
+  callType: string;
+}
+interface EmployeeDto {
+  id: string;
+  employeeCode: string;
+  name: string;
+  department?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  role: string;
+  deviceBound: boolean;
+}
+interface ClockRecordDto extends Omit<ClockRecord, 'type'> {
+  type: string;
+}
+interface RoomBookingResponseDto extends Omit<RoomBookingResponse, 'status'> {
+  status: string;
+}
+interface RoomBookingDto extends Omit<
+  RoomBooking,
+  'location' | 'participantIds' | 'priority' | 'responses'
+> {
+  location?: string | null;
+  participantIds?: string[] | null;
+  priority?: string | null;
   responses?: RoomBookingResponseDto[] | null;
 }
-interface PlanDto extends Omit<Plan, 'price'> { price: string | number; }
-interface NotificationDto extends Omit<AppNotification, 'type'> { type: string; }
-interface BillingDto {
-  plan: PlanDto; status: string; seatsUsed: number; renewalDate: string; paymentLast4: string | null;
+interface PlanDto extends Omit<Plan, 'price'> {
+  price: string | number;
 }
-interface InvoiceDto extends Omit<Invoice, 'amount' | 'status'> { amount: string | number; status: string; }
+interface NotificationDto extends Omit<AppNotification, 'type'> {
+  type: string;
+}
+interface BillingDto {
+  plan: PlanDto;
+  status: string;
+  seatsUsed: number;
+  renewalDate: string;
+  paymentLast4: string | null;
+}
+interface InvoiceDto extends Omit<Invoice, 'amount' | 'status'> {
+  amount: string | number;
+  status: string;
+}
 
 const cap = (s: string): string => (s ? s.charAt(0) + s.slice(1).toLowerCase() : s);
 
-const mapVisitor = (d: VisitorDto): Visitor => ({ ...d, status: d.status.toLowerCase() as VisitorStatus });
-const mapAppointment = (d: AppointmentDto): Appointment => (
-  { ...d, status: d.status.toLowerCase() as AppointmentStatus }
-);
+const mapVisitor = (d: VisitorDto): Visitor => ({
+  ...d,
+  status: d.status.toLowerCase() as VisitorStatus,
+});
+const mapAppointment = (d: AppointmentDto): Appointment => ({
+  ...d,
+  status: d.status.toLowerCase() as AppointmentStatus,
+});
 const mapCall = (d: CallDto): Call => ({ ...d, callType: cap(d.callType) as Call['callType'] });
 const mapEmployee = (d: EmployeeDto): Employee => ({
   id: d.id,
@@ -56,11 +123,16 @@ const mapEmployee = (d: EmployeeDto): Employee => ({
   phone: d.phone || '',
   email: d.email || '',
   role: d.role.toLowerCase() as Role,
+  deviceBound: d.deviceBound,
 });
-const mapClockRecord = (d: ClockRecordDto): ClockRecord => ({ ...d, type: d.type.toLowerCase() as ClockType });
-const mapRoomBookingResponse = (d: RoomBookingResponseDto): RoomBookingResponse => (
-  { ...d, status: d.status.toLowerCase() as MeetingResponseStatus }
-);
+const mapClockRecord = (d: ClockRecordDto): ClockRecord => ({
+  ...d,
+  type: d.type.toLowerCase() as ClockType,
+});
+const mapRoomBookingResponse = (d: RoomBookingResponseDto): RoomBookingResponse => ({
+  ...d,
+  status: d.status.toLowerCase() as MeetingResponseStatus,
+});
 const mapRoomBooking = (d: RoomBookingDto): RoomBooking => ({
   ...d,
   location: d.location || '',
@@ -76,12 +148,15 @@ const mapBilling = (d: BillingDto): Billing => ({
   renewalDate: d.renewalDate,
   paymentLast4: d.paymentLast4,
 });
-const mapInvoice = (d: InvoiceDto): Invoice => (
-  { ...d, amount: Number(d.amount), status: d.status.toLowerCase() as Invoice['status'] }
-);
-const mapNotification = (d: NotificationDto): AppNotification => (
-  { ...d, type: d.type.toLowerCase() as NotificationType }
-);
+const mapInvoice = (d: InvoiceDto): Invoice => ({
+  ...d,
+  amount: Number(d.amount),
+  status: d.status.toLowerCase() as Invoice['status'],
+});
+const mapNotification = (d: NotificationDto): AppNotification => ({
+  ...d,
+  type: d.type.toLowerCase() as NotificationType,
+});
 
 interface DataContextValue {
   // collections
@@ -100,7 +175,11 @@ interface DataContextValue {
   // operations
   registerAndCheckIn: (input: RegisterVisitorInput) => Promise<Visitor>;
   checkOutVisitor: (visitorId: string, notes?: string) => Promise<Visitor>;
-  updateAppointmentStatus: (id: string, status: AppointmentStatus, reason?: string) => Promise<Appointment>;
+  updateAppointmentStatus: (
+    id: string,
+    status: AppointmentStatus,
+    reason?: string,
+  ) => Promise<Appointment>;
   admitAppointment: (appointment: Appointment) => Promise<Visitor>;
   logCall: (input: LogCallInput) => Promise<Call>;
   addEmployee: (input: EmployeeInput) => Promise<Employee>;
@@ -120,11 +199,21 @@ interface DataContextValue {
   isClockedIn: (employeeId: string) => boolean;
   hasClockedInToday: (employeeId: string) => boolean;
   refreshClockRecords: () => Promise<void>;
-  rescheduleAppointment: (id: string, newScheduledAt: string, reason?: string) => Promise<Appointment>;
+  resetEmployeeDevice: (employeeId: string) => Promise<void>;
+  refreshEmployees: () => Promise<void>;
+  rescheduleAppointment: (
+    id: string,
+    newScheduledAt: string,
+    reason?: string,
+  ) => Promise<Appointment>;
   // self-service room booking
   bookRoom: (input: BookRoomInput) => Promise<RoomBooking>;
   refreshRoomBookings: () => Promise<void>;
-  respondToMeeting: (bookingId: string, status: 'acknowledged' | 'declined', reason?: string) => Promise<void>;
+  respondToMeeting: (
+    bookingId: string,
+    status: 'acknowledged' | 'declined',
+    reason?: string,
+  ) => Promise<void>;
   markParticipantAbsent: (bookingId: string, employeeId: string, absent: boolean) => Promise<void>;
   // billing / subscriptions
   plans: Plan[];
@@ -177,7 +266,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const loadAll = async (): Promise<void> => {
     if (!user) return;
     const isManager = user.role === 'manager';
-    const appointmentsPath = user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';
+    const appointmentsPath =
+      user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';
 
     const [v, a, c, e, r, cr, rb, p] = await Promise.all([
       apiClient.get<VisitorDto[]>('/api/v1/visitors'),
@@ -217,9 +307,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!user) {
-      setVisitors([]); setAppointments([]); setCalls([]); setEmployees([]);
-      setMeetingRooms([]); setClockRecords([]); setRoomBookings([]);
-      setBilling(null); setInvoices([]); setPlans([]); setNotifications([]);
+      setVisitors([]);
+      setAppointments([]);
+      setCalls([]);
+      setEmployees([]);
+      setMeetingRooms([]);
+      setClockRecords([]);
+      setRoomBookings([]);
+      setBilling(null);
+      setInvoices([]);
+      setPlans([]);
+      setNotifications([]);
       return;
     }
     loadAll();
@@ -237,8 +335,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const registerAndCheckIn = async (input: RegisterVisitorInput): Promise<Visitor> => {
     const dto = await apiClient.post<VisitorDto>('/api/v1/visitors', {
-      firstName: input.firstName, lastName: input.lastName, phone: input.phone, email: input.email,
-      company: input.company, purpose: input.purpose, hostId: input.hostId, notes: input.notes,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      email: input.email,
+      company: input.company,
+      purpose: input.purpose,
+      hostId: input.hostId,
+      notes: input.notes,
     });
     const visitor = mapVisitor(dto);
     setVisitors((vs) => [visitor, ...vs]);
@@ -246,7 +350,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const checkOutVisitor = async (visitorId: string, notes = ''): Promise<Visitor> => {
-    const dto = await apiClient.patch<VisitorDto>(`/api/v1/visitors/${visitorId}/check-out`, { notes });
+    const dto = await apiClient.patch<VisitorDto>(`/api/v1/visitors/${visitorId}/check-out`, {
+      notes,
+    });
     const visitor = mapVisitor(dto);
     setVisitors((vs) => vs.map((v) => (v.id === visitorId ? visitor : v)));
     return visitor;
@@ -256,8 +362,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const bookVisit = async (input: BookVisitInput): Promise<Appointment> => {
     const dto = await apiClient.post<AppointmentDto>('/api/v1/appointments', {
-      visitorName: input.visitorName, visitorPhone: input.visitorPhone, visitorEmail: input.visitorEmail,
-      visitorCompany: input.visitorCompany, purpose: input.purpose, hostId: input.hostId,
+      visitorName: input.visitorName,
+      visitorPhone: input.visitorPhone,
+      visitorEmail: input.visitorEmail,
+      visitorCompany: input.visitorCompany,
+      purpose: input.purpose,
+      hostId: input.hostId,
       scheduledAt: input.scheduledAt,
     });
     const appointment = mapAppointment(dto);
@@ -269,7 +379,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const clean = (code || '').trim().toUpperCase();
     if (!clean) return null;
     try {
-      const dto = await apiClient.get<AppointmentDto>(`/api/v1/appointments/by-code/${encodeURIComponent(clean)}`);
+      const dto = await apiClient.get<AppointmentDto>(
+        `/api/v1/appointments/by-code/${encodeURIComponent(clean)}`,
+      );
       return mapAppointment(dto);
     } catch {
       return null;
@@ -277,9 +389,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateAppointmentStatus = async (
-    id: string, status: AppointmentStatus, reason?: string
+    id: string,
+    status: AppointmentStatus,
+    reason?: string,
   ): Promise<Appointment> => {
-    const dto = await apiClient.patch<AppointmentDto>(`/api/v1/appointments/${id}/status`, { status, reason });
+    const dto = await apiClient.patch<AppointmentDto>(`/api/v1/appointments/${id}/status`, {
+      status,
+      reason,
+    });
     const appointment = mapAppointment(dto);
     setAppointments((as) => as.map((a) => (a.id === id ? appointment : a)));
     return appointment;
@@ -289,7 +406,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // admit response is only the updated appointment, so we refetch the
   // visitor list (newest-first) and hand back that just-created record.
   const admitAppointment = async (appointment: Appointment): Promise<Visitor> => {
-    const apptDto = await apiClient.post<AppointmentDto>(`/api/v1/appointments/${appointment.id}/admit`);
+    const apptDto = await apiClient.post<AppointmentDto>(
+      `/api/v1/appointments/${appointment.id}/admit`,
+    );
     const updated = mapAppointment(apptDto);
     setAppointments((as) => as.map((a) => (a.id === updated.id ? updated : a)));
 
@@ -303,9 +422,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const logCall = async (input: LogCallInput): Promise<Call> => {
     const dto = await apiClient.post<CallDto>('/api/v1/calls', {
-      callerName: input.callerName, callerPhone: input.callerPhone, hostId: input.hostId,
-      callType: input.callType, purpose: input.purpose,
-      durationMinutes: Number(input.durationMinutes) || 0, notes: input.notes,
+      callerName: input.callerName,
+      callerPhone: input.callerPhone,
+      hostId: input.hostId,
+      callType: input.callType,
+      purpose: input.purpose,
+      durationMinutes: Number(input.durationMinutes) || 0,
+      notes: input.notes,
     });
     const call = mapCall(dto);
     setCalls((cs) => [call, ...cs]);
@@ -316,8 +439,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addEmployee = async (input: EmployeeInput): Promise<Employee> => {
     const dto = await apiClient.post<EmployeeDto>('/api/v1/employees', {
-      employeeCode: input.employeeId, name: input.name, department: input.department,
-      phone: input.phone, email: input.email, role: input.role || 'employee',
+      employeeCode: input.employeeId,
+      name: input.name,
+      department: input.department,
+      phone: input.phone,
+      email: input.email,
+      role: input.role || 'employee',
     });
     const employee = mapEmployee(dto);
     setEmployees((es) => [...es, employee]);
@@ -328,16 +455,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // EmployeeInput (see DirectoryScreen's mapRow); the backend still
   // validates and reports back per-row, since a CSV can have typos a
   // single-add form would never let through.
-  const bulkImportEmployees = async (rows: EmployeeInput[]): Promise<BulkImportResult<Employee>> => {
-    const res = await apiClient.post<{ created: EmployeeDto[]; errors: BulkImportResult<never>['errors'] }>(
-      '/api/v1/employees/bulk',
-      {
-        employees: rows.map((r) => ({
-          employeeCode: r.employeeId, name: r.name, department: r.department,
-          phone: r.phone, email: r.email, role: r.role || 'employee',
-        })),
-      }
-    );
+  const bulkImportEmployees = async (
+    rows: EmployeeInput[],
+  ): Promise<BulkImportResult<Employee>> => {
+    const res = await apiClient.post<{
+      created: EmployeeDto[];
+      errors: BulkImportResult<never>['errors'];
+    }>('/api/v1/employees/bulk', {
+      employees: rows.map((r) => ({
+        employeeCode: r.employeeId,
+        name: r.name,
+        department: r.department,
+        phone: r.phone,
+        email: r.email,
+        role: r.role || 'employee',
+      })),
+    });
     const created = res.created.map(mapEmployee);
     setEmployees((es) => [...es, ...created]);
     return { created, errors: res.errors };
@@ -345,8 +478,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const updateEmployee = async (id: string, input: EmployeeInput): Promise<Employee> => {
     const dto = await apiClient.patch<EmployeeDto>(`/api/v1/employees/${id}`, {
-      employeeCode: input.employeeId, name: input.name, department: input.department,
-      phone: input.phone, email: input.email, role: input.role,
+      employeeCode: input.employeeId,
+      name: input.name,
+      department: input.department,
+      phone: input.phone,
+      email: input.email,
+      role: input.role,
     });
     const employee = mapEmployee(dto);
     setEmployees((es) => es.map((e) => (e.id === id ? employee : e)));
@@ -362,32 +499,43 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addMeetingRoom = async (input: MeetingRoomInput): Promise<MeetingRoom> => {
     const room = await apiClient.post<MeetingRoom>('/api/v1/meeting-rooms', {
-      name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
-      photoUrl: input.photoUrl || null, description: input.description || null,
+      name: input.name,
+      capacity: Number(input.capacity) || null,
+      floor: input.floor,
+      photoUrl: input.photoUrl || null,
+      description: input.description || null,
     });
     setMeetingRooms((rs) => [...rs, room]);
     return room;
   };
 
   // CSV bulk import -- see bulkImportEmployees above for the pattern.
-  const bulkImportMeetingRooms = async (rows: MeetingRoomInput[]): Promise<BulkImportResult<MeetingRoom>> => {
-    const res = await apiClient.post<{ created: MeetingRoom[]; errors: BulkImportResult<never>['errors'] }>(
-      '/api/v1/meeting-rooms/bulk',
-      {
-        rooms: rows.map((r) => ({
-          name: r.name, capacity: Number(r.capacity) || null, floor: r.floor, photoUrl: r.photoUrl || null,
-          description: r.description || null,
-        })),
-      }
-    );
+  const bulkImportMeetingRooms = async (
+    rows: MeetingRoomInput[],
+  ): Promise<BulkImportResult<MeetingRoom>> => {
+    const res = await apiClient.post<{
+      created: MeetingRoom[];
+      errors: BulkImportResult<never>['errors'];
+    }>('/api/v1/meeting-rooms/bulk', {
+      rooms: rows.map((r) => ({
+        name: r.name,
+        capacity: Number(r.capacity) || null,
+        floor: r.floor,
+        photoUrl: r.photoUrl || null,
+        description: r.description || null,
+      })),
+    });
     setMeetingRooms((rs) => [...rs, ...res.created]);
     return res;
   };
 
   const updateMeetingRoom = async (id: string, input: MeetingRoomInput): Promise<MeetingRoom> => {
     const room = await apiClient.patch<MeetingRoom>(`/api/v1/meeting-rooms/${id}`, {
-      name: input.name, capacity: Number(input.capacity) || null, floor: input.floor,
-      photoUrl: input.photoUrl || null, description: input.description || null,
+      name: input.name,
+      capacity: Number(input.capacity) || null,
+      floor: input.floor,
+      photoUrl: input.photoUrl || null,
+      description: input.description || null,
     });
     setMeetingRooms((rs) => rs.map((r) => (r.id === id ? room : r)));
     return room;
@@ -401,17 +549,46 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ---- clock in/out (work attendance) ----
 
   const clockIn = async (employeeId: string, employeeName: string): Promise<ClockRecord> => {
-    const dto = await apiClient.post<ClockRecordDto>('/api/v1/clock-records/in', { employeeId, employeeName });
+    const deviceId = await getDeviceId();
+    const dto = await apiClient.post<ClockRecordDto>('/api/v1/clock-records/in', {
+      employeeId,
+      employeeName,
+      deviceId,
+    });
     const record = mapClockRecord(dto);
     setClockRecords((cs) => [record, ...cs]);
     return record;
   };
 
   const clockOut = async (employeeId: string, employeeName: string): Promise<ClockRecord> => {
-    const dto = await apiClient.post<ClockRecordDto>('/api/v1/clock-records/out', { employeeId, employeeName });
+    const deviceId = await getDeviceId();
+    const dto = await apiClient.post<ClockRecordDto>('/api/v1/clock-records/out', {
+      employeeId,
+      employeeName,
+      deviceId,
+    });
     const record = mapClockRecord(dto);
     setClockRecords((cs) => [record, ...cs]);
     return record;
+  };
+
+  // Manager-only -- clears the phone link so the next clock-in from any
+  // device re-binds fresh. See ClockCard's "different phone" error and
+  // EmployeeDetailScreen's reset button.
+  const resetEmployeeDevice = async (id: string): Promise<void> => {
+    const dto = await apiClient.post<EmployeeDto>(`/api/v1/employees/${id}/reset-device`, {});
+    const employee = mapEmployee(dto);
+    setEmployees((es) => es.map((e) => (e.id === id ? employee : e)));
+  };
+
+  // clockIn() only updates the clockRecords ledger, not the employees
+  // list -- so a staff member's deviceBound flag (set server-side the
+  // moment they first clock in) wouldn't show up here until the next
+  // full reload. EmployeeDetailScreen calls this on focus so reopening
+  // a profile after a clock-in reflects the real lock state.
+  const refreshEmployees = async (): Promise<void> => {
+    const es = await apiClient.get<EmployeeDto[]>('/api/v1/employees');
+    setEmployees(es.map(mapEmployee));
   };
 
   // Everything above only reflects actions taken in *this* signed-in
@@ -434,11 +611,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const hasClockedInToday = (employeeId: string): boolean => {
     const todayKey = new Date().toDateString();
-    return clockRecords.some((c) => (
-      c.employeeId === employeeId
-      && c.type === 'in'
-      && new Date(c.timestamp).toDateString() === todayKey
-    ));
+    return clockRecords.some(
+      (c) =>
+        c.employeeId === employeeId &&
+        c.type === 'in' &&
+        new Date(c.timestamp).toDateString() === todayKey,
+    );
   };
 
   // ---- self-service meeting booking ----
@@ -446,7 +624,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const bookRoom = async (input: BookRoomInput): Promise<RoomBooking> => {
     const dto = await apiClient.post<RoomBookingDto>('/api/v1/room-bookings', {
       roomId: input.roomId || null,
-      location: input.roomId ? null : (input.location || ''),
+      location: input.roomId ? null : input.location || '',
       title: input.title || 'Meeting',
       startTime: input.startTime,
       endTime: input.endTime,
@@ -462,11 +640,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // A participant acknowledging ("seen it") or declining (with a
   // reason) their invite to someone else's meeting.
   const respondToMeeting = async (
-    bookingId: string, status: 'acknowledged' | 'declined', reason?: string
+    bookingId: string,
+    status: 'acknowledged' | 'declined',
+    reason?: string,
   ): Promise<void> => {
-    const dto = await apiClient.patch<RoomBookingDto>(`/api/v1/room-bookings/${bookingId}/respond`, {
-      status, reason,
-    });
+    const dto = await apiClient.patch<RoomBookingDto>(
+      `/api/v1/room-bookings/${bookingId}/respond`,
+      {
+        status,
+        reason,
+      },
+    );
     const updated = mapRoomBooking(dto);
     setRoomBookings((rs) => rs.map((b) => (b.id === bookingId ? updated : b)));
   };
@@ -475,10 +659,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // after the fact -- independent of whether that person acknowledged
   // or declined beforehand.
   const markParticipantAbsent = async (
-    bookingId: string, employeeId: string, absent: boolean
+    bookingId: string,
+    employeeId: string,
+    absent: boolean,
   ): Promise<void> => {
     const dto = await apiClient.patch<RoomBookingDto>(
-      `/api/v1/room-bookings/${bookingId}/participants/${employeeId}/absent`, { absent }
+      `/api/v1/room-bookings/${bookingId}/participants/${employeeId}/absent`,
+      { absent },
     );
     const updated = mapRoomBooking(dto);
     setRoomBookings((rs) => rs.map((b) => (b.id === bookingId ? updated : b)));
@@ -497,10 +684,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // ---- appointment rescheduling (Employee & Visitor only) ----
 
   const rescheduleAppointment = async (
-    id: string, newScheduledAt: string, reason?: string
+    id: string,
+    newScheduledAt: string,
+    reason?: string,
   ): Promise<Appointment> => {
     const dto = await apiClient.patch<AppointmentDto>(`/api/v1/appointments/${id}/reschedule`, {
-      newScheduledAt, reason: reason || '',
+      newScheduledAt,
+      reason: reason || '',
     });
     const appointment = mapAppointment(dto);
     setAppointments((as) => as.map((a) => (a.id === id ? appointment : a)));
@@ -537,16 +727,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
 
-    const todayVisitors = visitors.filter(
-      (v) => new Date(v.checkInAt).getTime() >= startOfDay
-    );
+    const todayVisitors = visitors.filter((v) => new Date(v.checkInAt).getTime() >= startOfDay);
     const onsite = visitors.filter((v) => v.status === 'onsite');
-    const callsToday = calls.filter(
-      (c) => new Date(c.timestamp).getTime() >= startOfDay
-    );
-    const monthVisitors = visitors.filter(
-      (v) => new Date(v.checkInAt).getTime() >= startOfMonth
-    );
+    const callsToday = calls.filter((c) => new Date(c.timestamp).getTime() >= startOfDay);
+    const monthVisitors = visitors.filter((v) => new Date(v.checkInAt).getTime() >= startOfMonth);
     const pendingApprovals = appointments.filter((a) => a.status === 'pending');
 
     return {
@@ -562,25 +746,59 @@ export function DataProvider({ children }: { children: ReactNode }) {
     <DataContext.Provider
       value={{
         // collections
-        visitors, appointments, calls, nfcCards, roomBookings, employees, meetingRooms,
+        visitors,
+        appointments,
+        calls,
+        nfcCards,
+        roomBookings,
+        employees,
+        meetingRooms,
         // lookup helpers
-        employeeById, roomById,
+        employeeById,
+        roomById,
         // pull-to-refresh
         refreshAll,
         // operations
-        registerAndCheckIn, checkOutVisitor,
-        updateAppointmentStatus, admitAppointment,
-        logCall, addEmployee, updateEmployee, bulkImportEmployees, removeEmployee,
-        addMeetingRoom, updateMeetingRoom, bulkImportMeetingRooms, removeMeetingRoom,
-        bookVisit, findAppointmentByCode,
+        registerAndCheckIn,
+        checkOutVisitor,
+        updateAppointmentStatus,
+        admitAppointment,
+        logCall,
+        addEmployee,
+        updateEmployee,
+        bulkImportEmployees,
+        removeEmployee,
+        addMeetingRoom,
+        updateMeetingRoom,
+        bulkImportMeetingRooms,
+        removeMeetingRoom,
+        bookVisit,
+        findAppointmentByCode,
         // work attendance (clock in/out) + appointment rescheduling
-        clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, refreshClockRecords, rescheduleAppointment,
+        clockRecords,
+        clockIn,
+        clockOut,
+        isClockedIn,
+        hasClockedInToday,
+        refreshClockRecords,
+        resetEmployeeDevice,
+        refreshEmployees,
+        rescheduleAppointment,
         // self-service room booking
-        bookRoom, refreshRoomBookings, respondToMeeting, markParticipantAbsent,
+        bookRoom,
+        refreshRoomBookings,
+        respondToMeeting,
+        markParticipantAbsent,
         // billing / subscriptions
-        plans, billing, invoices, changePlan,
+        plans,
+        billing,
+        invoices,
+        changePlan,
         // in-app notifications
-        notifications, unreadNotificationCount, refreshNotifications, markNotificationRead,
+        notifications,
+        unreadNotificationCount,
+        refreshNotifications,
+        markNotificationRead,
         // derived
         stats,
       }}

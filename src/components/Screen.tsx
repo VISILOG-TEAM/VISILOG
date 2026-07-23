@@ -1,7 +1,13 @@
 import React, { type ReactNode } from 'react';
 import {
-  View, Image, ScrollView, StyleSheet, KeyboardAvoidingView, RefreshControl,
-  type StyleProp, type ViewStyle,
+  View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  KeyboardAvoidingView,
+  RefreshControl,
+  type StyleProp,
+  type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { spacing } from '../theme/spacing';
@@ -35,7 +41,9 @@ function Watermark() {
   return (
     <View style={styles.watermarkWrap} pointerEvents="none">
       <Image
-        source={organization?.logoUrl ? { uri: organization.logoUrl } : require('../../assets/logo.png')}
+        source={
+          organization?.logoUrl ? { uri: organization.logoUrl } : require('../../assets/logo.png')
+        }
         style={styles.watermarkImage}
         resizeMode="contain"
       />
@@ -64,19 +72,23 @@ export default function Screen({
   const { colors: themeColors } = useTheme();
   if (scroll) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: themeColors.background }, style]} edges={edges}>
+      <SafeAreaView
+        style={[styles.safe, { backgroundColor: themeColors.background }, style]}
+        edges={edges}
+      >
         <Watermark />
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior="padding"
-        >
+        <KeyboardAvoidingView style={styles.flex} behavior="padding">
           <ScrollView
             contentContainerStyle={[padded && styles.padded, contentStyle]}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             refreshControl={
               onRefresh ? (
-                <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={themeColors.primary} />
+                <RefreshControl
+                  refreshing={!!refreshing}
+                  onRefresh={onRefresh}
+                  tintColor={themeColors.primary}
+                />
               ) : undefined
             }
           >
@@ -87,12 +99,12 @@ export default function Screen({
     );
   }
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: themeColors.background }, style]} edges={edges}>
+    <SafeAreaView
+      style={[styles.safe, { backgroundColor: themeColors.background }, style]}
+      edges={edges}
+    >
       <Watermark />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior="padding"
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <View style={[styles.flex, padded && styles.padded, contentStyle]}>{children}</View>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -1,5 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { buildColors, colors as defaultColors, type BrandTheme, type Colors } from './colors';
 import { loadDarkModeOverride, saveDarkModeOverride } from '../api/themePreference';
 
@@ -7,10 +12,9 @@ interface ThemeContextValue {
   colors: Colors;
   dark: boolean;
   setOrgTheme: (theme: BrandTheme | null) => void;
-  // null = follow the device's own light/dark setting; true/false = the
-  // user explicitly picked one on the Settings screen, which then wins
-  // (and is remembered) until they change it again.
-  setDarkOverride: (value: boolean | null) => void;
+  // The app defaults to light regardless of the device's own OS
+  // setting -- dark is opt-in only, via the Settings toggle.
+  setDarkOverride: (value: boolean) => void;
 }
 
 // ThemeContext -- makes the color palette both multi-tenant and
@@ -18,8 +22,9 @@ interface ThemeContextValue {
 // signed-in organization changes (login, signup, registerCompany, or
 // restoring a session on boot); every screen that reads colors via
 // useTheme() re-renders with that org's brand colors live, no reload
-// needed. `dark` follows the device's system setting by default and
-// falls back to the user's own Settings toggle once they've set one.
+// needed. `dark` defaults to false (light) and only becomes true once
+// the user explicitly turns it on in Settings -- it does not follow the
+// device's own OS-level dark mode setting.
 const ThemeContext = createContext<ThemeContextValue>({
   colors: defaultColors,
   dark: false,
@@ -29,19 +34,19 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [orgTheme, setOrgTheme] = useState<BrandTheme | null>(null);
-  const systemScheme = useColorScheme();
-  const [darkOverride, setDarkOverrideState] = useState<boolean | null>(null);
+  const [dark, setDarkState] = useState(false);
 
-  useEffect(() => {
-    loadDarkModeOverride().then(setDarkOverrideState);
+  React.useEffect(() => {
+    loadDarkModeOverride().then((saved) => {
+      if (saved != null) setDarkState(saved);
+    });
   }, []);
 
-  const setDarkOverride = (value: boolean | null) => {
-    setDarkOverrideState(value);
+  const setDarkOverride = (value: boolean) => {
+    setDarkState(value);
     saveDarkModeOverride(value);
   };
 
-  const dark = darkOverride ?? systemScheme === 'dark';
   const colors = useMemo(() => buildColors(orgTheme, dark), [orgTheme, dark]);
 
   return (

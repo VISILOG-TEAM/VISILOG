@@ -20,7 +20,12 @@ interface StatTileProps {
 // One of the four big numbers on the Dashboard. A coloured icon chip on
 // the left and a big display number on the right. The `tint` prop selects
 // which status colour family the icon chip uses.
-export default function StatTile({ icon = 'people', label, value, tint = 'primary' }: StatTileProps) {
+export default function StatTile({
+  icon = 'people',
+  label,
+  value,
+  tint = 'primary',
+}: StatTileProps) {
   const { colors } = useTheme();
   // 'primary' pulls the signed-in org's brand accent; the rest are fixed
   // status colors that don't vary per organization.
@@ -32,7 +37,13 @@ export default function StatTile({ icon = 'people', label, value, tint = 'primar
   };
   const t = TINTS[tint] || TINTS.primary;
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        shadows.sm,
+      ]}
+    >
       <View style={[styles.icon, { backgroundColor: t.bg }]}>
         <Ionicons name={icon} size={18} color={t.fg} />
       </View>
@@ -52,8 +63,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   icon: {
-    width: 32, height: 32, borderRadius: radius.md,
-    alignItems: 'center', justifyContent: 'center',
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   label: { marginTop: 2 },
