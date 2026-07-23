@@ -4,7 +4,6 @@ import {
   KeyboardAvoidingView, type TextInputProps,
 } from 'react-native';
 import Text from './Text';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -18,7 +17,7 @@ interface RescheduleModalProps {
   onClose: () => void;
 }
 
-// RescheduleModal — lets an Employee or Visitor move an appointment's
+// RescheduleModal -- lets an Employee or Visitor move an appointment's
 // time, but only with a reason on record (per spec). Shared between
 // AppointmentsScreen (Employee tab) and VisitorVisitsScreen.
 export default function RescheduleModal({ appointment, visible, onClose }: RescheduleModalProps) {
@@ -49,7 +48,7 @@ export default function RescheduleModal({ appointment, visible, onClose }: Resch
         style={styles.wrap}
         behavior="padding"
       >
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Reschedule visit</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             {appointment?.visitorName}
@@ -60,7 +59,7 @@ export default function RescheduleModal({ appointment, visible, onClose }: Resch
           <Field label="Reason for change" value={reason} onChangeText={setReason} multiline />
 
           <View style={styles.row}>
-            <Pressable onPress={onClose} style={[styles.btn, styles.btnGhost]}>
+            <Pressable onPress={onClose} style={[styles.btn, { backgroundColor: colors.surfaceAlt }]}>
               <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
             </Pressable>
             <Pressable onPress={onSave} style={[styles.btn, { backgroundColor: colors.brand }]}>
@@ -80,13 +79,14 @@ function toInstant(dateStr: string, timeStr: string): string {
 }
 
 function Field({ label, ...inputProps }: TextInputProps & { label: string }) {
+  const { colors } = useTheme();
   return (
     <View style={{ marginBottom: spacing.sm }}>
-      <Text variant="caption" color={staticColors.textSecondary} style={{ marginBottom: 4 }}>{label}</Text>
+      <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>{label}</Text>
       <TextInput
         {...inputProps}
-        style={styles.input}
-        placeholderTextColor={staticColors.textMuted}
+        style={[styles.input, { borderColor: colors.border, color: colors.textPrimary }]}
+        placeholderTextColor={colors.textMuted}
       />
     </View>
   );
@@ -99,16 +99,14 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%', maxWidth: 360,
-    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   input: {
-    borderWidth: 1, borderColor: staticColors.border, borderRadius: radius.md,
+    borderWidth: 1, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, paddingVertical: 10,
-    fontFamily: fonts.regular, fontSize: 14, color: staticColors.textPrimary,
+    fontFamily: fonts.regular, fontSize: 14,
   },
   row: { flexDirection: 'row', marginTop: spacing.sm, gap: spacing.sm },
   btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  btnGhost: { backgroundColor: staticColors.surfaceAlt },
 });

@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import { View, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
-import { colors as staticColors, type StatusKey } from '../theme/colors';
+import type { StatusKey } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { shadows } from '../theme/shadows';
@@ -34,7 +34,15 @@ export default function Card({
     : null;
 
   const inner = (
-    <View style={[styles.card, elevated && shadows.sm, padStyle, style]}>
+    <View
+      style={[
+        styles.card,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        elevated && shadows.sm,
+        padStyle,
+        style,
+      ]}
+    >
       {accentColor ? <View style={[styles.stripe, { backgroundColor: accentColor }]} /> : null}
       {children}
     </View>
@@ -54,14 +62,13 @@ export default function Card({
 }
 
 // Card background/border are neutral (identical across every
-// organization's theme), so a plain module-level StyleSheet is fine —
-// only `accentColor` above needs to react to the signed-in org's brand.
+// organization's theme) but still light/dark-aware, so their actual
+// color values are applied inline above from useTheme() -- this
+// StyleSheet only carries the layout, not the colors themselves.
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: staticColors.border,
     overflow: 'hidden',
   },
   stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 4 },

@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import Text from './Text';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, spacing } from '../theme/spacing';
 import type { Option } from '../types';
@@ -14,12 +13,12 @@ interface SegmentedProps<T extends string> {
 }
 
 // Pill-style filter group used at the top of list screens (e.g. Visitors:
-// All · On-site · Completed). Pass an array of { label, value } options
+// All Â· On-site Â· Completed). Pass an array of { label, value } options
 // and the selected value; emits the new value on press.
 export default function Segmented<T extends string>({ options, value, onChange, style }: SegmentedProps<T>) {
   const { colors } = useTheme();
   return (
-    <View style={[styles.wrap, style]}>
+    <View style={[styles.wrap, { backgroundColor: colors.surfaceAlt }, style]}>
       {options.map((opt) => {
         const active = opt.value === value;
         return (
@@ -44,7 +43,6 @@ export default function Segmented<T extends string>({ options, value, onChange, 
 const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
-    backgroundColor: staticColors.surfaceAlt,
     borderRadius: radius.pill,
     padding: 4,
   },

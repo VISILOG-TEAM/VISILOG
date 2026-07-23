@@ -4,7 +4,6 @@ import {
   type StyleProp, type ViewStyle,
 } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
-import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -65,7 +64,7 @@ export default function Screen({
   const { colors: themeColors } = useTheme();
   if (scroll) {
     return (
-      <SafeAreaView style={[styles.safe, style]} edges={edges}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: themeColors.background }, style]} edges={edges}>
         <Watermark />
         <KeyboardAvoidingView
           style={styles.flex}
@@ -88,7 +87,7 @@ export default function Screen({
     );
   }
   return (
-    <SafeAreaView style={[styles.safe, style]} edges={edges}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: themeColors.background }, style]} edges={edges}>
       <Watermark />
       <KeyboardAvoidingView
         style={styles.flex}
@@ -101,7 +100,7 @@ export default function Screen({
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
   flex: { flex: 1 },
   padded: { padding: spacing.md, paddingBottom: spacing.xxxl },
   watermarkWrap: {

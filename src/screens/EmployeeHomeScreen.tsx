@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Button, Avatar, StatTile, ClockCard,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +18,7 @@ interface EmployeeHomeScreenProps {
 // Employee dashboard: check in/out for work, accept/decline visitors
 // who picked them as host, view incoming calls, see their NFC card.
 export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenProps) {
-  const { colors: themeColors, setOrgTheme } = useTheme();
+  const { colors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const {
     appointments, calls, updateAppointmentStatus, admitAppointment, unreadNotificationCount, refreshAll,
@@ -108,7 +107,7 @@ export default function EmployeeHomeScreen({ navigation }: EmployeeHomeScreenPro
         ) : (
           myCalls.map((c) => (
             <View key={c.id} style={styles.callRow}>
-              <Ionicons name="call" size={16} color={themeColors.primary} />
+              <Ionicons name="call" size={16} color={colors.primary} />
               <Text variant="bodyMd" style={{ flex: 1, marginLeft: 8 }}>
                 {c.callerName}
               </Text>

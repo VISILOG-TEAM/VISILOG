@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Button,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -25,21 +24,21 @@ const STATUS_META: Record<BillingStatus, { label: string; badge: StatusKey }> = 
   past_due: { label: 'Past due', badge: 'rejected' },
 };
 
-// BillingScreen — Manager/Administrator only, reachable from
+// BillingScreen -- Manager/Administrator only, reachable from
 // Settings > Organisation > "Billing & subscription". Stands in for
 // the Stripe-backed subscription flow: a company signs in with their
 // org's own plan/status/seat count and can switch tiers here (a real
 // build would hit Stripe Checkout/Billing Portal instead of the demo
 // confirm-alert below).
 export default function BillingScreen({ navigation }: BillingScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { plans, billing, invoices, changePlan } = useData();
 
   const currentPlan = plans.find((p) => p.id === billing?.planId);
   const statusMeta = STATUS_META[billing?.status ?? 'active'] || STATUS_META.active;
 
-  // Switches immediately rather than gating behind a confirm dialog —
+  // Switches immediately rather than gating behind a confirm dialog --
   // a real build would hand off to Stripe Checkout here instead.
   const onSwitchPlan = async (plan: Plan) => {
     if (plan.id === currentPlan?.id) return;
@@ -66,19 +65,19 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
         <View style={styles.planHead}>
           <View style={{ flex: 1 }}>
             <Text variant="caption" color={colors.textSecondary}>Current plan</Text>
-            <Text variant="h2">{currentPlan?.name || '—'}</Text>
+            <Text variant="h2">{currentPlan?.name || '--'}</Text>
           </View>
           <Badge label={statusMeta.label} status={statusMeta.badge} />
         </View>
 
-        <Text style={[styles.price, { color: themeColors.brand }]}>
+        <Text style={[styles.price, { color: colors.brand }]}>
           GHS {currentPlan?.price}
           <Text variant="body" color={colors.textSecondary}> / 2 years</Text>
         </Text>
 
         <View style={styles.metaRow}>
           <MetaCell icon="people-outline" label="Seats used"
-            value={`${billing?.seatsUsed ?? 0} / ${currentPlan?.seatLimit ?? '—'}`} />
+            value={`${billing?.seatsUsed ?? 0} / ${currentPlan?.seatLimit ?? '--'}`} />
           <MetaCell icon="calendar-outline" label="Renews"
             value={fmtDate(billing?.renewalDate)} />
         </View>
@@ -95,7 +94,7 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
             <View style={styles.planHead}>
               <View style={{ flex: 1 }}>
                 <Text variant="h3">{plan.name}</Text>
-                <Text variant="bodySemibold" style={{ color: themeColors.brand }}>
+                <Text variant="bodySemibold" style={{ color: colors.brand }}>
                   GHS {plan.price}<Text variant="caption" color={colors.textSecondary}> / 2yr</Text>
                 </Text>
               </View>
@@ -104,7 +103,7 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
 
             {plan.features.map((f) => (
               <View key={f} style={styles.featureRow}>
-                <Ionicons name="checkmark-circle" size={16} color={themeColors.primary} />
+                <Ionicons name="checkmark-circle" size={16} color={colors.primary} />
                 <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 6, flex: 1 }}>
                   {f}
                 </Text>
@@ -129,11 +128,11 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
       </Text>
       <Card>
         <View style={styles.cardRow}>
-          <View style={[styles.cardIcon, { backgroundColor: themeColors.primarySurface }]}>
-            <Ionicons name="card-outline" size={20} color={themeColors.brand} />
+          <View style={[styles.cardIcon, { backgroundColor: colors.primarySurface }]}>
+            <Ionicons name="card-outline" size={20} color={colors.brand} />
           </View>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
-            <Text variant="bodySemibold">Card ending in {billing?.paymentLast4 || '••••'}</Text>
+            <Text variant="bodySemibold">Card ending in {billing?.paymentLast4 || 'â€¢â€¢â€¢â€¢'}</Text>
             <Text variant="caption" color={colors.textSecondary}>Billed once every 2 years</Text>
           </View>
           <Button
@@ -175,7 +174,7 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
                   dot={false}
                 />
               </View>
-              {i < invoices.length - 1 ? <View style={styles.divider} /> : null}
+              {i < invoices.length - 1 ? <View style={[styles.divider, { backgroundColor: colors.border }]} /> : null}
             </View>
           ))
         )}
@@ -185,10 +184,10 @@ export default function BillingScreen({ navigation }: BillingScreenProps) {
 }
 
 function MetaCell({ icon, label, value }: { icon: IoniconName; label: string; value: string }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <View style={styles.metaCell}>
-      <Ionicons name={icon} size={16} color={themeColors.primary} style={{ marginRight: 6 }} />
+      <Ionicons name={icon} size={16} color={colors.primary} style={{ marginRight: 6 }} />
       <View>
         <Text variant="caption" color={colors.textSecondary}>{label}</Text>
         <Text variant="bodySemibold">{value}</Text>
@@ -213,5 +212,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     padding: spacing.md,
   },
-  divider: { height: 1, backgroundColor: colors.border, marginLeft: spacing.md },
+  divider: { height: 1, marginLeft: spacing.md },
 });

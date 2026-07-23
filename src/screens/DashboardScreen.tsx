@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, StatTile, ListItem, ClockCard,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +24,7 @@ interface DashboardScreenProps {
 //   4. Visitors This Month
 // Plus pending appointment approvals and a Recent Visitor Logs preview.
 export default function DashboardScreen({ navigation }: DashboardScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { stats, visitors, appointments, employeeById, unreadNotificationCount, refreshAll } = useData();
   const [refreshing, setRefreshing] = useState(false);
@@ -60,9 +59,9 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
       <Header
-        eyebrow="VisiLog · Reception"
+        eyebrow="VisiLog Â· Reception"
         title={`${greeting},`}
-        subtitle={`${user?.name?.split(' ')[0] || 'there'} · Front desk`}
+        subtitle={`${user?.name?.split(' ')[0] || 'there'} Â· Front desk`}
         rightIcon="notifications-outline"
         onRightPress={() => navigation.navigate('Notifications')}
         badge={unreadNotificationCount}
@@ -86,13 +85,13 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
       {pending.length > 0 && (
         <Pressable
           onPress={() => navigation.navigate('Appointments')}
-          style={({ pressed }) => [styles.alert, pressed && { opacity: 0.9 }]}
+          style={({ pressed }) => [styles.alert, { backgroundColor: colors.status.pending.bg }, pressed && { opacity: 0.9 }]}
         >
           <View style={styles.alertIcon}>
             <Ionicons name="time-outline" size={18} color={colors.status.pending.solid} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text variant="bodySemibold" color={themeColors.brand}>
+            <Text variant="bodySemibold" color={colors.brand}>
               {pending.length} appointment{pending.length === 1 ? '' : 's'} need your review
             </Text>
             <Text variant="caption" color={colors.textSecondary}>
@@ -152,7 +151,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
       <View style={styles.sectionHeader}>
         <Text variant="h2">Recent visitor logs</Text>
         <Pressable onPress={() => navigation.navigate('Visitors')}>
-          <Text variant="label" color={themeColors.primary}>
+          <Text variant="label" color={colors.primary}>
             View all
           </Text>
         </Pressable>
@@ -178,7 +177,7 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
                 chevron
                 onPress={() => navigation.navigate('VisitorDetail', { visitorId: v.id })}
               />
-              {i < recent.length - 1 ? <View style={styles.sep} /> : null}
+              {i < recent.length - 1 ? <View style={[styles.sep, { backgroundColor: colors.border }]} /> : null}
             </View>
           );
         })}
@@ -191,11 +190,14 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
 function QuickAction({
   icon, label, onPress,
 }: { icon: IoniconName; label: string; onPress: () => void }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.qa, pressed && { opacity: 0.85 }]}>
-      <View style={[styles.qaIcon, { backgroundColor: themeColors.primarySurface }]}>
-        <Ionicons name={icon} size={22} color={themeColors.primary} />
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.qa, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85 }]}
+    >
+      <View style={[styles.qaIcon, { backgroundColor: colors.primarySurface }]}>
+        <Ionicons name={icon} size={22} color={colors.primary} />
       </View>
       <Text variant="caption" color={colors.textPrimary} align="center" numberOfLines={2}>
         {label}
@@ -210,7 +212,6 @@ const styles = StyleSheet.create({
   alert: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.status.pending.bg,
     borderRadius: radius.lg,
     padding: spacing.md,
     marginTop: spacing.md,
@@ -226,10 +227,8 @@ const styles = StyleSheet.create({
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   qa: {
     width: '31%',
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
     padding: spacing.sm,
     alignItems: 'center',
     minHeight: 84,
@@ -244,5 +243,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
     marginTop: spacing.xl, marginBottom: spacing.sm,
   },
-  sep: { height: 1, backgroundColor: colors.border, marginLeft: spacing.md + 40 + spacing.sm },
+  sep: { height: 1, marginLeft: spacing.md + 40 + spacing.sm },
 });

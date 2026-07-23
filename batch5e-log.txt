@@ -1,0 +1,31 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260722195331
+Username: DESKTOP-4CPH5C4\HP
+RunAs User: DESKTOP-4CPH5C4\HP
+Configuration Name: 
+Machine: DESKTOP-4CPH5C4 (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command try { . "c:\Users\HP\AppData\Local\Programs\Microsoft VS Code\fcf604774b\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 27496
+PSVersion: 5.1.26100.8875
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8875
+BuildVersion: 10.0.26100.8875
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is batch5e-log.txt
+
+
+    Directory: C:\Users\HP\Downloads\VisiLog-frontend\src\context
+
+
+Mode                 LastWriteTime         Length Name
+----                 -------------         ------ ----
+-a----        22/07/2026     19:53          26007 DataContext.tsx
+**********************
+Windows PowerShell transcript end
+End time: 20260722195331
+**********************

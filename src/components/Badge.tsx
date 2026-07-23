@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Text from './Text';
-import { colors, type StatusKey } from '../theme/colors';
+import type { StatusKey } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { radius } from '../theme/spacing';
 
 interface BadgeProps {
@@ -22,6 +23,7 @@ export default function Badge({
   dot = true,
   size = 'md',
 }: BadgeProps) {
+  const { colors } = useTheme();
   const s = colors.status[status] || colors.status.neutral;
   const small = size === 'sm';
   const textVariant = small ? 'caption' : 'label';

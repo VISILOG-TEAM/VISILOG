@@ -5,7 +5,6 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Button, EmptyState } from '../components';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -167,10 +166,12 @@ function NotificationRow({
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <View style={styles.rowTop}>
               <Text variant="bodySemibold" numberOfLines={1}>{notification.title}</Text>
-              {!notification.read ? <View style={styles.unreadDot} /> : null}
+              {!notification.read ? (
+                <View style={[styles.unreadDot, { backgroundColor: themeColors.palette.red600 }]} />
+              ) : null}
             </View>
-            <Text variant="body" color={staticColors.textSecondary}>{notification.body}</Text>
-            <Text variant="caption" color={staticColors.textMuted} style={{ marginTop: 2 }}>
+            <Text variant="body" color={themeColors.textSecondary}>{notification.body}</Text>
+            <Text variant="caption" color={themeColors.textMuted} style={{ marginTop: 2 }}>
               {fmtRelative(notification.createdAt)}
             </Text>
 
@@ -202,8 +203,8 @@ function NotificationRow({
               </View>
             ) : myResponse?.status === 'declined' ? (
               <View style={styles.respondedRow}>
-                <Ionicons name="close-circle" size={14} color={staticColors.status.rejected.solid} />
-                <Text variant="caption" color={staticColors.status.rejected.solid} style={{ marginLeft: 4 }}>
+                <Ionicons name="close-circle" size={14} color={themeColors.status.rejected.solid} />
+                <Text variant="caption" color={themeColors.status.rejected.solid} style={{ marginLeft: 4 }}>
                   You declined
                 </Text>
               </View>
@@ -236,7 +237,7 @@ function DeclineReasonModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <KeyboardAvoidingView style={modalStyles.wrap} behavior="padding">
-        <View style={modalStyles.card}>
+        <View style={[modalStyles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Can't make it?</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             Let the organiser know why -- they'll see this right away.
@@ -245,12 +246,12 @@ function DeclineReasonModal({
             value={reason}
             onChangeText={setReason}
             placeholder="e.g. I have another commitment that day"
-            placeholderTextColor={staticColors.textMuted}
-            style={modalStyles.input}
+            placeholderTextColor={colors.textMuted}
+            style={[modalStyles.input, { borderColor: colors.border, color: colors.textPrimary }]}
             multiline
           />
           <View style={modalStyles.row}>
-            <Pressable onPress={onCancel} style={[modalStyles.btn, modalStyles.btnGhost]}>
+            <Pressable onPress={onCancel} style={[modalStyles.btn, { backgroundColor: colors.surfaceAlt }]}>
               <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
             </Pressable>
             <Pressable onPress={onSubmit} style={[modalStyles.btn, { backgroundColor: colors.brand }]}>
@@ -273,7 +274,7 @@ const styles = StyleSheet.create({
   },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
   unreadDot: {
-    width: 8, height: 8, borderRadius: 4, backgroundColor: staticColors.palette.red600,
+    width: 8, height: 8, borderRadius: 4,
   },
   actionRow: { flexDirection: 'row', marginTop: spacing.sm },
   respondedRow: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs },
@@ -286,16 +287,14 @@ const modalStyles = StyleSheet.create({
   },
   card: {
     width: '100%', maxWidth: 360,
-    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   input: {
-    borderWidth: 1, borderColor: staticColors.border, borderRadius: radius.md,
+    borderWidth: 1, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, paddingVertical: 10, minHeight: 80, textAlignVertical: 'top',
-    fontFamily: fonts.regular, fontSize: 14, color: staticColors.textPrimary,
+    fontFamily: fonts.regular, fontSize: 14,
   },
   row: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
   btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  btnGhost: { backgroundColor: staticColors.surfaceAlt },
 });

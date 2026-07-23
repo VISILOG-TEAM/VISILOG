@@ -3,7 +3,6 @@ import { View, Modal, Pressable, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Button from './Button';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import type { IoniconName, Option } from '../types';
@@ -18,11 +17,11 @@ interface MultiSelectProps<T> {
 }
 
 // Like Select, but lets the user tick more than one option before
-// closing the sheet — used for picking meeting attendees from the
+// closing the sheet -- used for picking meeting attendees from the
 // whole staff directory (not just a single host).
 export default function MultiSelect<T>({
   label,
-  placeholder = 'Select…',
+  placeholder = 'Select...',
   values = [],
   options = [],
   onChange,
@@ -56,7 +55,10 @@ export default function MultiSelect<T>({
         </Text>
       ) : null}
 
-      <Pressable onPress={() => setOpen(true)} style={styles.field}>
+      <Pressable
+        onPress={() => setOpen(true)}
+        style={[styles.field, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      >
         {icon ? (
           <Ionicons name={icon} size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
         ) : null}
@@ -78,8 +80,8 @@ export default function MultiSelect<T>({
         onRequestClose={() => setOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.handle} />
+          <Pressable style={[styles.sheet, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
             {label ? (
               <Text variant="h3" style={{ marginBottom: spacing.sm }}>
                 {label}
@@ -89,12 +91,18 @@ export default function MultiSelect<T>({
             <FlatList
               data={options}
               keyExtractor={(item) => String(item.value)}
-              ItemSeparatorComponent={() => <View style={styles.sep} />}
+              ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.border }]} />}
               renderItem={({ item }) => {
                 const active = values.includes(item.value);
                 return (
                   <Pressable onPress={() => toggle(item.value)} style={styles.row}>
-                    <View style={[styles.checkbox, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                    <View
+                      style={[
+                        styles.checkbox,
+                        { borderColor: colors.borderStrong },
+                        active && { backgroundColor: colors.primary, borderColor: colors.primary },
+                      ]}
+                    >
                       {active ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
                     </View>
                     <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -122,9 +130,7 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: staticColors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     height: 48,
@@ -135,7 +141,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: staticColors.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.md,
@@ -145,7 +150,6 @@ const styles = StyleSheet.create({
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
-    backgroundColor: staticColors.borderStrong,
     alignSelf: 'center',
     marginBottom: spacing.sm,
   },
@@ -155,8 +159,8 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     width: 20, height: 20, borderRadius: 6,
-    borderWidth: 1.5, borderColor: staticColors.borderStrong,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
   },
-  sep: { height: 1, backgroundColor: staticColors.border },
+  sep: { height: 1 },
 });

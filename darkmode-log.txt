@@ -1,0 +1,73 @@
+﻿**********************
+Windows PowerShell transcript start
+Start time: 20260723001725
+Username: DESKTOP-4CPH5C4\HP
+RunAs User: DESKTOP-4CPH5C4\HP
+Configuration Name: 
+Machine: DESKTOP-4CPH5C4 (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe -noexit -command try { . "c:\Users\HP\AppData\Local\Programs\Microsoft VS Code\fcf604774b\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 29800
+PSVersion: 5.1.26100.8875
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.8875
+BuildVersion: 10.0.26100.8875
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcript started, output file is darkmode-log.txt
+--- Files written, verifying ---
+OK   App.tsx
+OK   src\theme\colors.ts
+OK   src\theme\ThemeContext.tsx
+OK   src\api\themePreference.ts
+OK   src\components\Text.tsx
+OK   src\components\Card.tsx
+OK   src\components\Badge.tsx
+OK   src\components\Avatar.tsx
+OK   src\components\Input.tsx
+OK   src\components\Header.tsx
+OK   src\components\ListItem.tsx
+OK   src\components\Segmented.tsx
+OK   src\components\StatTile.tsx
+OK   src\components\Select.tsx
+OK   src\components\MultiSelect.tsx
+OK   src\components\RescheduleModal.tsx
+OK   src\components\CompanyMapSection.tsx
+OK   src\components\QuickDateTime.tsx
+OK   src\components\ClockCard.tsx
+OK   src\components\Screen.tsx
+OK   src\components\CsvImportModal.tsx
+OK   src\components\ExportModal.tsx
+OK   src\components\BookMeetingForm.tsx
+OK   src\screens\DashboardScreen.tsx
+OK   src\screens\ManagerHomeScreen.tsx
+OK   src\screens\EmployeeHomeScreen.tsx
+OK   src\screens\VisitorHomeScreen.tsx
+OK   src\screens\NotificationsScreen.tsx
+OK   src\screens\AppointmentsScreen.tsx
+OK   src\screens\HistoryScreen.tsx
+OK   src\screens\MeetingRoomsScreen.tsx
+OK   src\screens\CallLogScreen.tsx
+OK   src\screens\NFCLookupScreen.tsx
+OK   src\screens\VisitorVisitsScreen.tsx
+OK   src\screens\VisitorBookScreen.tsx
+OK   src\screens\DirectoryScreen.tsx
+OK   src\screens\VisitorBookingScreen.tsx
+OK   src\screens\ManagerClockInsScreen.tsx
+OK   src\screens\BillingScreen.tsx
+OK   src\screens\NFCCardsScreen.tsx
+OK   src\screens\ReportsScreen.tsx
+OK   src\screens\RegisterVisitorScreen.tsx
+OK   src\screens\EmployeeDetailScreen.tsx
+OK   src\screens\VisitorDetailScreen.tsx
+OK   src\screens\LegalAgreementScreen.tsx
+OK   src\screens\VisitorsScreen.tsx
+OK   src\screens\AttendanceScreen.tsx
+OK   src\screens\CompanySetupScreen.tsx
+OK   src\screens\SettingsScreen.tsx
+**********************
+Windows PowerShell transcript end
+End time: 20260723001725
+**********************

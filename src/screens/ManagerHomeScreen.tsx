@@ -3,7 +3,6 @@ import { View, Pressable, StyleSheet } from 'react-native';
 import {
   Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +18,7 @@ interface ManagerHomeScreenProps {
 // clock-in/out card every other role gets -- an Administrator is staff
 // too, and shows up on their own Clock-ins screen like everyone else.
 export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps) {
-  const { colors: themeColors, setOrgTheme } = useTheme();
+  const { colors, setOrgTheme } = useTheme();
   const { user, logout } = useAuth();
   const {
     stats, visitors, calls, employees, employeeById, unreadNotificationCount, refreshAll,
@@ -94,7 +93,7 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
           Currently on-site
         </Text>
         <Pressable onPress={() => navigation.navigate('Visitors')}>
-          <Text variant="label" color={themeColors.primary}>View all visitors</Text>
+          <Text variant="label" color={colors.primary}>View all visitors</Text>
         </Pressable>
       </View>
       <Card>

@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Button, Input, Select, DateChips, TimeChips,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +21,7 @@ interface VisitorBookScreenProps {
 // sectioned treatment (distinct headers per group) since it's now a
 // dedicated screen rather than embedded on the dashboard.
 export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { employees, bookVisit } = useData();
 
@@ -84,8 +83,8 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
         subtitle="Complete each section below to request an appointment"
       />
 
-      <Text variant="label" color={themeColors.brand} style={styles.sectionLabel}>
-        1 · Your details
+      <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
+        1 Â· Your details
       </Text>
       <Card>
         <Input label="Full name" value={name} onChangeText={setName} icon="person-outline" />
@@ -97,8 +96,8 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
           icon="business-outline" />
       </Card>
 
-      <Text variant="label" color={themeColors.brand} style={styles.sectionLabel}>
-        2 · Visit details
+      <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
+        2 Â· Visit details
       </Text>
       <Card>
         <Select label="Purpose" value={purpose} onChange={setPurpose}
@@ -116,8 +115,8 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
           }))} />
       </Card>
 
-      <Text variant="label" color={themeColors.brand} style={styles.sectionLabel}>
-        3 · When
+      <Text variant="label" color={colors.brand} style={styles.sectionLabel}>
+        3 Â· When
       </Text>
       <Card>
         <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>Date</Text>
@@ -126,9 +125,9 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
         <TimeChips value={time} onChange={setTime} />
       </Card>
 
-      <View style={[styles.notice, { backgroundColor: themeColors.primarySurface }]}>
-        <Ionicons name="information-circle" size={18} color={themeColors.primary} />
-        <Text variant="caption" color={themeColors.brand} style={{ marginLeft: 8, flex: 1 }}>
+      <View style={[styles.notice, { backgroundColor: colors.primarySurface }]}>
+        <Ionicons name="information-circle" size={18} color={colors.primary} />
+        <Text variant="caption" color={colors.brand} style={{ marginLeft: 8, flex: 1 }}>
           You'll receive an NFC pass code once submitted -- show it at reception on arrival.
         </Text>
       </View>

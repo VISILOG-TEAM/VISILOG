@@ -7,7 +7,6 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import Text from './Text';
 import Card from './Card';
 import Button from './Button';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -33,6 +32,7 @@ import { ApiError } from '../api/client';
 // more common case of clocking in from a phone someone else left
 // signed in and unattended. Clocking OUT never blocks.
 export default function ClockCard() {
+  const { colors } = useTheme();
   const { user, organization, verifyPassword } = useAuth();
   const { clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday } = useData();
   const [checking, setChecking] = useState(false);
@@ -175,14 +175,14 @@ interface ConfirmClockInModalProps {
 function ConfirmClockInModal({
   visible, password, onChangePassword, confirming, onCancel, onConfirm,
 }: ConfirmClockInModalProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <KeyboardAvoidingView
         style={styles.modalWrap}
         behavior="padding"
       >
-        <View style={styles.modalCard}>
+        <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Confirm it's you</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             Re-enter your password to clock in.
@@ -194,10 +194,10 @@ function ConfirmClockInModal({
             placeholderTextColor={colors.textMuted}
             secureTextEntry
             autoFocus
-            style={styles.modalInput}
+            style={[styles.modalInput, { borderColor: colors.border, color: colors.textPrimary }]}
           />
           <View style={styles.modalRow}>
-            <Pressable onPress={onCancel} style={[styles.modalBtn, styles.modalBtnGhost]}>
+            <Pressable onPress={onCancel} style={[styles.modalBtn, { backgroundColor: colors.surfaceAlt }]}>
               <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
             </Pressable>
             <Pressable
@@ -205,7 +205,7 @@ function ConfirmClockInModal({
               disabled={!password || confirming}
               style={[
                 styles.modalBtn,
-                { backgroundColor: themeColors.primary, opacity: !password || confirming ? 0.6 : 1 },
+                { backgroundColor: colors.primary, opacity: !password || confirming ? 0.6 : 1 },
               ]}
             >
               <Text variant="bodySemibold" color={colors.textInverse}>
@@ -227,17 +227,15 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%', maxWidth: 360,
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   modalInput: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    borderWidth: 1, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, paddingVertical: 10,
-    fontFamily: fonts.regular, fontSize: 14, color: colors.textPrimary,
+    fontFamily: fonts.regular, fontSize: 14,
     marginBottom: spacing.sm,
   },
   modalRow: { flexDirection: 'row', marginTop: spacing.xs, gap: spacing.sm },
   modalBtn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  modalBtnGhost: { backgroundColor: colors.surfaceAlt },
 });

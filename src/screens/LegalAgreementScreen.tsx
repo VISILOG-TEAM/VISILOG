@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Button } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -13,16 +12,16 @@ import type { RootStackScreenProps } from '../types/navigation';
 //
 //   - Registration flow: RegisterCompanyScreen collects the form, then
 //     pushes here with `pending` set. A company can't use VisiLog until
-//     this screen's subscription is agreed to and "paid" for — there's
+//     this screen's subscription is agreed to and "paid" for -- there's
 //     no real payment processor in this build, so this is a placeholder
 //     checkout step, but registerCompany() (the call that actually
 //     creates the org and hands back a company code) only fires from
 //     the button on *this* screen, never from the form screen itself.
 //   - Review flow: reachable anytime afterwards from Company Setup (the
-//     paying manager's own screen), with no `pending` data — read-only,
+//     paying manager's own screen), with no `pending` data -- read-only,
 //     no checkbox or payment section, just the terms.
 // Every self-serve signup lands on the Starter plan (see
-// AuthService.registerCompany) — match its real price so this isn't a
+// AuthService.registerCompany) -- match its real price so this isn't a
 // disconnected placeholder figure. Administrators can switch plans
 // afterwards from Billing & subscription.
 const STARTER_PRICE = 400;
@@ -49,7 +48,7 @@ You may cancel future renewals at any time from Billing & Subscription in Settin
 By continuing, you confirm you have the authority to enter into this agreement on behalf of your organization.`;
 
 export default function LegalAgreementScreen({ navigation, route }: RootStackScreenProps<'LegalAgreement'>) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { registerCompany } = useAuth();
   const pending = route?.params?.pending || null;
   const viewOnly = !pending;
@@ -77,7 +76,7 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
           // The root navigator swaps to the signed-in stack once `user` is
           // set, but "LegalAgreement" is a valid screen name in *both*
           // stacks (it's also reachable from Company Setup post-login), so
-          // React Navigation has no reason to redirect on its own — it just
+          // React Navigation has no reason to redirect on its own -- it just
           // keeps rendering the same screen name across the swap. Reset
           // explicitly to the new stack's actual landing screen instead of
           // relying on that swap to also navigate.
@@ -111,10 +110,10 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
               <View>
                 <Text variant="bodySemibold">VisiLog subscription</Text>
                 <Text variant="caption" color={colors.textSecondary}>
-                  {TERM_YEARS}-year term · billed once
+                  {TERM_YEARS}-year term Â· billed once
                 </Text>
               </View>
-              <Text variant="h2" color={themeColors.brand}>
+              <Text variant="h2" color={colors.brand}>
                 {CURRENCY} {STARTER_PRICE}
               </Text>
             </View>
@@ -126,7 +125,8 @@ export default function LegalAgreementScreen({ navigation, route }: RootStackScr
           <Pressable onPress={() => setAgreed((a) => !a)} style={styles.agreeRow}>
             <View style={[
               styles.checkbox,
-              agreed && { backgroundColor: themeColors.primary, borderColor: themeColors.primary },
+              { borderColor: colors.borderStrong },
+              agreed && { backgroundColor: colors.primary, borderColor: colors.primary },
             ]}>
               {agreed ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
             </View>
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     width: 20, height: 20, borderRadius: 6,
-    borderWidth: 1.5, borderColor: colors.borderStrong,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
   },
 });

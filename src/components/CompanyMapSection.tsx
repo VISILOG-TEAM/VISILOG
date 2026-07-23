@@ -3,7 +3,6 @@ import { View, Image, StyleSheet, Pressable, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Card from './Card';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -22,7 +21,7 @@ interface MapLocation {
 // A simplified "tour" map: a stylized floor-plan grid with tappable
 // pins for reception + each meeting room. There's no real indoor
 // positioning here (that needs BLE beacons / indoor GPS infrastructure
-// this demo doesn't have) — tapping a pin shows the room's real photo
+// this demo doesn't have) -- tapping a pin shows the room's real photo
 // (if Company Setup added one) plus short walking directions, giving
 // the tour feel without it. Falls back to a stylized icon when no
 // photo has been uploaded for that room.
@@ -57,12 +56,12 @@ export default function CompanyMapSection() {
         Find your way around
       </Text>
       <Card padded={false} style={styles.mapCard}>
-        <View style={styles.floor}>
+        <View style={[styles.floor, { backgroundColor: colors.surfaceAlt }]}>
           {LOCATIONS.map((loc) => (
             <Pressable
               key={loc.id}
               onPress={() => setSelected(loc)}
-              style={styles.room}
+              style={[styles.room, { backgroundColor: colors.surface, borderColor: colors.border }]}
             >
               <View style={[styles.pin, { backgroundColor: colors.primarySurface }]}>
                 <Ionicons name={loc.icon} size={16} color={colors.brand} />
@@ -77,7 +76,7 @@ export default function CompanyMapSection() {
 
       <Modal visible={!!selected} transparent animationType="fade" onRequestClose={() => setSelected(null)}>
         <View style={styles.modalWrap}>
-          <View style={styles.modalCard}>
+          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
             <View style={[styles.modalPhoto, { backgroundColor: colors.primarySurface }]}>
               {selected?.photoUrl ? (
                 <Image source={{ uri: selected.photoUrl }} style={styles.modalPhotoImage} resizeMode="cover" />
@@ -87,7 +86,7 @@ export default function CompanyMapSection() {
             </View>
             <Text variant="h3">{selected?.name}</Text>
             <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
-              {selected?.floor}{selected?.capacity ? ` · Capacity ${selected.capacity}` : ''}
+              {selected?.floor}{selected?.capacity ? ` Â· Capacity ${selected.capacity}` : ''}
             </Text>
             {selected?.directions.map((step, i) => (
               <View key={i} style={styles.stepRow}>
@@ -110,7 +109,7 @@ export default function CompanyMapSection() {
 const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   mapCard: { overflow: 'hidden' },
-  // A wrapping grid rather than fixed absolute slots — a fixed 4-slot
+  // A wrapping grid rather than fixed absolute slots -- a fixed 4-slot
   // layout silently stacked any 5th+ room directly on top of an
   // earlier one (i % 4 reused the same position), which looked like
   // "only 4 rooms show up" no matter how many Company Setup had.
@@ -118,17 +117,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     minHeight: 140,
-    backgroundColor: staticColors.surfaceAlt,
     padding: spacing.md,
     gap: spacing.sm,
   },
   room: {
     width: 110,
     alignItems: 'center',
-    backgroundColor: staticColors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: staticColors.border,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
   },
@@ -145,7 +141,6 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     width: '100%', maxWidth: 360,
-    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },

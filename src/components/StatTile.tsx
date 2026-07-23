@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { shadows } from '../theme/shadows';
@@ -33,14 +32,14 @@ export default function StatTile({ icon = 'people', label, value, tint = 'primar
   };
   const t = TINTS[tint] || TINTS.primary;
   return (
-    <View style={[styles.card, shadows.sm]}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }, shadows.sm]}>
       <View style={[styles.icon, { backgroundColor: t.bg }]}>
         <Ionicons name={icon} size={18} color={t.fg} />
       </View>
       <Text variant="caption" color={colors.textSecondary} style={styles.label}>
         {label}
       </Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text style={[styles.value, { color: colors.textPrimary }]}>{value}</Text>
     </View>
   );
 }
@@ -48,10 +47,8 @@ export default function StatTile({ icon = 'people', label, value, tint = 'primar
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: staticColors.border,
     padding: spacing.md,
   },
   icon: {
@@ -63,7 +60,6 @@ const styles = StyleSheet.create({
   value: {
     fontFamily: fonts.displayBold,
     fontSize: 26,
-    color: staticColors.textPrimary,
     marginTop: 2,
     letterSpacing: -0.5,
   },

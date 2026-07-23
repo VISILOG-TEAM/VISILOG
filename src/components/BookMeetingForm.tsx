@@ -9,7 +9,6 @@ import MultiSelect from './MultiSelect';
 import Segmented from './Segmented';
 import Text from './Text';
 import { DateChips, TimeChips } from './QuickDateTime';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -23,17 +22,17 @@ interface BookMeetingFormProps {
   onDone?: () => void;
 }
 
-// BookMeetingForm — self-service internal meeting booking. Shared by
+// BookMeetingForm -- self-service internal meeting booking. Shared by
 // Employee, Manager (EmployeeBookScreen) and Receptionist (the
 // "Internal meeting" pane on VisitorBookingScreen), so an
-// Administrator or anyone else can invite whoever they need — not
-// just their own direct reports — and can book either one of the
+// Administrator or anyone else can invite whoever they need -- not
+// just their own direct reports -- and can book either one of the
 // company's meeting rooms or an outside location (a client's office,
 // a restaurant, etc.) for meetings that don't happen on-site. The
 // organiser is derived server-side from the signed-in user's own
-// employee record — see RoomBookingController.
+// employee record -- see RoomBookingController.
 export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { employees, meetingRooms, bookRoom } = useData();
 
   const [title, setTitle] = useState('');
@@ -144,7 +143,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             onChange={setRoomId}
             icon="business-outline"
             options={meetingRooms.map((r) => ({
-              label: r.name, value: r.id, sublabel: `${r.floor} · Capacity ${r.capacity}`,
+              label: r.name, value: r.id, sublabel: `${r.floor} Â· Capacity ${r.capacity}`,
             }))}
           />
         ) : (
@@ -204,10 +203,10 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
         </View>
         <Pressable
           onPress={onAddGuest}
-          style={[styles.addGuestBtn, { borderColor: themeColors.primary }]}
+          style={[styles.addGuestBtn, { borderColor: colors.primary }]}
         >
-          <Ionicons name="add-circle-outline" size={18} color={themeColors.primary} />
-          <Text variant="bodySemibold" color={themeColors.primary} style={{ marginLeft: 6 }}>
+          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          <Text variant="bodySemibold" color={colors.primary} style={{ marginLeft: 6 }}>
             Add guest
           </Text>
         </Pressable>

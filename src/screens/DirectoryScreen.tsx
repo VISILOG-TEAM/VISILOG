@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Input, Text, Card, EmptyState, Avatar, CsvImportModal,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -15,21 +14,28 @@ interface DirectoryScreenProps {
   navigation: RootStackNavigation;
 }
 
-// Accepts a few common header spellings so a spreadsheet someone
-// already has (HR export, a previous system) doesn't need renaming
-// first — "code"/"employee code"/"staff id" all work for the id column.
+// Accepts a wide range of header spellings so a real HR export (which
+// almost never matches a fixed schema) doesn't need renaming first --
+// "code"/"employee code"/"employeeid"/"staff id" all work for the id
+// column, and FirstName+LastName combine into one name if there's no
+// single "name" column at all.
 function mapCsvRow(record: Record<string, string>): EmployeeInput {
+  const firstName = record['firstname'] || record['first name'] || '';
+  const lastName = record['lastname'] || record['last name'] || '';
+  const combinedName = [firstName, lastName].filter(Boolean).join(' ');
+
   return {
-    employeeId: record['code'] || record['employee code'] || record['staff id'] || record['id'] || '',
-    name: record['name'] || '',
+    employeeId: record['code'] || record['employee code'] || record['employeecode']
+      || record['employeeid'] || record['employee id'] || record['staff id'] || record['id'] || '',
+    name: record['name'] || record['full name'] || record['fullname'] || combinedName || '',
     department: record['department'] || '',
-    phone: record['phone'] || '',
-    email: record['email'] || '',
+    phone: record['phone'] || record['phone number'] || record['phonenumber'] || record['mobile'] || '',
+    email: record['email'] || record['email address'] || record['emailaddress'] || '',
     role: (record['role'] || 'employee').toLowerCase() as Role,
   };
 }
 
-// DirectoryScreen — the Phone Book.
+// DirectoryScreen -- the Phone Book.
 // Lists every staff member; tap a row to open their detail page; tap
 // the phone icon to dial straight from the device.
 export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
@@ -104,7 +110,7 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
 function DirectoryRow({
   employee, onPress, onCall,
 }: { employee: Employee; onPress: () => void; onCall: () => void }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <Card padded={false} onPress={onPress} style={{ marginHorizontal: spacing.md }}>
       <View style={styles.row}>
@@ -115,8 +121,8 @@ function DirectoryRow({
             {employee.department}
           </Text>
         </View>
-        <Pressable onPress={onCall} hitSlop={8} style={[styles.callBtn, { backgroundColor: themeColors.primarySurface }]}>
-          <Ionicons name="call" size={18} color={themeColors.primary} />
+        <Pressable onPress={onCall} hitSlop={8} style={[styles.callBtn, { backgroundColor: colors.primarySurface }]}>
+          <Ionicons name="call" size={18} color={colors.primary} />
         </Pressable>
       </View>
     </Card>

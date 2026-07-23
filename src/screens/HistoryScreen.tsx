@@ -3,7 +3,7 @@ import { View, SectionList, StyleSheet, RefreshControl } from 'react-native';
 import {
   Screen, Header, Text, Card, Badge, EmptyState, Avatar, Segmented,
 } from '../components';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { fmtDate, fmtTime, fmtRelative, splitRecentOlder } from '../data/format';
@@ -52,6 +52,7 @@ export default function HistoryScreen({ route, navigation }: RootStackScreenProp
 }
 
 function AppointmentsHistory() {
+  const { colors } = useTheme();
   const { appointments, employeeById, refreshAll } = useData();
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
@@ -81,7 +82,7 @@ function AppointmentsHistory() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
       renderSectionHeader={({ section }) => (
-        <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionHeader}>
+        <Text variant="eyebrow" color={colors.textMuted} style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
           {section.title}
         </Text>
       )}
@@ -100,6 +101,7 @@ function AppointmentsHistory() {
 }
 
 function AppointmentHistoryRow({ appointment, hostName }: { appointment: Appointment; hostName?: string }) {
+  const { colors } = useTheme();
   const badgeStatus: StatusKey = appointment.status === 'admitted' ? 'success' : 'rejected';
   return (
     <Card padded={false} style={{ marginHorizontal: spacing.md }}>
@@ -128,6 +130,7 @@ function AppointmentHistoryRow({ appointment, hostName }: { appointment: Appoint
 }
 
 function MeetingsHistory() {
+  const { colors } = useTheme();
   const { roomBookings, employeeById, roomById, refreshRoomBookings } = useData();
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
@@ -155,7 +158,7 @@ function MeetingsHistory() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
       renderSectionHeader={({ section }) => (
-        <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionHeader}>
+        <Text variant="eyebrow" color={colors.textMuted} style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
           {section.title}
         </Text>
       )}
@@ -180,6 +183,7 @@ function MeetingsHistory() {
 function MeetingHistoryRow({
   booking, organiserName, roomName,
 }: { booking: RoomBooking; organiserName?: string; roomName?: string }) {
+  const { colors } = useTheme();
   const absentCount = booking.responses?.filter((r) => r.absent).length || 0;
   return (
     <Card style={{ marginHorizontal: spacing.md }}>
@@ -205,6 +209,7 @@ function MeetingHistoryRow({
 }
 
 function ClockHistory() {
+  const { colors } = useTheme();
   const { clockRecords, employeeById, refreshClockRecords } = useData();
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
@@ -230,7 +235,7 @@ function ClockHistory() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       ItemSeparatorComponent={() => <View style={{ height: spacing.xs }} />}
       renderSectionHeader={({ section }) => (
-        <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionHeader}>
+        <Text variant="eyebrow" color={colors.textMuted} style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
           {section.title}
         </Text>
       )}
@@ -249,6 +254,7 @@ function ClockHistory() {
 }
 
 function ClockHistoryRow({ record, employeeName }: { record: ClockRecord; employeeName?: string }) {
+  const { colors } = useTheme();
   const isIn = record.type === 'in';
   return (
     <Card padded={false} style={{ marginHorizontal: spacing.md }}>
@@ -271,7 +277,7 @@ function ClockHistoryRow({ record, employeeName }: { record: ClockRecord; employ
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: 0 },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
-  sectionHeader: { backgroundColor: colors.background, paddingVertical: spacing.xs },
+  sectionHeader: { paddingVertical: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
   middle: { flex: 1, marginLeft: spacing.sm },
   titleRow: {

@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Text, Card, Badge, Avatar, CompanyMapSection,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -25,7 +24,7 @@ interface VisitorHomeScreenProps {
 // book, if there isn't one yet), the submitted details, a visit-status
 // timeline, and the company map/tour section.
 export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { employees, appointments, unreadNotificationCount, refreshAll } = useData();
   const [refreshing, setRefreshing] = useState(false);
@@ -52,10 +51,10 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
         </Pressable>
         <Pressable
           onPress={() => navigation.navigate('Notifications')}
-          style={[styles.bellBtn, { backgroundColor: themeColors.primarySurface }]}
+          style={[styles.bellBtn, { backgroundColor: colors.primarySurface }]}
           hitSlop={8}
         >
-          <Ionicons name="notifications-outline" size={22} color={themeColors.brand} />
+          <Ionicons name="notifications-outline" size={22} color={colors.brand} />
           {unreadNotificationCount > 0 ? (
             <View style={[styles.bellBadge, { backgroundColor: colors.status.rejected.solid }]}>
               <Text variant="caption" color="#FFFFFF" style={styles.bellBadgeText}>
@@ -66,7 +65,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
         </Pressable>
       </View>
 
-      <Text style={styles.welcome}>
+      <Text style={[styles.welcome, { color: colors.textPrimary }]}>
         {myBooking
           ? `Welcome back, ${user!.name?.split(' ')[0] || 'there'}`
           : 'Ready to book your first appointment?'}
@@ -83,10 +82,10 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
       {myBooking ? (
         <>
           {/* Full-bleed pass card in the org's own brand colors */}
-          <View style={[styles.passCard, { backgroundColor: themeColors.brand }]}>
+          <View style={[styles.passCard, { backgroundColor: colors.brand }]}>
             <View style={styles.passHead}>
-              <View style={[styles.chip, { backgroundColor: themeColors.primary }]}>
-                <Ionicons name="hardware-chip" size={20} color={themeColors.brandDark} />
+              <View style={[styles.chip, { backgroundColor: colors.primary }]}>
+                <Ionicons name="hardware-chip" size={20} color={colors.brandDark} />
               </View>
               <Ionicons name="wifi" size={22} color="rgba(255,255,255,0.6)" style={{ transform: [{ rotate: '90deg' }] }} />
             </View>
@@ -106,7 +105,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               <View style={{ flex: 1 }}>
                 <Text style={styles.passMetaLabel}>Scheduled</Text>
                 <Text style={styles.passMetaValue} numberOfLines={1}>
-                  {fmtDate(myBooking.scheduledAt)} · {fmtTime(myBooking.scheduledAt)}
+                  {fmtDate(myBooking.scheduledAt)} Â· {fmtTime(myBooking.scheduledAt)}
                 </Text>
               </View>
             </View>
@@ -114,8 +113,8 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
             <View style={[styles.passDivider, { backgroundColor: 'rgba(255,255,255,0.18)' }]} />
 
             <View style={styles.passStatusRow}>
-              <View style={[styles.passDot, { backgroundColor: themeColors.primary }]} />
-              <Text style={[styles.passStatusText, { color: themeColors.primary }]}>
+              <View style={[styles.passDot, { backgroundColor: colors.primary }]} />
+              <Text style={[styles.passStatusText, { color: colors.primary }]}>
                 Present this card at reception to check in
               </Text>
             </View>
@@ -127,9 +126,9 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
           </Text>
           <Card>
             <DetailRow label="Company" value={myBooking.visitorCompany || '--'} />
-            <View style={styles.hairline} />
+            <View style={[styles.hairline, { backgroundColor: colors.border }]} />
             <DetailRow label="Purpose" value={myBooking.purpose || '--'} />
-            <View style={styles.hairline} />
+            <View style={[styles.hairline, { backgroundColor: colors.border }]} />
             <DetailRow label="Contact" value={myBooking.visitorPhone || '--'} />
           </Card>
 
@@ -142,7 +141,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               done
               icon="checkmark"
               label="Details submitted"
-              sub={`${fmtDate(myBooking.scheduledAt)} · ${fmtTime(myBooking.scheduledAt)}`}
+              sub={`${fmtDate(myBooking.scheduledAt)} Â· ${fmtTime(myBooking.scheduledAt)}`}
               isLast={false}
             />
             {myBooking.status === 'rejected' ? (
@@ -158,7 +157,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               <TimelineStep
                 done
                 icon="checkmark"
-                label="Approved · card issued"
+                label="Approved Â· card issued"
                 sub="You're all set for your visit."
                 isLast
               />
@@ -193,6 +192,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.detailRow}>
       <Text variant="body" color={colors.textSecondary}>{label}</Text>
@@ -211,15 +211,15 @@ interface TimelineStepProps {
 }
 
 function TimelineStep({ done, negative, icon, label, sub, isLast }: TimelineStepProps) {
-  const { colors: themeColors } = useTheme();
-  const dotColor = negative ? themeColors.status.rejected.solid : done ? themeColors.status.success.solid : colors.borderStrong;
+  const { colors } = useTheme();
+  const dotColor = negative ? colors.status.rejected.solid : done ? colors.status.success.solid : colors.borderStrong;
   return (
     <View style={styles.timelineRow}>
       <View style={styles.timelineRail}>
         <View style={[styles.timelineDot, { backgroundColor: dotColor }]}>
           {done ? <Ionicons name={icon} size={12} color="#FFFFFF" /> : null}
         </View>
-        {!isLast ? <View style={styles.timelineLine} /> : null}
+        {!isLast ? <View style={[styles.timelineLine, { backgroundColor: colors.border }]} /> : null}
       </View>
       <View style={{ flex: 1, paddingBottom: isLast ? 0 : spacing.md }}>
         <Text variant="bodySemibold" color={done ? colors.textPrimary : colors.textSecondary}>
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   bellBadgeText: { fontSize: 10, lineHeight: 12 },
-  welcome: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.textPrimary },
+  welcome: { fontFamily: fonts.displayBold, fontSize: 22 },
   eyebrow: { marginTop: spacing.md, marginBottom: spacing.sm },
 
   // Pass card
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingVertical: spacing.xs,
   },
-  hairline: { height: 1, backgroundColor: colors.border },
+  hairline: { height: 1 },
 
   // Timeline
   timelineRow: { flexDirection: 'row' },
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     width: 22, height: 22, borderRadius: 11,
     alignItems: 'center', justifyContent: 'center',
   },
-  timelineLine: { width: 2, flex: 1, backgroundColor: colors.border, marginVertical: 4 },
+  timelineLine: { width: 2, flex: 1, marginVertical: 4 },
 
   emptyCard: { alignItems: 'center', paddingVertical: spacing.sm },
 });

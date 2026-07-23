@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Button, Input, Avatar,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -13,7 +12,7 @@ import { ApiError } from '../api/client';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { IoniconName } from '../types';
 
-// VisitorDetailScreen — the full record for one visitor.
+// VisitorDetailScreen -- the full record for one visitor.
 // Reachable by tapping any row in the Visitors list. Shows:
 //   - Identity block (avatar, name, badge ID, status)
 //   - Visit details (host, purpose, company, phone)
@@ -21,6 +20,7 @@ import type { IoniconName } from '../types';
 //   - Notes (editable)
 //   - Check-out action (when on-site)
 export default function VisitorDetailScreen({ route, navigation }: RootStackScreenProps<'VisitorDetail'>) {
+  const { colors } = useTheme();
   const { visitorId } = route.params;
   const { visitors, checkOutVisitor, employeeById } = useData();
   const visitor = visitors.find((v) => v.id === visitorId);
@@ -161,11 +161,11 @@ export default function VisitorDetailScreen({ route, navigation }: RootStackScre
 function DetailRow({
   icon, label, value, sub,
 }: { icon: IoniconName; label: string; value: string; sub?: string }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <View style={styles.detailRow}>
-      <View style={styles.detailIcon}>
-        <Ionicons name={icon} size={18} color={themeColors.brand} />
+      <View style={[styles.detailIcon, { backgroundColor: colors.surfaceAlt }]}>
+        <Ionicons name={icon} size={18} color={colors.brand} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="caption" color={colors.textSecondary}>{label}</Text>
@@ -179,17 +179,18 @@ function DetailRow({
 }
 
 function Divider() {
-  return <View style={styles.divider} />;
+  const { colors } = useTheme();
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 }
 
 function ActionPill({
   icon, label, onPress,
 }: { icon: IoniconName; label: string; onPress: () => void }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, pressed && { opacity: 0.85 }]}>
-      <Ionicons name={icon} size={18} color={themeColors.primary} />
-      <Text variant="bodyMd" color={themeColors.brand} style={{ marginLeft: 6 }}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && { opacity: 0.85 }]}>
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Text variant="bodyMd" color={colors.brand} style={{ marginLeft: 6 }}>
         {label}
       </Text>
     </Pressable>
@@ -205,18 +206,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.border,
   },
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   detailRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
   detailIcon: {
     width: 32, height: 32, borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
     marginRight: spacing.sm,
   },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.xs, marginLeft: 32 + spacing.sm },
+  divider: { height: 1, marginVertical: spacing.xs, marginLeft: 32 + spacing.sm },
 });

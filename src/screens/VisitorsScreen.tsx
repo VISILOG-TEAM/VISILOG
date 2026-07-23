@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState, Avatar, ExportModal,
 } from '../components';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { fmtTime, fmtDateTime, fmtDuration, splitRecentOlder } from '../data/format';
@@ -26,6 +26,7 @@ type StatusFilter = 'all' | 'onsite' | 'completed';
 //   - each row links into a detail page where check-out happens
 // A floating "Register" button opens the registration modal.
 export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
+  const { colors } = useTheme();
   const { visitors, employeeById } = useData();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -105,7 +106,7 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         renderSectionHeader={({ section }) => (
-          <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionHeader}>
+          <Text variant="eyebrow" color={colors.textMuted} style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
             {section.title}
           </Text>
         )}
@@ -150,6 +151,7 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
 function VisitorRow({
   visitor, hostName, onPress,
 }: { visitor: Visitor; hostName?: string; onPress: () => void }) {
+  const { colors } = useTheme();
   const isOnsite = visitor.status === 'onsite';
   const accent = isOnsite ? 'onsite' : 'neutral';
   return (
@@ -173,12 +175,12 @@ function VisitorRow({
             <Text variant="caption" color={colors.textMuted} style={{ marginLeft: 4 }}>
               {visitor.badgeId}
             </Text>
-            <View style={styles.dot} />
+            <View style={[styles.dot, { backgroundColor: colors.textMuted }]} />
             <Ionicons name="time-outline" size={12} color={colors.textMuted} />
             <Text variant="caption" color={colors.textMuted} style={{ marginLeft: 4 }}>
               {isOnsite
                 ? `In - ${fmtTime(visitor.checkInAt)} - ${fmtDuration(visitor.checkInAt)}`
-                : `${fmtTime(visitor.checkInAt)} → ${fmtTime(visitor.checkOutAt)}`}
+                : `${fmtTime(visitor.checkInAt)} â†’ ${fmtTime(visitor.checkOutAt)}`}
             </Text>
           </View>
         </View>
@@ -190,7 +192,7 @@ function VisitorRow({
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: 0 },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
-  sectionHeader: { backgroundColor: colors.background, paddingVertical: spacing.xs },
+  sectionHeader: { paddingVertical: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
   middle: { flex: 1, marginLeft: spacing.sm },
   titleRow: {
@@ -199,6 +201,6 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   dot: {
     width: 3, height: 3, borderRadius: 2,
-    backgroundColor: colors.textMuted, marginHorizontal: 8,
+    marginHorizontal: 8,
   },
 });

@@ -6,7 +6,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
 import Text from './Text';
 import Button from './Button';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { parseCsv, csvRowsToRecords } from '../data/csv';
@@ -71,7 +70,7 @@ export default function CsvImportModal<T>({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDoneClose}>
       <View style={styles.wrap}>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">{title}</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             {columnsHint}
@@ -84,7 +83,7 @@ export default function CsvImportModal<T>({
               </Text>
               {result.errors.length > 0 ? (
                 <>
-                  <Text variant="bodySemibold" color={staticColors.status.rejected.solid} style={{ marginTop: spacing.sm }}>
+                  <Text variant="bodySemibold" color={colors.status.rejected.solid} style={{ marginTop: spacing.sm }}>
                     {result.errors.length} skipped
                   </Text>
                   {result.errors.map((e) => (
@@ -122,7 +121,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%', maxWidth: 380,
-    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },

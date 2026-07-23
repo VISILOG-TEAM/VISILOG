@@ -5,7 +5,6 @@ import * as ImagePicker from 'expo-image-picker';
 import {
   Screen, Header, Text, Card, Button, Input, EmptyState, CsvImportModal,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -34,7 +33,7 @@ function mapCsvRow(record: Record<string, string>): MeetingRoomInput {
 // The rooms managed here are exactly what BookMeetingForm and
 // AppointmentsScreen's "Meeting Rooms" tab draw from.
 export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { meetingRooms, addMeetingRoom, bulkImportMeetingRooms, removeMeetingRoom } = useData();
 
   const [name, setName] = useState('');
@@ -133,14 +132,14 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
           <Input label="Description / directions (optional)" value={description} onChangeText={setDescription}
             placeholder="e.g. Past the kitchen, second door on the left" icon="map-outline" multiline />
           <Pressable onPress={onPickPhoto} disabled={pickingPhoto} style={styles.photoRow}>
-            <View style={[styles.photoPreview, { borderColor: colors.border }]}>
+            <View style={[styles.photoPreview, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}>
               {photoUrl ? (
                 <Image source={{ uri: photoUrl }} style={styles.photoImage} resizeMode="cover" />
               ) : (
                 <Ionicons name="camera-outline" size={20} color={colors.textMuted} />
               )}
             </View>
-            <Text variant="bodySemibold" color={themeColors.brand} style={{ marginLeft: spacing.sm }}>
+            <Text variant="bodySemibold" color={colors.brand} style={{ marginLeft: spacing.sm }}>
               {pickingPhoto ? 'Opening photos...' : photoUrl ? 'Change photo' : 'Add a room photo (optional)'}
             </Text>
           </Pressable>
@@ -159,17 +158,17 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
         renderItem={({ item }) => (
           <Card style={{ marginHorizontal: spacing.md }}>
             <View style={styles.roomRow}>
-              <View style={[styles.roomIcon, { backgroundColor: themeColors.primarySurface }]}>
+              <View style={[styles.roomIcon, { backgroundColor: colors.primarySurface }]}>
                 {item.photoUrl ? (
                   <Image source={{ uri: item.photoUrl }} style={styles.roomIconImage} resizeMode="cover" />
                 ) : (
-                  <Ionicons name="business" size={20} color={themeColors.primary} />
+                  <Ionicons name="business" size={20} color={colors.primary} />
                 )}
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text variant="bodySemibold">{item.name}</Text>
                 <Text variant="caption" color={colors.textSecondary}>
-                  {item.floor || 'No floor set'}{item.capacity ? ` · Capacity ${item.capacity}` : ''}
+                  {item.floor || 'No floor set'}{item.capacity ? ` Â· Capacity ${item.capacity}` : ''}
                 </Text>
                 {item.description ? (
                   <Text variant="caption" color={colors.textMuted} numberOfLines={2} style={{ marginTop: 2 }}>
@@ -212,7 +211,7 @@ const styles = StyleSheet.create({
   photoPreview: {
     width: 44, height: 44, borderRadius: radius.md,
     borderWidth: 1, alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', backgroundColor: colors.surfaceAlt,
+    overflow: 'hidden',
   },
   photoImage: { width: '100%', height: '100%' },
 });

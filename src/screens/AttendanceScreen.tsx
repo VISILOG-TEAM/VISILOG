@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, EmptyState, Avatar, StatTile, ExportModal,
 } from '../components';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { fmtTime, fmtDateTime, fmtRelative } from '../data/format';
@@ -103,6 +103,7 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
 }
 
 function TapRow({ tap, employee }: { tap: ClockRecord; employee?: Employee }) {
+  const { colors } = useTheme();
   const isIn = tap.type === 'in';
   return (
     <Card padded={false} style={{ marginHorizontal: spacing.md }}>

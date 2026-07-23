@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Button, Input, Select, Segmented, BookMeetingForm,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -18,16 +17,16 @@ interface VisitorBookingScreenProps {
 
 type BookingMode = 'visitor' | 'internal';
 
-// VisitorBookingScreen — the receptionist's "Book" tab. Defaults to
+// VisitorBookingScreen -- the receptionist's "Book" tab. Defaults to
 // the online visitor pre-registration form (booking on behalf of a
 // visitor who called or walked up), with a toggle to switch over to
-// booking an internal meeting — reception needs to reserve rooms too,
+// booking an internal meeting -- reception needs to reserve rooms too,
 // not just register outside visitors.
 //
 // Submitting the visitor form creates a new appointment in 'pending'
 // status, mirroring the real visitor-side flow.
 export default function VisitorBookingScreen({ navigation }: VisitorBookingScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { employees, bookVisit } = useData();
   const [mode, setMode] = useState<BookingMode>('visitor');
 
@@ -106,9 +105,9 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
       ) : (
       <>
       <Card>
-        <View style={[styles.notice, { backgroundColor: themeColors.primarySurface }]}>
-          <Ionicons name="information-circle" size={18} color={themeColors.primary} />
-          <Text variant="caption" color={themeColors.brand} style={{ marginLeft: 8, flex: 1 }}>
+        <View style={[styles.notice, { backgroundColor: colors.primarySurface }]}>
+          <Ionicons name="information-circle" size={18} color={colors.primary} />
+          <Text variant="caption" color={colors.brand} style={{ marginLeft: 8, flex: 1 }}>
             Pre-booking speeds up reception. You will receive a QR code & badge ID after approval.
           </Text>
         </View>

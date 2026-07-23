@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -45,7 +44,7 @@ export default function Input({
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   // Password fields get their own reveal toggle instead of the caller
-  // having to wire one up on every screen — this is a bit of state per
+  // having to wire one up on every screen -- this is a bit of state per
   // field, so it only kicks in when secureTextEntry is actually passed.
   const [revealed, setRevealed] = useState(false);
   const isPassword = !!secureTextEntry;
@@ -61,9 +60,10 @@ export default function Input({
       <View
         style={[
           styles.field,
+          { backgroundColor: colors.surface, borderColor: colors.border },
           multiline && styles.multiline,
           focused && { borderColor: colors.primary },
-          error && styles.errored,
+          error && { borderColor: colors.status.error.solid },
         ]}
       >
         {icon ? (
@@ -75,7 +75,7 @@ export default function Input({
           />
         ) : null}
         <TextInput
-          style={styles.input}
+          style={[styles.input, { color: colors.textPrimary }]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
@@ -118,22 +118,18 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: staticColors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     height: 48,
   },
   multiline: { height: 100, alignItems: 'flex-start', paddingTop: 12 },
-  errored: { borderColor: staticColors.status.error.solid },
   icon: { marginRight: 8 },
   eyeIcon: { marginLeft: 8 },
   input: {
     flex: 1,
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: staticColors.textPrimary,
     paddingVertical: 0,
   },
   error: { marginTop: 4 },

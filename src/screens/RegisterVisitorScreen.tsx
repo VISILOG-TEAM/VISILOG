@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Button, Input, Select, Badge,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -25,7 +24,7 @@ interface RegisterVisitorErrors {
   otherPurpose?: string;
 }
 
-// RegisterVisitorScreen — modal opened from the visitors tab + dashboard.
+// RegisterVisitorScreen -- modal opened from the visitors tab + dashboard.
 // Implements the Check-In form from VisiLog spec + User Guide:
 //   - First/Last name, phone, company, purpose (dropdown), host (dropdown)
 //   - Badge number auto-generated and shown read-only
@@ -33,7 +32,7 @@ interface RegisterVisitorErrors {
 //   - Optional consent / signature toggle
 // Submitting registers AND checks the visitor in (single click flow).
 export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { employees, visitors, registerAndCheckIn } = useData();
 
   const [firstName, setFirstName] = useState('');
@@ -105,11 +104,15 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
       />
 
       <Card>
-        {/* Photo placeholder — tappable square that toggles a "photo added"
+        {/* Photo placeholder -- tappable square that toggles a "photo added"
             state. A real build would launch expo-image-picker here. */}
         <Pressable
           onPress={() => setPhotoAdded((p) => !p)}
-          style={[styles.photo, photoAdded && styles.photoAdded]}
+          style={[
+            styles.photo,
+            { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+            photoAdded && { borderStyle: 'solid', borderColor: colors.status.success.solid, backgroundColor: colors.status.success.bg },
+          ]}
         >
           <Ionicons
             name={photoAdded ? 'checkmark-circle' : 'camera-outline'}
@@ -205,8 +208,8 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
         />
 
         {/* Badge number (auto-generated, read-only preview) */}
-        <View style={[styles.badgePreview, { backgroundColor: themeColors.primarySurface }]}>
-          <Ionicons name="card-outline" size={18} color={themeColors.brand} />
+        <View style={[styles.badgePreview, { backgroundColor: colors.primarySurface }]}>
+          <Ionicons name="card-outline" size={18} color={colors.brand} />
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <Text variant="caption" color={colors.textSecondary}>
               Badge number (auto-generated)
@@ -221,7 +224,7 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
           onPress={() => setConsent((c) => !c)}
           style={styles.consent}
         >
-          <View style={[styles.checkbox, consent && { backgroundColor: themeColors.primary, borderColor: themeColors.primary }]}>
+          <View style={[styles.checkbox, { borderColor: colors.borderStrong }, consent && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
             {consent ? <Ionicons name="checkmark" size={14} color="#FFF" /> : null}
           </View>
           <View style={{ flex: 1, marginLeft: spacing.xs }}>
@@ -259,18 +262,11 @@ const styles = StyleSheet.create({
   photo: {
     height: 88,
     borderWidth: 1,
-    borderColor: colors.border,
     borderStyle: 'dashed',
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
-    backgroundColor: colors.surfaceAlt,
-  },
-  photoAdded: {
-    borderStyle: 'solid',
-    borderColor: colors.status.success.solid,
-    backgroundColor: colors.status.success.bg,
   },
   nameRow: { flexDirection: 'row' },
   badgePreview: {
@@ -287,7 +283,7 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     width: 20, height: 20, borderRadius: 6,
-    borderWidth: 1.5, borderColor: colors.borderStrong,
+    borderWidth: 1.5,
     alignItems: 'center', justifyContent: 'center',
   },
 });

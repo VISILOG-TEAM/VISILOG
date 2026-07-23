@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Input, Segmented, EmptyState,
 } from '../components';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { fmtDateTime, splitRecentOlder } from '../data/format';
@@ -17,9 +17,10 @@ interface CallLogScreenProps {
 
 type CallFilter = 'all' | 'incoming' | 'outgoing' | 'missed';
 
-// CallLogScreen — every incoming / outgoing / missed call.
+// CallLogScreen -- every incoming / outgoing / missed call.
 // Fields per the User Guide: date+time, caller name+phone, host, duration, purpose.
 export default function CallLogScreen({ navigation }: CallLogScreenProps) {
+  const { colors } = useTheme();
   const { calls, employeeById } = useData();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<CallFilter>('all');
@@ -78,7 +79,7 @@ export default function CallLogScreen({ navigation }: CallLogScreenProps) {
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
         renderSectionHeader={({ section }) => (
-          <Text variant="eyebrow" color={colors.textMuted} style={styles.sectionHeader}>
+          <Text variant="eyebrow" color={colors.textMuted} style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
             {section.title}
           </Text>
         )}
@@ -98,6 +99,7 @@ export default function CallLogScreen({ navigation }: CallLogScreenProps) {
 }
 
 function CallRow({ call }: { call: Call }) {
+  const { colors } = useTheme();
   const { employeeById } = useData();
   const host = employeeById(call.hostId);
   const icon: 'call' | 'call-outline' | 'call-sharp' =
@@ -144,7 +146,7 @@ function CallRow({ call }: { call: Call }) {
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: 0 },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
-  sectionHeader: { backgroundColor: colors.background, paddingVertical: spacing.xs },
+  sectionHeader: { paddingVertical: spacing.xs },
   row: { flexDirection: 'row', alignItems: 'flex-start', padding: spacing.md },
   iconWrap: {
     width: 40, height: 40, borderRadius: 12,

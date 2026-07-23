@@ -6,7 +6,6 @@ import * as Location from 'expo-location';
 import {
   Screen, Header, Text, Card, Button, Input,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -38,14 +37,14 @@ const THEME_PRESETS: { id: string; label: string; theme: BrandTheme }[] = [
   } },
 ];
 
-// CompanySetupScreen — Manager/Administrator only, reachable from
+// CompanySetupScreen -- Manager/Administrator only, reachable from
 // Settings > Organisation > "Company branding". Covers everything the
 // self-serve onboarding story needs after registration: sharing the
 // company code, branding, and the office location that backs the
 // clock-in geofence check. Staff roster (Directory) and meeting rooms
 // each have their own dedicated screens, linked from here.
 export default function CompanySetupScreen({ navigation }: CompanySetupScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { organization, updateOrganization, updateOfficeLocation } = useAuth();
 
   const [name, setName] = useState(organization?.name || '');
@@ -88,7 +87,7 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
   const [locating, setLocating] = useState(false);
 
   // Fills lat/lng from the phone's own GPS instead of making someone
-  // look up coordinates manually — stand at the office and tap this.
+  // look up coordinates manually -- stand at the office and tap this.
   const onUseCurrentLocation = async () => {
     setLocating(true);
     try {
@@ -163,10 +162,10 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
       <Card accent="info">
         <Text variant="caption" color={colors.textSecondary}>Company code</Text>
         <View style={styles.codeRow}>
-          <Text style={[styles.code, { color: themeColors.brand }]}>{organization?.code}</Text>
-          <Pressable onPress={onShareCode} style={[styles.shareBtn, { backgroundColor: themeColors.primarySurface }]}>
-            <Ionicons name="share-outline" size={16} color={themeColors.primary} />
-            <Text variant="caption" color={themeColors.brand} style={{ marginLeft: 4 }}>Share</Text>
+          <Text style={[styles.code, { color: colors.brand }]}>{organization?.code}</Text>
+          <Pressable onPress={onShareCode} style={[styles.shareBtn, { backgroundColor: colors.primarySurface }]}>
+            <Ionicons name="share-outline" size={16} color={colors.primary} />
+            <Text variant="caption" color={colors.brand} style={{ marginLeft: 4 }}>Share</Text>
           </Pressable>
         </View>
         <Text variant="caption" color={colors.textMuted}>
@@ -181,7 +180,7 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
 
         <Text variant="label" color={colors.textSecondary} style={styles.logoLabel}>Logo</Text>
         <Pressable onPress={onPickLogo} disabled={pickingLogo} style={styles.logoRow}>
-          <View style={[styles.logoPreview, { borderColor: colors.border }]}>
+          <View style={[styles.logoPreview, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}>
             {logoUrl ? (
               <Image source={{ uri: logoUrl }} style={styles.logoImage} resizeMode="cover" />
             ) : (
@@ -189,7 +188,7 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
             )}
           </View>
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
-            <Text variant="bodySemibold" color={themeColors.brand}>
+            <Text variant="bodySemibold" color={colors.brand}>
               {pickingLogo ? 'Opening photos...' : logoUrl ? 'Change logo' : 'Upload a logo'}
             </Text>
             <Text variant="caption" color={colors.textMuted}>From your device's photo library</Text>
@@ -241,7 +240,7 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
           <Ionicons
             name={locationIsSet ? 'checkmark-circle' : 'alert-circle-outline'}
             size={18}
-            color={locationIsSet ? themeColors.primary : colors.textMuted}
+            color={locationIsSet ? colors.primary : colors.textMuted}
           />
           <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 8 }}>
             {locationIsSet ? 'Location set' : 'No location set yet'}
@@ -259,10 +258,10 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
       <Card padded={false}>
         <LinkRow icon="people-outline" title="Staff roster" sub="Add employees & set their roles"
           onPress={() => navigation.navigate('Directory')} />
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <LinkRow icon="business-outline" title="Meeting rooms" sub="Add or remove bookable rooms"
           onPress={() => navigation.navigate('MeetingRooms')} />
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <LinkRow icon="document-text-outline" title="Legal agreement" sub="The subscription terms your company agreed to"
           onPress={() => navigation.navigate('LegalAgreement')} />
       </Card>
@@ -273,11 +272,11 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
 function LinkRow({
   icon, title, sub, onPress,
 }: { icon: IoniconName; title: string; sub: string; onPress: () => void }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <Pressable style={styles.linkRow} onPress={onPress}>
-      <View style={styles.linkIcon}>
-        <Ionicons name={icon} size={18} color={themeColors.brand} />
+      <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
+        <Ionicons name={icon} size={18} color={colors.brand} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="bodySemibold">{title}</Text>
@@ -295,7 +294,7 @@ const styles = StyleSheet.create({
   logoPreview: {
     width: 56, height: 56, borderRadius: radius.md,
     borderWidth: 1, alignItems: 'center', justifyContent: 'center',
-    overflow: 'hidden', backgroundColor: colors.surfaceAlt,
+    overflow: 'hidden',
   },
   logoImage: { width: '100%', height: '100%' },
   codeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 4 },
@@ -308,11 +307,10 @@ const styles = StyleSheet.create({
   linkRow: { flexDirection: 'row', alignItems: 'center', padding: spacing.md },
   linkIcon: {
     width: 32, height: 32, borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
     marginRight: spacing.sm,
   },
-  divider: { height: 1, backgroundColor: colors.border, marginLeft: spacing.md + 32 + spacing.sm },
+  divider: { height: 1, marginLeft: spacing.md + 32 + spacing.sm },
   locationStatus: {
     flexDirection: 'row', alignItems: 'center',
     borderRadius: radius.md, padding: spacing.sm, marginBottom: spacing.sm,

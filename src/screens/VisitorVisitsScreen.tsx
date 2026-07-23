@@ -3,7 +3,7 @@ import { View, StyleSheet, FlatList } from 'react-native';
 import {
   Screen, Header, Text, Card, Badge, Button, EmptyState, RescheduleModal,
 } from '../components';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -15,6 +15,7 @@ import type { Appointment, AppointmentStatus, StatusKey } from '../types';
 // Visitors can also reschedule a pending visit, with a reason, same as
 // Employees can on their own Appointments tab.
 export default function VisitorVisitsScreen() {
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { appointments, employeeById } = useData();
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null);
@@ -57,10 +58,10 @@ export default function VisitorVisitsScreen() {
                 <Badge label={item.status} status={badgeStatus(item.status)} size="sm" />
               </View>
               <Text variant="caption" color={colors.textSecondary}>
-                {item.purpose} · Host: {host?.name || 'Unassigned'}
+                {item.purpose} Â· Host: {host?.name || 'Unassigned'}
               </Text>
               <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
-                {fmtTime(item.scheduledAt)} · Code {item.nfcCode || 'pending approval'}
+                {fmtTime(item.scheduledAt)} Â· Code {item.nfcCode || 'pending approval'}
               </Text>
               {item.rescheduleReason ? (
                 <Text variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>

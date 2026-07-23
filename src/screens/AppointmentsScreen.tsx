@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Button, Segmented, EmptyState, Avatar, RescheduleModal,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -213,6 +212,7 @@ interface AppointmentRowProps {
 }
 
 function AppointmentRow({ appointment, canAct, onAdmit, onReject, onReschedule }: AppointmentRowProps) {
+  const { colors } = useTheme();
   const { employeeById } = useData();
   const host = employeeById(appointment.hostId);
   const accent: StatusKey =
@@ -302,7 +302,7 @@ interface RejectReasonModalProps {
 function RejectReasonModal({
   visible, visitorName, canReschedule, onCancel, onConfirm, onRescheduleInstead,
 }: RejectReasonModalProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const [reason, setReason] = useState('');
 
   const onSubmit = () => {
@@ -317,7 +317,7 @@ function RejectReasonModal({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <KeyboardAvoidingView style={rejectStyles.wrap} behavior="padding">
-        <View style={rejectStyles.card}>
+        <View style={[rejectStyles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Reject visitor?</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             {visitorName} will be denied entry. Let them know why.
@@ -327,23 +327,23 @@ function RejectReasonModal({
             onChangeText={setReason}
             placeholder="e.g. No availability that day"
             placeholderTextColor={colors.textMuted}
-            style={rejectStyles.input}
+            style={[rejectStyles.input, { borderColor: colors.border, color: colors.textPrimary }]}
             multiline
           />
           {canReschedule ? (
             <Pressable onPress={onRescheduleInstead} style={rejectStyles.rescheduleLink}>
-              <Ionicons name="calendar-outline" size={16} color={themeColors.primary} />
-              <Text variant="caption" color={themeColors.primary} style={{ marginLeft: 6 }}>
+              <Ionicons name="calendar-outline" size={16} color={colors.primary} />
+              <Text variant="caption" color={colors.primary} style={{ marginLeft: 6 }}>
                 Just a scheduling conflict? Reschedule instead
               </Text>
             </Pressable>
           ) : null}
           <View style={rejectStyles.row}>
-            <Pressable onPress={onCancel} style={[rejectStyles.btn, rejectStyles.btnGhost]}>
+            <Pressable onPress={onCancel} style={[rejectStyles.btn, { backgroundColor: colors.surfaceAlt }]}>
               <Text variant="bodySemibold" color={colors.textSecondary}>Cancel</Text>
             </Pressable>
-            <Pressable onPress={onSubmit} style={[rejectStyles.btn, { backgroundColor: themeColors.brand }]}>
-              <Text variant="bodySemibold" color={themeColors.textInverse}>Reject</Text>
+            <Pressable onPress={onSubmit} style={[rejectStyles.btn, { backgroundColor: colors.brand }]}>
+              <Text variant="bodySemibold" color={colors.textInverse}>Reject</Text>
             </Pressable>
           </View>
         </View>
@@ -353,6 +353,7 @@ function RejectReasonModal({
 }
 
 function MetaRow({ icon, text }: { icon: IoniconName; text: string }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.metaRow}>
       <Ionicons name={icon} size={14} color={colors.textMuted} />
@@ -407,11 +408,11 @@ function responseSummary(responses: RoomBooking['responses']): string {
   if (acknowledged) parts.push(`${acknowledged} seen`);
   if (declined) parts.push(`${declined} declined`);
   if (pending) parts.push(`${pending} pending`);
-  return parts.join(' - ') || 'No responses yet';
+  return parts.join(' Â· ') || 'No responses yet';
 }
 
 function MeetingsView() {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { user } = useAuth();
   const {
     roomBookings, meetingRooms, employeeById, roomById, refreshRoomBookings, markParticipantAbsent,
@@ -479,20 +480,20 @@ function MeetingsView() {
                 return (
                   <Card key={room.id} style={{ marginBottom: spacing.sm }}>
                     <View style={styles.headRow}>
-                      <View style={[styles.roomIcon, { backgroundColor: themeColors.primarySurface }]}>
-                        <Ionicons name="business" size={20} color={themeColors.primary} />
+                      <View style={[styles.roomIcon, { backgroundColor: colors.primarySurface }]}>
+                        <Ionicons name="business" size={20} color={colors.primary} />
                       </View>
                       <View style={{ flex: 1, marginLeft: spacing.sm }}>
                         <Text variant="bodySemibold">{room.name}</Text>
                         <Text variant="caption" color={colors.textSecondary}>
-                          {room.floor} - Capacity {room.capacity}
+                          {room.floor} Â· Capacity {room.capacity}
                         </Text>
                       </View>
                       <Badge label={meta.label} status={meta.badge} size="sm" />
                     </View>
                     {booking && status !== 'available' ? (
                       <MetaRow icon="time-outline"
-                        text={`Next: ${fmtTime(booking.startTime)} to ${fmtTime(booking.endTime)}`} />
+                        text={`Next: ${fmtTime(booking.startTime)} â†’ ${fmtTime(booking.endTime)}`} />
                     ) : null}
                   </Card>
                 );
@@ -534,7 +535,7 @@ function MeetingsView() {
             </View>
             <View style={styles.metaList}>
               <MetaRow icon="time-outline"
-                text={`${fmtDate(item.startTime)} - ${fmtTime(item.startTime)} to ${fmtTime(item.endTime)}`} />
+                text={`${fmtDate(item.startTime)} Â· ${fmtTime(item.startTime)} â†’ ${fmtTime(item.endTime)}`} />
               <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
               {item.participantIds?.length ? (
                 <MetaRow icon="people-outline" text={`${item.participantIds.length} staff invited`} />
@@ -583,7 +584,7 @@ interface MarkAttendanceModalProps {
 // Only invited staff have a response row to toggle; external guests
 // aren't tracked here.
 function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttendanceModalProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { employeeById } = useData();
 
   if (!booking) return null;
@@ -591,7 +592,7 @@ function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttend
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={rejectStyles.wrap}>
-        <View style={rejectStyles.card}>
+        <View style={[rejectStyles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Mark attendance</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             {booking.title}
@@ -602,16 +603,16 @@ function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttend
               const response = booking.responses.find((r) => r.employeeId === id);
               const absent = response?.absent || false;
               return (
-                <View key={id} style={attendanceStyles.row}>
+                <View key={id} style={[attendanceStyles.row, { borderBottomColor: colors.border }]}>
                   <Text variant="bodySemibold" style={{ flex: 1 }}>{employee?.name || 'Unknown'}</Text>
                   <Pressable
                     onPress={() => onToggle(id, !absent)}
                     style={[
                       attendanceStyles.pill,
-                      { backgroundColor: absent ? colors.status.rejected.solid : themeColors.brand },
+                      { backgroundColor: absent ? colors.status.rejected.solid : colors.brand },
                     ]}
                   >
-                    <Text variant="caption" color={themeColors.textInverse}>
+                    <Text variant="caption" color={colors.textInverse}>
                       {absent ? 'Absent' : 'Present'}
                     </Text>
                   </Pressable>
@@ -648,25 +649,23 @@ const rejectStyles = StyleSheet.create({
   },
   card: {
     width: '100%', maxWidth: 360,
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
   input: {
-    borderWidth: 1, borderColor: colors.border, borderRadius: radius.md,
+    borderWidth: 1, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, paddingVertical: 10, minHeight: 44,
-    fontFamily: fonts.regular, fontSize: 14, color: colors.textPrimary,
+    fontFamily: fonts.regular, fontSize: 14,
   },
   rescheduleLink: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
   row: { flexDirection: 'row', marginTop: spacing.md, gap: spacing.sm },
   btn: { flex: 1, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  btnGhost: { backgroundColor: colors.surfaceAlt },
 });
 
 const attendanceStyles = StyleSheet.create({
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border,
+    paddingVertical: spacing.sm, borderBottomWidth: 1,
   },
   pill: {
     paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.md,

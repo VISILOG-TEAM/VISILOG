@@ -3,7 +3,6 @@ import { ScrollView, View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Input from './Input';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
@@ -48,11 +47,11 @@ export function DateChips({ value, onChange, days = 10 }: DateChipsProps) {
               onPress={() => { onChange(opt.dateStr); setCustomOpen(false); }}
               style={[
                 styles.chip,
-                { borderColor: colors.border, backgroundColor: staticColors.surface },
+                { borderColor: colors.border, backgroundColor: colors.surface },
                 selected && { backgroundColor: colors.primary, borderColor: colors.primary },
               ]}
             >
-              <Text variant="label" color={selected ? colors.textInverse : staticColors.textPrimary}>
+              <Text variant="label" color={selected ? colors.textInverse : colors.textPrimary}>
                 {opt.label}
               </Text>
             </Pressable>
@@ -63,18 +62,18 @@ export function DateChips({ value, onChange, days = 10 }: DateChipsProps) {
         onPress={() => setCustomOpen((o) => !o)}
         style={[
           styles.customToggle,
-          { borderColor: colors.border, backgroundColor: staticColors.surface },
+          { borderColor: colors.border, backgroundColor: colors.surface },
           (customOpen || !isQuickPick) && { backgroundColor: colors.primary, borderColor: colors.primary },
         ]}
       >
         <Ionicons
           name="calendar-outline"
           size={16}
-          color={(customOpen || !isQuickPick) ? colors.textInverse : staticColors.textPrimary}
+          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
         />
         <Text
           variant="label"
-          color={(customOpen || !isQuickPick) ? colors.textInverse : staticColors.textPrimary}
+          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
           style={{ marginLeft: 6 }}
         >
           Pick a date
@@ -127,11 +126,11 @@ export function TimeChips({ value, onChange, startHour = 7, endHour = 19, stepMi
               onPress={() => { onChange(t); setCustomOpen(false); }}
               style={[
                 styles.chip,
-                { borderColor: colors.border, backgroundColor: staticColors.surface },
+                { borderColor: colors.border, backgroundColor: colors.surface },
                 selected && { backgroundColor: colors.primary, borderColor: colors.primary },
               ]}
             >
-              <Text variant="label" color={selected ? colors.textInverse : staticColors.textPrimary}>
+              <Text variant="label" color={selected ? colors.textInverse : colors.textPrimary}>
                 {t}
               </Text>
             </Pressable>
@@ -142,18 +141,18 @@ export function TimeChips({ value, onChange, startHour = 7, endHour = 19, stepMi
         onPress={() => setCustomOpen((o) => !o)}
         style={[
           styles.customToggle,
-          { borderColor: colors.border, backgroundColor: staticColors.surface },
+          { borderColor: colors.border, backgroundColor: colors.surface },
           (customOpen || !isQuickPick) && { backgroundColor: colors.primary, borderColor: colors.primary },
         ]}
       >
         <Ionicons
           name="time-outline"
           size={16}
-          color={(customOpen || !isQuickPick) ? colors.textInverse : staticColors.textPrimary}
+          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
         />
         <Text
           variant="label"
-          color={(customOpen || !isQuickPick) ? colors.textInverse : staticColors.textPrimary}
+          color={(customOpen || !isQuickPick) ? colors.textInverse : colors.textPrimary}
           style={{ marginLeft: 6 }}
         >
           Pick a time

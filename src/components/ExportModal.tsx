@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Modal, StyleSheet, Alert } from 'react-native';
 import Text from './Text';
 import Button from './Button';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
@@ -37,7 +36,7 @@ export default function ExportModal({ visible, title, onClose, onExportCsv, onEx
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.wrap}>
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">{title}</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             Choose a format to share or save.
@@ -78,7 +77,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%', maxWidth: 360,
-    backgroundColor: staticColors.surface,
     borderRadius: radius.lg,
     padding: spacing.lg,
   },

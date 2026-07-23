@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Modal, Pressable, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import type { IoniconName, Option } from '../types';
@@ -21,7 +20,7 @@ interface SelectProps<T> {
 // options. Use for: purpose of visit, host employee, call type, etc.
 export default function Select<T>({
   label,
-  placeholder = 'Select…',
+  placeholder = 'Select...',
   value,
   options = [],
   onChange,
@@ -42,7 +41,11 @@ export default function Select<T>({
 
       <Pressable
         onPress={() => setOpen(true)}
-        style={[styles.field, error && styles.errored]}
+        style={[
+          styles.field,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+          error && { borderColor: colors.status.error.solid },
+        ]}
       >
         {icon ? (
           <Ionicons name={icon} size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
@@ -71,8 +74,8 @@ export default function Select<T>({
         onRequestClose={() => setOpen(false)}
       >
         <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-            <View style={styles.handle} />
+          <Pressable style={[styles.sheet, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
+            <View style={[styles.handle, { backgroundColor: colors.borderStrong }]} />
             {label ? (
               <Text variant="h3" style={{ marginBottom: spacing.sm }}>
                 {label}
@@ -82,7 +85,7 @@ export default function Select<T>({
             <FlatList
               data={options}
               keyExtractor={(item) => String(item.value)}
-              ItemSeparatorComponent={() => <View style={styles.sep} />}
+              ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: colors.border }]} />}
               renderItem={({ item }) => {
                 const active = item.value === value;
                 return (
@@ -119,21 +122,17 @@ const styles = StyleSheet.create({
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: staticColors.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     height: 48,
   },
-  errored: { borderColor: staticColors.status.error.solid },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(14, 27, 44, 0.45)',
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: staticColors.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.md,
@@ -143,7 +142,6 @@ const styles = StyleSheet.create({
   },
   handle: {
     width: 36, height: 4, borderRadius: 2,
-    backgroundColor: staticColors.borderStrong,
     alignSelf: 'center',
     marginBottom: spacing.sm,
   },
@@ -151,5 +149,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: spacing.sm,
   },
-  sep: { height: 1, backgroundColor: staticColors.border },
+  sep: { height: 1 },
 });

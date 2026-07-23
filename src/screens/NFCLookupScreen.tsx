@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Button, Input, Badge, Avatar,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -20,6 +19,7 @@ interface NFCLookupScreenProps {
 
 // Receptionist enters a visitor's NFC code, sees their full booking.
 export default function NFCLookupScreen({ navigation }: NFCLookupScreenProps) {
+  const { colors } = useTheme();
   const { findAppointmentByCode, admitAppointment, employeeById } = useData();
   const [code, setCode] = useState('');
   const [found, setFound] = useState<Appointment | null>(null);
@@ -72,7 +72,7 @@ export default function NFCLookupScreen({ navigation }: NFCLookupScreenProps) {
           <Row icon="call-outline" label="Phone" value={found.visitorPhone} />
           <Row icon="briefcase-outline" label="Purpose" value={found.purpose} />
           <Row icon="people-outline" label="Host"
-            value={employeeById(found.hostId)?.name || '—'} />
+            value={employeeById(found.hostId)?.name || '--'} />
           <Row icon="time-outline" label="Scheduled"
             value={fmtDateTime(found.scheduledAt)} />
 
@@ -98,10 +98,10 @@ export default function NFCLookupScreen({ navigation }: NFCLookupScreenProps) {
 }
 
 function Row({ icon, label, value }: { icon: IoniconName; label: string; value: string }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <View style={styles.row}>
-      <Ionicons name={icon} size={16} color={themeColors.brand} style={{ width: 24 }} />
+      <Ionicons name={icon} size={16} color={colors.brand} style={{ width: 24 }} />
       <Text variant="caption" color={colors.textSecondary} style={{ width: 80 }}>
         {label}
       </Text>

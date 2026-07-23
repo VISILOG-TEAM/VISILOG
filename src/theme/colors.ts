@@ -1,20 +1,26 @@
 // VisiLog color system
 // -------------------------------------------------------------
 // Brand identity: a deep institutional emerald green paired with a
-// gold accent (the "access-granted / tap" colour) — VRA's default.
+// gold accent (the "access-granted / tap" colour) -- VRA's default.
 // Functional status colours stay conventional (green / amber / red)
 // so a receptionist can never misread a visitor's state at a glance
-// — kept distinct from any brand colour so the two don't get confused.
+// -- kept distinct from any brand colour so the two don't get confused.
 //
-// buildColors(brandTheme) makes this multi-tenant: each Organization
-// carries its own {brand, primary, ...} shades, and ThemeContext calls
-// this factory with the signed-in user's org to produce that org's
-// full colors object. Neutrals/surfaces/status colors don't vary per
-// org, only brand + primary do.
+// buildColors(brandTheme, dark) makes this both multi-tenant and
+// light/dark-aware: each Organization carries its own {brand, primary,
+// ...} shades, and ThemeContext calls this factory with the signed-in
+// user's org (and the current light/dark mode) to produce that org's
+// full colors object. Status hues and the brand shades themselves stay
+// the same hex in both modes (they're already saturated enough to read
+// on a dark background); only neutrals/surfaces and the tint-derived
+// primarySurface/primarySurfaceStrong swap per mode.
 
 // An organization's brand shades, as returned by the backend's
 // OrganizationDto.theme (see AuthContext) or one of Company Setup's
-// preset palettes.
+// preset palettes. These are computed for a light background --
+// buildColors derives dark-mode-appropriate tinted surfaces from
+// `primary` rather than using primarySurface/primarySurfaceStrong
+// as-is when dark=true (see mix() below).
 export interface BrandTheme {
   brand: string;
   brandDark: string;
@@ -53,8 +59,8 @@ export interface Colors extends BrandTheme {
 
 const palette = {
   // Brand emerald green (VRA default)
-  emerald900: '#0A2A1D', // deepest — primary text on light surfaces
-  emerald800: '#0F3D2A', // brand ink — nav bars, dark surfaces, logo
+  emerald900: '#0A2A1D', // deepest -- primary text on light surfaces
+  emerald800: '#0F3D2A', // brand ink -- nav bars, dark surfaces, logo
   emerald700: '#155636',
   emerald600: '#1D7248',
 
@@ -64,7 +70,7 @@ const palette = {
   gold100: '#F5E6BC',
   gold050: '#FBF3DE',
 
-  // Cool, lobby-clean neutrals
+  // Cool, lobby-clean neutrals (light mode)
   slate900: '#0F172A',
   slate700: '#334155',
   slate500: '#64748B',
@@ -77,11 +83,23 @@ const palette = {
   white: '#FFFFFF',
   black: '#000000',
 
-  // Status families (high-clarity, conventional)
-  green600: '#16A34A', green100: '#DCFCE7',
-  amber600: '#D97706', amber100: '#FEF3C7',
-  red600: '#DC2626', red100: '#FEE2E2',
-  blue600: '#2563EB', blue100: '#DBEAFE',
+  // Status families (high-clarity, conventional) -- solid/fg shared by
+  // both modes, bg differs (see LIGHT_STATUS_BG/DARK_STATUS_BG below).
+  green600: '#16A34A', green100: '#DCFCE7', greenDarkBg: '#123322', greenDarkFg: '#4ADE80',
+  amber600: '#D97706', amber100: '#FEF3C7', amberDarkBg: '#3A2A0C', amberDarkFg: '#FBBF24',
+  red600: '#DC2626', red100: '#FEE2E2', redDarkBg: '#3A1414', redDarkFg: '#F87171',
+  blue600: '#2563EB', blue100: '#DBEAFE', blueDarkBg: '#122A4A', blueDarkFg: '#60A5FA',
+
+  // Deep, near-black neutrals (dark mode) -- slightly green-tinted to
+  // stay consistent with the brand rather than reading as pure grey.
+  ink900: '#0B1512', // background
+  ink800: '#132019', // surface
+  ink700: '#1A2921', // surfaceAlt
+  ink600: '#24352B', // border
+  ink500: '#34493D', // borderStrong
+  mist100: '#F1F5F2', // textPrimary
+  mist300: '#A9B7AF', // textSecondary
+  mist500: '#78877E', // textMuted
 };
 
 // VRA's own brand shades, used when no organization theme is supplied
@@ -96,45 +114,97 @@ const DEFAULT_BRAND_THEME: BrandTheme = {
   primarySurfaceStrong: palette.gold100,
 };
 
-export const buildColors = (brandTheme?: BrandTheme | null): Colors => {
+// Blends two "#RRGGBB" hexes -- weight is how much of `hexA` to use
+// (1 = all hexA, 0 = all hexB). Used to derive a dark-mode-appropriate
+// tinted surface from an org's own `primary` color, since the stored
+// primarySurface/primarySurfaceStrong are pale tints computed for a
+// light background and would look wrong (a near-white chip) on a dark
+// one -- this way the tint always scales with whatever brand color the
+// org picked, without needing a separate dark value from the backend.
+const mix = (hexA: string, hexB: string, weight: number): string => {
+  const a = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexA);
+  const b = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexB);
+  if (!a || !b) return hexA;
+  const blend = (i: number) => {
+    const av = parseInt(a[i], 16);
+    const bv = parseInt(b[i], 16);
+    return Math.round(av * weight + bv * (1 - weight)).toString(16).padStart(2, '0');
+  };
+  return `#${blend(1)}${blend(2)}${blend(3)}`;
+};
+
+export const buildColors = (brandTheme?: BrandTheme | null, dark = false): Colors => {
   const b = brandTheme || DEFAULT_BRAND_THEME;
   return {
-    // Brand (varies per organization)
+    // Brand + primary action -- same hex in both modes (already
+    // saturated enough to read on a dark background).
     brand: b.brand,
     brandDark: b.brandDark,
     brandTint: b.brandTint,
-
-    // Primary action (varies per organization)
     primary: b.primary,
     primaryPressed: b.primaryPressed,
-    primarySurface: b.primarySurface,
-    primarySurfaceStrong: b.primarySurfaceStrong,
+
+    // Tinted "chip" surfaces behind icons/badges -- derived from the
+    // org's own primary color against the current mode's surface, not
+    // used as-is in dark mode (see mix() above).
+    primarySurface: dark ? mix(b.primary, palette.ink700, 0.18) : b.primarySurface,
+    primarySurfaceStrong: dark ? mix(b.primary, palette.ink700, 0.32) : b.primarySurfaceStrong,
 
     // Surfaces
-    background: palette.slate050,
-    surface: palette.white,
-    surfaceAlt: palette.slate100,
+    background: dark ? palette.ink900 : palette.slate050,
+    surface: dark ? palette.ink800 : palette.white,
+    surfaceAlt: dark ? palette.ink700 : palette.slate100,
 
     // Text
-    textPrimary: palette.emerald900,
-    textSecondary: palette.slate500,
-    textMuted: palette.slate400,
+    textPrimary: dark ? palette.mist100 : palette.emerald900,
+    textSecondary: dark ? palette.mist300 : palette.slate500,
+    textMuted: dark ? palette.mist500 : palette.slate400,
     textInverse: palette.white,
 
     // Lines
-    border: palette.slate200,
-    borderStrong: palette.slate300,
+    border: dark ? palette.ink600 : palette.slate200,
+    borderStrong: dark ? palette.ink500 : palette.slate300,
 
     // Status: each key carries a fill (solid), a soft surface (bg) and a
-    // readable foreground (fg) for text/icons on that surface.
+    // readable foreground (fg) for text/icons on that surface. `solid`
+    // stays the same vivid hue in both modes; `bg`/`fg` swap for
+    // contrast against a dark background.
     status: {
-      onsite: { solid: palette.green600, bg: palette.green100, fg: '#0B6B33' },
-      success: { solid: palette.green600, bg: palette.green100, fg: '#0B6B33' },
-      pending: { solid: palette.amber600, bg: palette.amber100, fg: '#92400E' },
-      rejected: { solid: palette.red600, bg: palette.red100, fg: '#991B1B' },
-      error: { solid: palette.red600, bg: palette.red100, fg: '#991B1B' },
-      info: { solid: palette.blue600, bg: palette.blue100, fg: '#1E40AF' },
-      neutral: { solid: palette.slate500, bg: palette.slate100, fg: palette.slate700 },
+      onsite: {
+        solid: palette.green600,
+        bg: dark ? palette.greenDarkBg : palette.green100,
+        fg: dark ? palette.greenDarkFg : '#0B6B33',
+      },
+      success: {
+        solid: palette.green600,
+        bg: dark ? palette.greenDarkBg : palette.green100,
+        fg: dark ? palette.greenDarkFg : '#0B6B33',
+      },
+      pending: {
+        solid: palette.amber600,
+        bg: dark ? palette.amberDarkBg : palette.amber100,
+        fg: dark ? palette.amberDarkFg : '#92400E',
+      },
+      rejected: {
+        solid: palette.red600,
+        bg: dark ? palette.redDarkBg : palette.red100,
+        fg: dark ? palette.redDarkFg : '#991B1B',
+      },
+      error: {
+        solid: palette.red600,
+        bg: dark ? palette.redDarkBg : palette.red100,
+        fg: dark ? palette.redDarkFg : '#991B1B',
+      },
+      info: {
+        solid: palette.blue600,
+        bg: dark ? palette.blueDarkBg : palette.blue100,
+        fg: dark ? palette.blueDarkFg : '#1E40AF',
+      },
+      neutral: {
+        solid: palette.slate500,
+        bg: dark ? palette.ink700 : palette.slate100,
+        fg: dark ? palette.mist300 : palette.slate700,
+      },
     },
 
     // Escape hatch for raw values
@@ -142,9 +212,9 @@ export const buildColors = (brandTheme?: BrandTheme | null): Colors => {
   };
 };
 
-// Default/back-compat static export — VRA's own colors. Used by
-// pre-login screens (Splash, Login, Signup) where no organization is
-// known yet, and as the fallback for `useTheme()`.
+// Default/back-compat static export -- VRA's own colors, light mode.
+// Used by pre-login screens before ThemeProvider has resolved the
+// device's actual light/dark setting, and as the context's fallback.
 export const colors = buildColors();
 
 // "#RRGGBB" -> "r,g,b", for building rgba() strings from a org's brand

@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Button, Segmented, StatTile, Badge,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -17,11 +16,11 @@ interface ReportsScreenProps {
 
 type ReportRange = '24h' | '7d' | '30d';
 
-// ReportsScreen — date-range filtered visit summary with simple charts
+// ReportsScreen -- date-range filtered visit summary with simple charts
 // drawn in plain React Native (no chart library required).
 // Per spec: date range, export PDF/CSV, "chart visualisations".
 export default function ReportsScreen({ navigation }: ReportsScreenProps) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const { visitors, calls, employeeById } = useData();
   const [range, setRange] = useState<ReportRange>('7d');
 
@@ -67,7 +66,7 @@ export default function ReportsScreen({ navigation }: ReportsScreenProps) {
 
   const avgDuration = useMemo(() => {
     const completed = windowVisitors.filter((v) => v.checkOutAt);
-    if (!completed.length) return '—';
+    if (!completed.length) return '--';
     const totalMin = completed.reduce((sum, v) => {
       return sum + (new Date(v.checkOutAt as string).getTime() - new Date(v.checkInAt).getTime()) / 60000;
     }, 0);
@@ -119,12 +118,12 @@ export default function ReportsScreen({ navigation }: ReportsScreenProps) {
             return (
               <View key={i} style={styles.barCol}>
                 <View style={styles.barTrack}>
-                  <View style={[styles.bar, { height: Math.max(2, h), backgroundColor: themeColors.primary }]} />
+                  <View style={[styles.bar, { height: Math.max(2, h), backgroundColor: colors.primary }]} />
                 </View>
                 <Text variant="caption" color={colors.textSecondary} style={styles.barLabel}>
                   {b.label}
                 </Text>
-                <Text style={styles.barValue}>{b.count}</Text>
+                <Text style={[styles.barValue, { color: colors.textPrimary }]}>{b.count}</Text>
               </View>
             );
           })}
@@ -143,8 +142,8 @@ export default function ReportsScreen({ navigation }: ReportsScreenProps) {
         ) : (
           topHosts.map((h, i) => (
             <View key={h.employee?.id || i} style={styles.hostRow}>
-              <View style={[styles.rank, { backgroundColor: themeColors.primarySurface }]}>
-                <Text style={[styles.rankNum, { color: themeColors.primary }]}>{i + 1}</Text>
+              <View style={[styles.rank, { backgroundColor: colors.primarySurface }]}>
+                <Text style={[styles.rankNum, { color: colors.primary }]}>{i + 1}</Text>
               </View>
               <View style={{ flex: 1, marginLeft: spacing.sm }}>
                 <Text variant="bodySemibold">{h.employee?.name || 'Unknown'}</Text>
@@ -198,7 +197,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 4, borderTopRightRadius: 4,
   },
   barLabel: { marginTop: 4 },
-  barValue: { fontFamily: fonts.semibold, fontSize: 11, color: colors.textPrimary },
+  barValue: { fontFamily: fonts.semibold, fontSize: 11 },
 
   hostRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
   rank: {

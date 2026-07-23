@@ -1,7 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import React, { useEffect, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   useFonts,
@@ -13,7 +13,7 @@ import {
 
 import { AuthProvider } from './src/context/AuthContext';
 import { DataProvider } from './src/context/DataContext';
-import { ThemeProvider } from './src/theme/ThemeContext';
+import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import SplashScreen from './src/screens/SplashScreen';
 
@@ -44,15 +44,36 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <AuthProvider>
-          <DataProvider>
-            <NavigationContainer>
-              <StatusBar style="dark" />
-              <RootNavigator />
-            </NavigationContainer>
-          </DataProvider>
-        </AuthProvider>
+        <AppContent />
       </ThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+// Reads the active theme, so it must live inside ThemeProvider rather
+// than in App() itself -- drives both the OS status bar icon color and
+// React Navigation's own screen-transition background/text colors.
+function AppContent() {
+  const { colors, dark } = useTheme();
+  const navTheme = {
+    ...(dark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(dark ? DarkTheme : DefaultTheme).colors,
+      primary: colors.primary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.textPrimary,
+      border: colors.border,
+    },
+  };
+  return (
+    <AuthProvider>
+      <DataProvider>
+        <NavigationContainer theme={navTheme}>
+          <StatusBar style={dark ? 'light' : 'dark'} />
+          <RootNavigator />
+        </NavigationContainer>
+      </DataProvider>
+    </AuthProvider>
   );
 }

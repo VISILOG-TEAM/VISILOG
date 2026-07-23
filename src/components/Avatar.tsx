@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
 import Text from './Text';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/typography';
 
 // Shows a photo when `uri` is given, otherwise coloured initials. The
@@ -29,10 +29,11 @@ interface AvatarProps {
 }
 
 export default function Avatar({ name = '', uri, size = 44 }: AvatarProps) {
+  const { colors } = useTheme();
   const dim = { width: size, height: size, borderRadius: size / 2 };
 
   if (uri) {
-    return <Image source={{ uri }} style={[dim, styles.img]} />;
+    return <Image source={{ uri }} style={[dim, styles.img, { backgroundColor: colors.surfaceAlt }]} />;
   }
 
   const tint = tintFor(name);
@@ -47,5 +48,5 @@ export default function Avatar({ name = '', uri, size = 44 }: AvatarProps) {
 
 const styles = StyleSheet.create({
   circle: { alignItems: 'center', justifyContent: 'center' },
-  img: { backgroundColor: colors.surfaceAlt },
+  img: {},
 });

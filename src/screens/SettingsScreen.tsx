@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Button, Input, Avatar, Badge,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -19,7 +18,7 @@ interface SettingsScreenProps {
 // Per the VisiLog spec: profile info, password change, notification
 // preferences, organisation branding, sign-out.
 export default function SettingsScreen({ navigation }: SettingsScreenProps) {
-  const { colors: themeColors, setOrgTheme } = useTheme();
+  const { colors, dark, setOrgTheme, setDarkOverride } = useTheme();
   const { user, logout } = useAuth();
 
   const [notifyAppts, setNotifyAppts] = useState(true);
@@ -41,7 +40,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
       return;
     }
     if (newPw !== confirmPw) {
-      Alert.alert('Mismatch', 'New passwords don\u2019t match.');
+      Alert.alert('Mismatch', "New passwords don't match.");
       return;
     }
     Alert.alert('Password updated', 'Your password has been changed.');
@@ -50,7 +49,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
   };
 
   const onLogout = () => {
-    Alert.alert('Sign out?', 'You\u2019ll need to sign in again to access VisiLog.', [
+    Alert.alert('Sign out?', "You'll need to sign in again to access VisiLog.", [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Sign out', style: 'destructive', onPress: () => { logout(); setOrgTheme(null); } },
     ]);
@@ -104,8 +103,8 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
           </>
         ) : (
           <Pressable onPress={() => setEditingPassword(true)} style={styles.linkRow}>
-            <View style={styles.linkIcon}>
-              <Ionicons name="key-outline" size={18} color={themeColors.brand} />
+            <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
+              <Ionicons name="key-outline" size={18} color={colors.brand} />
             </View>
             <View style={{ flex: 1 }}>
               <Text variant="bodySemibold">Change password</Text>
@@ -118,7 +117,19 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
         )}
       </Card>
 
-      {/* Notifications — these toggles are about staff workflow (someone
+      {/* Appearance */}
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Appearance
+      </Text>
+      <Card padded={false}>
+        <ToggleRow
+          label="Dark mode"
+          sub="Use a dark color scheme throughout the app."
+          value={dark} onChange={setDarkOverride}
+        />
+      </Card>
+
+      {/* Notifications -- these toggles are about staff workflow (someone
           else pre-booking, missing a call, a card being tapped), which
           means nothing to a visitor account, so this whole section is
           staff-only. */}
@@ -149,7 +160,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
         </>
       ) : null}
 
-      {/* Organisation — administration for the whole tenant, so only the
+      {/* Organisation -- administration for the whole tenant, so only the
           Manager/Administrator who owns that org sees it. Everyone else's
           settings are about their own account, not the company's. */}
       {user?.role === 'manager' ? (
@@ -159,7 +170,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
           </Text>
           <Card padded={false}>
             <LinkRow icon="card-outline" title="Billing & subscription"
-              sub={`${user.organizationName} · manage plan & invoices`}
+              sub={`${user.organizationName} Â· manage plan & invoices`}
               onPress={() => navigation.navigate('Billing')} />
             <Divider />
             <LinkRow icon="business-outline" title="Company Setup"
@@ -218,7 +229,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 function ToggleRow({
   label, sub, value, onChange,
 }: { label: string; sub: string; value: boolean; onChange: (value: boolean) => void }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <View style={styles.toggleRow}>
       <View style={{ flex: 1, marginRight: spacing.sm }}>
@@ -228,7 +239,7 @@ function ToggleRow({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: colors.borderStrong, true: themeColors.primary }}
+        trackColor={{ false: colors.borderStrong, true: colors.primary }}
         thumbColor="#FFFFFF"
       />
     </View>
@@ -238,11 +249,11 @@ function ToggleRow({
 function LinkRow({
   icon, title, sub, onPress,
 }: { icon: IoniconName; title: string; sub?: string; onPress?: () => void }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   return (
     <Pressable style={styles.linkRow} onPress={onPress}>
-      <View style={styles.linkIcon}>
-        <Ionicons name={icon} size={18} color={themeColors.brand} />
+      <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
+        <Ionicons name={icon} size={18} color={colors.brand} />
       </View>
       <View style={{ flex: 1 }}>
         <Text variant="bodySemibold">{title}</Text>
@@ -254,7 +265,8 @@ function LinkRow({
 }
 
 function Divider() {
-  return <View style={styles.divider} />;
+  const { colors } = useTheme();
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 }
 
 const styles = StyleSheet.create({
@@ -270,9 +282,8 @@ const styles = StyleSheet.create({
   },
   linkIcon: {
     width: 32, height: 32, borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
     alignItems: 'center', justifyContent: 'center',
     marginRight: spacing.sm,
   },
-  divider: { height: 1, backgroundColor: colors.border, marginLeft: spacing.md + 32 + spacing.sm },
+  divider: { height: 1, marginLeft: spacing.md + 32 + spacing.sm },
 });

@@ -2,7 +2,6 @@ import React, { type ReactNode } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
-import { colors as staticColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import type { IoniconName } from '../types';
@@ -21,7 +20,7 @@ interface HeaderProps {
   onRightPress?: () => void;
   /** Unread-count badge for the single rightIcon button. */
   badge?: number;
-  /** A row of icon buttons (e.g. notifications bell + logout) — takes
+  /** A row of icon buttons (e.g. notifications bell + logout) -- takes
    * priority over rightIcon/right when given. */
   rightActions?: HeaderAction[];
   right?: ReactNode;
@@ -34,12 +33,16 @@ function ActionButton({ icon, onPress, badge }: HeaderAction) {
     <Pressable
       onPress={onPress}
       hitSlop={8}
-      style={({ pressed }) => [styles.iconBtn, pressed && { opacity: 0.6 }]}
+      style={({ pressed }) => [
+        styles.iconBtn,
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        pressed && { opacity: 0.6 },
+      ]}
     >
       <Ionicons name={icon} size={20} color={colors.brand} />
       {badge ? (
-        <View style={styles.badge}>
-          <Text variant="caption" color={staticColors.surface} style={styles.badgeText}>
+        <View style={[styles.badge, { backgroundColor: colors.palette.red600 }]}>
+          <Text variant="caption" color={colors.textInverse} style={styles.badgeText}>
             {badge > 9 ? '9+' : badge}
           </Text>
         </View>
@@ -104,8 +107,8 @@ export default function Header({
   );
 }
 
-// row/left/backBtn/eyebrow/subtitle are layout-only; iconBtn's
-// background/border are neutral, so this stays a plain StyleSheet.
+// row/left/backBtn/eyebrow/subtitle are layout-only; iconBtn's/badge's
+// color values are applied inline above from useTheme() instead.
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
@@ -127,9 +130,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: staticColors.surface,
     borderWidth: 1,
-    borderColor: staticColors.border,
   },
   actionsRow: { flexDirection: 'row' },
   actionsGap: { marginLeft: spacing.xs },
@@ -143,7 +144,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: staticColors.palette.red600,
   },
   badgeText: { fontSize: 10, lineHeight: 12 },
 });

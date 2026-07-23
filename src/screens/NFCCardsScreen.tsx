@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Screen, Header, Text, Card, Badge, Segmented, EmptyState, Avatar, Button,
 } from '../components';
-import { colors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -19,7 +18,7 @@ interface NFCCardsScreenProps {
 
 type NfcCardFilter = 'active' | 'revoked' | 'all';
 
-// NFCCardsScreen — list of virtual NFC cards.
+// NFCCardsScreen -- list of virtual NFC cards.
 // Per the VisiLog 2.0 spec: each card has a holder, an issuance date,
 // an expiry, and a status ('active' | 'revoked'). Receptionists can
 // revoke (or in this demo, "rotate") a card.
@@ -94,7 +93,7 @@ export default function NFCCardsScreen({ navigation }: NFCCardsScreenProps) {
 function NfcCard({
   card, onRevoke,
 }: { card: NfcCardType & { holderName: string }; onRevoke: () => void }) {
-  const { colors: themeColors } = useTheme();
+  const { colors } = useTheme();
   const isActive = card.status === 'active';
   return (
     <Card
@@ -102,11 +101,11 @@ function NfcCard({
       style={{ marginHorizontal: spacing.md }}
     >
       <View style={styles.cardHead}>
-        <View style={[styles.chip, { backgroundColor: isActive ? themeColors.primarySurface : themeColors.status.rejected.bg }]}>
+        <View style={[styles.chip, { backgroundColor: isActive ? colors.primarySurface : colors.status.rejected.bg }]}>
           <Ionicons
             name="card"
             size={20}
-            color={isActive ? themeColors.primary : themeColors.status.rejected.solid}
+            color={isActive ? colors.primary : colors.status.rejected.solid}
           />
         </View>
         <View style={{ flex: 1, marginLeft: spacing.sm }}>
@@ -118,9 +117,9 @@ function NfcCard({
         <Badge label={card.status} status={isActive ? 'success' : 'rejected'} size="sm" />
       </View>
 
-      <View style={styles.tokenRow}>
+      <View style={[styles.tokenRow, { backgroundColor: colors.surfaceAlt }]}>
         <Text variant="caption" color={colors.textMuted}>Token</Text>
-        <Text style={[styles.token, { color: themeColors.brand }]}>{card.tokenHash}</Text>
+        <Text style={[styles.token, { color: colors.brand }]}>{card.tokenHash}</Text>
       </View>
 
       <View style={styles.dateRow}>
@@ -156,7 +155,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   tokenRow: {
-    backgroundColor: colors.surfaceAlt,
     borderRadius: radius.sm,
     padding: spacing.sm,
     marginBottom: spacing.sm,
