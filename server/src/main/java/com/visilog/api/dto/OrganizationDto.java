@@ -9,8 +9,13 @@ public record OrganizationDto(
         String name,
         String logoUrl,
         ThemeDto theme,
-        OfficeLocationDto officeLocation,
-        String wifiNetworkName
+        String wifiNetworkName,
+        // The org's current plan id -- exposed here (not just via the
+        // manager-only GET /billing) so every role can do client-side
+        // plan-feature checks like SettingsScreen's priority-support
+        // badge and VisitorHomeScreen's tour map gate, without needing
+        // access to the rest of Billing (payment info, invoices).
+        String planId
 ) {
     public record ThemeDto(
             String brand, String brandDark, String brandTint,
@@ -18,17 +23,12 @@ public record OrganizationDto(
     ) {
     }
 
-    public record OfficeLocationDto(Double latitude, Double longitude, Integer radiusMeters) {
-    }
-
-    public static OrganizationDto from(Organization org) {
-        var officeLocation = org.getOfficeLatitude() == null ? null
-                : new OfficeLocationDto(org.getOfficeLatitude(), org.getOfficeLongitude(), org.getOfficeRadiusMeters());
+    public static OrganizationDto from(Organization org, String planId) {
         return new OrganizationDto(
                 org.getId(), org.getCode(), org.getName(), org.getLogoUrl(),
                 new ThemeDto(
                         org.getBrand(), org.getBrandDark(), org.getBrandTint(),
                         org.getPrimary(), org.getPrimaryPressed(), org.getPrimarySurface(), org.getPrimarySurfaceStrong()),
-                officeLocation, org.getWifiNetworkName());
+                org.getWifiNetworkName(), planId);
     }
 }

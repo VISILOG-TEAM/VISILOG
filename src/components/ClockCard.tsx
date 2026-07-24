@@ -41,8 +41,9 @@ import { ApiError } from '../api/client';
 // is enough (no biometric/password re-check).
 export default function ClockCard() {
   const { colors } = useTheme();
-  const { user, organization, verifyPassword } = useAuth();
-  const { clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday } = useData();
+  const { user, verifyPassword } = useAuth();
+  const { clockRecords, clockIn, clockOut, isClockedIn, hasClockedInToday, officeLocations } =
+    useData();
   const [checking, setChecking] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [password, setPassword] = useState('');
@@ -81,7 +82,7 @@ export default function ClockCard() {
         Alert.alert('Company network required', 'Connect to the company WiFi to clock in.');
         return;
       }
-      const locationResult = await isAtOffice(organization?.officeLocation);
+      const locationResult = await isAtOffice(officeLocations);
       if (!locationResult.ok) {
         setChecking(false);
         Alert.alert('Location check failed', locationResult.error);
@@ -121,7 +122,10 @@ export default function ClockCard() {
           onPress: async () => {
             try {
               const r = await clockOut(employeeId, user!.name);
-              Alert.alert('Checked out', `See you next time. Clocked out at ${fmtTime(r.timestamp)}.`);
+              Alert.alert(
+                'Checked out',
+                `See you next time. Clocked out at ${fmtTime(r.timestamp)}.`,
+              );
             } catch (err) {
               Alert.alert(
                 'Could not clock out',

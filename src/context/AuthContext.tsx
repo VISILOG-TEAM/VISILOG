@@ -71,11 +71,6 @@ interface AuthContextValue {
   logout: () => Promise<void>;
   verifyPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
   updateOrganization: (patch: OrganizationPatch) => Promise<AuthResult>;
-  updateOfficeLocation: (
-    latitude: number,
-    longitude: number,
-    radiusMeters: number,
-  ) => Promise<AuthResult>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -324,29 +319,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Company Setup > office location (manager only) -- backs the
-  // clock-in geofence check (src/data/locationCheck.ts).
-  const updateOfficeLocation = async (
-    latitude: number,
-    longitude: number,
-    radiusMeters: number,
-  ): Promise<AuthResult> => {
-    try {
-      const org = await apiClient.patch<Organization>('/api/v1/org/office-location', {
-        latitude,
-        longitude,
-        radiusMeters,
-      });
-      setOrganization(org);
-      return { ok: true, organization: org };
-    } catch (err) {
-      return {
-        ok: false,
-        error: err instanceof ApiError ? err.message : 'Could not save the office location.',
-      };
-    }
-  };
-
   return (
     <AuthContext.Provider
       value={{
@@ -362,7 +334,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         forgotPassword,
         resetPassword,
         updateOrganization,
-        updateOfficeLocation,
       }}
     >
       {children}

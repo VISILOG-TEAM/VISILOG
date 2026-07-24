@@ -7,8 +7,10 @@ import { Screen, Header, Text, Card, Button, Input } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
+import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
-import type { BrandTheme, IoniconName } from '../types';
+import type { BrandTheme, IoniconName, OfficeLocation } from '../types';
 
 interface CompanySetupScreenProps {
   navigation: RootStackNavigation;
@@ -79,7 +81,9 @@ const THEME_PRESETS: { id: string; label: string; theme: BrandTheme }[] = [
 // each have their own dedicated screens, linked from here.
 export default function CompanySetupScreen({ navigation }: CompanySetupScreenProps) {
   const { colors } = useTheme();
-  const { organization, updateOrganization, updateOfficeLocation } = useAuth();
+  const { organization, updateOrganization } = useAuth();
+  const { officeLocations, addOfficeLocation, updateOfficeLocation, removeOfficeLocation } =
+    useData();
 
   const [name, setName] = useState(organization?.name || '');
   const [logoUrl, setLogoUrl] = useState(organization?.logoUrl || '');
@@ -114,13 +118,38 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     }
   };
 
-  const [latitude, setLatitude] = useState(String(organization?.officeLocation?.latitude ?? ''));
-  const [longitude, setLongitude] = useState(String(organization?.officeLocation?.longitude ?? ''));
-  const [radiusMeters, setRadiusMeters] = useState(
-    String(organization?.officeLocation?.radiusMeters ?? '500'),
-  );
+  // Office locations -- an org can have more than one (see
+  // DataContext.officeLocations); `editingId` is null while adding a
+  // new one, or an existing location's id while editing it. The
+  // backend allows one free on any plan and 409s with an upgrade
+  // message on a second, which onSaveLocation surfaces as-is rather
+  // than pre-checking the plan here.
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [locName, setLocName] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [radiusMeters, setRadiusMeters] = useState('500');
   const [savingLocation, setSavingLocation] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  const onStartAddLocation = () => {
+    setEditingId(null);
+    setLocName('');
+    setLatitude('');
+    setLongitude('');
+    setRadiusMeters('500');
+    setFormOpen(true);
+  };
+
+  const onStartEditLocation = (loc: OfficeLocation) => {
+    setEditingId(loc.id);
+    setLocName(loc.name);
+    setLatitude(String(loc.latitude));
+    setLongitude(String(loc.longitude));
+    setRadiusMeters(String(loc.radiusMeters));
+    setFormOpen(true);
+  };
 
   // Fills lat/lng from the phone's own GPS instead of making someone
   // look up coordinates manually -- stand at the office and tap this.
@@ -172,24 +201,60 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     if (!result.ok) Alert.alert('Could not save', result.error);
   };
 
-  const locationIsSet = latitude.trim() !== '' && longitude.trim() !== '';
-
   const onSaveLocation = async () => {
+    if (!locName.trim()) {
+      Alert.alert('Almost there', 'Give this location a name (e.g. "Head Office").');
+      return;
+    }
     const lat = parseFloat(latitude);
     const lng = parseFloat(longitude);
     const radius = parseInt(radiusMeters, 10) || 500;
     if (Number.isNaN(lat) || Number.isNaN(lng)) {
       Alert.alert(
         'Almost there',
-        'Tap "Use my current location" while standing at the office first.',
+        'Tap "Use my current location" while standing at that office first.',
       );
       return;
     }
     setSavingLocation(true);
-    const result = await updateOfficeLocation(lat, lng, radius);
-    setSavingLocation(false);
-    if (!result.ok) Alert.alert('Could not save', result.error);
-    else Alert.alert('Saved', 'Staff will need to be within range of this location to clock in.');
+    try {
+      const input = { name: locName.trim(), latitude: lat, longitude: lng, radiusMeters: radius };
+      if (editingId) {
+        await updateOfficeLocation(editingId, input);
+      } else {
+        await addOfficeLocation(input);
+      }
+      setFormOpen(false);
+      Alert.alert('Saved', 'Staff will need to be within range of this location to clock in.');
+    } catch (err) {
+      Alert.alert(
+        'Could not save',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
+    } finally {
+      setSavingLocation(false);
+    }
+  };
+
+  const onRemoveLocation = (loc: OfficeLocation) => {
+    Alert.alert(
+      'Remove this location?',
+      `Staff will no longer be able to clock in at ${loc.name}.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () =>
+            removeOfficeLocation(loc.id).catch((err) =>
+              Alert.alert(
+                'Could not remove location',
+                err instanceof ApiError ? err.message : 'Something went wrong.',
+              ),
+            ),
+        },
+      ],
+    );
   };
 
   return (
@@ -305,46 +370,113 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
         </View>
       </Card>
 
-      {/* Office location */}
+      {/* Office locations -- the first is free on any plan; a second+
+          requires the enterprise plan (see onSaveLocation, which just
+          surfaces the backend's upgrade message if it's rejected). */}
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Office location
+        Office locations
       </Text>
-      <Card>
-        <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
-          Staff must be within this radius to clock in. Leave blank to skip the location check.
-        </Text>
-        <Button
-          label={locating ? 'Getting your location...' : 'Use my current location'}
-          icon="locate"
-          variant="secondary"
-          onPress={onUseCurrentLocation}
-          disabled={locating}
-          style={{ marginBottom: spacing.md }}
-        />
-        <View style={[styles.locationStatus, { backgroundColor: colors.surfaceAlt }]}>
-          <Ionicons
-            name={locationIsSet ? 'checkmark-circle' : 'alert-circle-outline'}
-            size={18}
-            color={locationIsSet ? colors.primary : colors.textMuted}
-          />
-          <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 8 }}>
-            {locationIsSet ? 'Location set' : 'No location set yet'}
-          </Text>
-        </View>
-        <Input
-          label="Radius (meters)"
-          value={radiusMeters}
-          onChangeText={setRadiusMeters}
-          placeholder="e.g. 500"
-          icon="radio-outline"
-          keyboardType="number-pad"
-        />
-        <Button
-          label={savingLocation ? 'Saving...' : 'Save location'}
-          onPress={onSaveLocation}
-          disabled={savingLocation}
-        />
+      <Card padded={false}>
+        {officeLocations.length === 0 ? (
+          <View style={{ padding: spacing.md }}>
+            <Text variant="caption" color={colors.textSecondary}>
+              No locations set yet. Staff can clock in from anywhere until you add one.
+            </Text>
+          </View>
+        ) : (
+          officeLocations.map((loc, i) => (
+            <View key={loc.id}>
+              <View style={styles.linkRow}>
+                <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
+                  <Ionicons name="location-outline" size={18} color={colors.brand} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodySemibold">{loc.name}</Text>
+                  <Text variant="caption" color={colors.textSecondary}>
+                    {loc.radiusMeters}m radius
+                  </Text>
+                </View>
+                <Pressable onPress={() => onStartEditLocation(loc)} style={{ padding: 6 }}>
+                  <Ionicons name="create-outline" size={20} color={colors.textMuted} />
+                </Pressable>
+                <Pressable onPress={() => onRemoveLocation(loc)} style={{ padding: 6 }}>
+                  <Ionicons name="trash-outline" size={20} color={colors.status.rejected.solid} />
+                </Pressable>
+              </View>
+              {i < officeLocations.length - 1 && (
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              )}
+            </View>
+          ))
+        )}
       </Card>
+
+      {!formOpen && (
+        <Button
+          label="Add office location"
+          icon="add-circle-outline"
+          variant="secondary"
+          onPress={onStartAddLocation}
+          style={{ marginTop: spacing.sm }}
+        />
+      )}
+
+      {formOpen && (
+        <Card style={{ marginTop: spacing.sm }}>
+          <Text variant="bodySemibold" style={{ marginBottom: spacing.sm }}>
+            {editingId ? 'Edit location' : 'New location'}
+          </Text>
+          <Input
+            label="Name"
+            value={locName}
+            onChangeText={setLocName}
+            placeholder="e.g. Head Office"
+            icon="business-outline"
+          />
+          <Button
+            label={locating ? 'Getting your location...' : 'Use my current location'}
+            icon="locate"
+            variant="secondary"
+            onPress={onUseCurrentLocation}
+            disabled={locating}
+            style={{ marginBottom: spacing.md }}
+          />
+          <View style={[styles.locationStatus, { backgroundColor: colors.surfaceAlt }]}>
+            <Ionicons
+              name={
+                latitude.trim() && longitude.trim() ? 'checkmark-circle' : 'alert-circle-outline'
+              }
+              size={18}
+              color={latitude.trim() && longitude.trim() ? colors.primary : colors.textMuted}
+            />
+            <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 8 }}>
+              {latitude.trim() && longitude.trim() ? 'Location set' : 'No location set yet'}
+            </Text>
+          </View>
+          <Input
+            label="Radius (meters)"
+            value={radiusMeters}
+            onChangeText={setRadiusMeters}
+            placeholder="e.g. 500"
+            icon="radio-outline"
+            keyboardType="number-pad"
+          />
+          <View style={{ flexDirection: 'row' }}>
+            <Button
+              label="Cancel"
+              variant="ghost"
+              onPress={() => setFormOpen(false)}
+              style={{ flex: 1, marginRight: spacing.xs }}
+            />
+            <Button
+              label={savingLocation ? 'Saving...' : 'Save'}
+              onPress={onSaveLocation}
+              disabled={savingLocation}
+              style={{ flex: 1, marginLeft: spacing.xs }}
+            />
+          </View>
+        </Card>
+      )}
 
       {/* Staff & rooms */}
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>

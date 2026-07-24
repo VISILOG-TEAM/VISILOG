@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import type { OfficeLocation } from '../types';
 
 // Best-effort "are you actually at the office" geofence check for
 // clock-in, alongside the WiFi check in wifiCheck.js. Like that check,
@@ -13,10 +14,6 @@ import * as Location from 'expo-location';
 interface LatLng {
   latitude: number;
   longitude: number;
-}
-
-export interface OfficeLocation extends LatLng {
-  radiusMeters: number;
 }
 
 export interface LocationCheckResult {
@@ -36,11 +33,14 @@ function distanceMeters(a: LatLng, b: LatLng): number {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
-// `officeLocation` is an org's { latitude, longitude, radiusMeters } from mockData.js.
+// An org can have more than one office location (see
+// DataContext.officeLocations) -- passes as soon as the phone is
+// within range of any single one of them, so staff at a branch office
+// aren't blocked by a radius set for headquarters.
 export const isAtOffice = async (
-  officeLocation?: OfficeLocation | null,
+  officeLocations?: OfficeLocation[] | null,
 ): Promise<LocationCheckResult> => {
-  if (!officeLocation) return { ok: true };
+  if (!officeLocations || officeLocations.length === 0) return { ok: true };
 
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -50,8 +50,10 @@ export const isAtOffice = async (
     const position = await Location.getCurrentPositionAsync({
       accuracy: Location.Accuracy.Balanced,
     });
-    const dist = distanceMeters(position.coords, officeLocation);
-    if (dist > officeLocation.radiusMeters) {
+    const withinAny = officeLocations.some(
+      (loc) => distanceMeters(position.coords, loc) <= loc.radiusMeters,
+    );
+    if (!withinAny) {
       return { ok: false, error: 'You need to be at the office to clock in.' };
     }
     return { ok: true };

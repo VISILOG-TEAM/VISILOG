@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// A paying tenant. Self-registered via POST /companies/register â€” see
+// A paying tenant. Self-registered via POST /companies/register -- see
 // AuthService.registerCompany. Every other tenant-scoped table carries
 // an organizationId FK back to this and every query is scoped to it.
 @Entity
@@ -27,12 +27,12 @@ public class Organization {
     @Column(nullable = false)
     private String name;
 
-    // TEXT, not the default VARCHAR(255) â€” holds either a pasted link or
+    // TEXT, not the default VARCHAR(255) -- holds either a pasted link or
     // a base64 data URI from an uploaded logo image (see V3 migration).
     @Column(columnDefinition = "TEXT")
     private String logoUrl;
 
-    // Brand theme â€” defaults applied at creation (see AuthService) so a
+    // Brand theme -- defaults applied at creation (see AuthService) so a
     // freshly registered org isn't blank/unstyled before the admin
     // customizes it in Company Setup.
     @Column(nullable = false)
@@ -49,13 +49,6 @@ public class Organization {
     private String primarySurface;
     @Column(nullable = false)
     private String primarySurfaceStrong;
-
-    // Null until the Administrator sets it in Company Setup â€” the
-    // clock-in geofence check (see ClockRecordService) is skipped
-    // entirely when this is unset.
-    private Double officeLatitude;
-    private Double officeLongitude;
-    private Integer officeRadiusMeters;
 
     // Informational only, shown to employees as "connect to X to clock
     // in" -- a phone can't verify a specific SSID without extra native

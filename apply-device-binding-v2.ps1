@@ -1,3 +1,372 @@
+# VisiLog -- device-binding for clock-in (frontend)
+# Run this from the FRONTEND ROOT folder (VisiLog-frontend), NOT the server folder.
+$ErrorActionPreference = 'Stop'
+Start-Transcript -Path "$PSScriptRoot\devicebinding-log.txt" -Force | Out-Null
+
+function Write-File($RelPath, $Content) {
+    $full = Join-Path $PSScriptRoot $RelPath
+    $dir = Split-Path $full -Parent
+    if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    [System.IO.File]::WriteAllText($full, $Content)
+}
+
+Write-Host "--- Writing files ---"
+$f0 = @'
+import * as Application from 'expo-application';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const FALLBACK_KEY = 'visilog.deviceId';
+
+// A persistent identifier for this physical device, sent along with
+// every clock-in so the backend can lock a staff member's attendance to
+// the phone they first used (see ClockRecordService.checkDeviceBinding)
+// -- stops "give a coworker my password so they can clock in for me,"
+// since it doesn't matter whose login was used, only whose phone it is.
+// Prefers the OS-level identifier, which survives an app reinstall
+// (unlike a locally-generated id would), so reinstalling the app can't
+// be used to dodge the device lock.
+export async function getDeviceId(): Promise<string | null> {
+  try {
+    if (Platform.OS === 'android') {
+      const id = Application.getAndroidId();
+      if (id) return id;
+    } else if (Platform.OS === 'ios') {
+      const id = await Application.getIosIdForVendorAsync();
+      if (id) return id;
+    }
+  } catch {
+    // Fall through to the AsyncStorage-based fallback below.
+  }
+  return getOrCreateFallbackId();
+}
+
+// For platforms where the OS-level id isn't available (web preview,
+// simulators without one, etc.) -- weaker (an uninstall/reinstall
+// resets it), but still better than no device check at all.
+async function getOrCreateFallbackId(): Promise<string | null> {
+  try {
+    const existing = await AsyncStorage.getItem(FALLBACK_KEY);
+    if (existing) return existing;
+    const generated = `fallback-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    await AsyncStorage.setItem(FALLBACK_KEY, generated);
+    return generated;
+  } catch {
+    return null;
+  }
+}
+
+'@
+Write-File "src\api\deviceId.ts" $f0
+$f1 = @'
+// Core domain types shared across the app. These describe the *mapped*
+// (frontend-normalized, lowercase-enum) shapes produced by context/*.tsx --
+// not the raw backend DTOs, which arrive with UPPERCASE enum strings and
+// get normalized at the DataContext/AuthContext boundary (see mapVisitor,
+// mapAppointment, etc.) so every screen can work with one consistent case.
+
+import type { ComponentProps } from 'react';
+import type { Ionicons } from '@expo/vector-icons';
+import type { BrandTheme, StatusKey } from '../theme/colors';
+
+export type { BrandTheme, StatusKey };
+
+export type IoniconName = ComponentProps<typeof Ionicons>['name'];
+
+export interface Option<T = string> {
+  label: string;
+  value: T;
+  sublabel?: string;
+}
+
+export type Role = 'visitor' | 'receptionist' | 'employee' | 'manager';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  employeeId: string | null;
+  organizationId: string;
+  organizationName: string;
+}
+
+export interface OfficeLocation {
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
+}
+
+export interface Organization {
+  id: string;
+  code: string;
+  name: string;
+  logoUrl: string | null;
+  theme: BrandTheme;
+  officeLocation: OfficeLocation | null;
+  wifiNetworkName: string | null;
+}
+
+export interface Employee {
+  id: string;
+  employeeId: string;
+  name: string;
+  department: string;
+  phone: string;
+  email: string;
+  role: Role;
+  // Whether this employee's clock-ins are locked to a phone yet -- see
+  // ClockRecordService.checkDeviceBinding on the backend.
+  deviceBound: boolean;
+}
+
+export type VisitorStatus = 'onsite' | 'completed';
+
+export interface Visitor {
+  id: string;
+  badgeId: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  company: string;
+  purpose: string;
+  hostId: string;
+  checkInAt: string;
+  checkOutAt: string | null;
+  status: VisitorStatus;
+  notes: string;
+}
+
+export type AppointmentStatus = 'pending' | 'admitted' | 'rejected';
+
+export interface Appointment {
+  id: string;
+  visitorName: string;
+  visitorPhone: string;
+  visitorEmail: string;
+  visitorCompany: string;
+  purpose: string;
+  hostId: string;
+  scheduledAt: string;
+  status: AppointmentStatus;
+  nfcCode: string | null;
+  bookedByEmail?: string | null;
+  rescheduleReason?: string | null;
+  rescheduledAt?: string | null;
+  rejectReason?: string | null;
+}
+
+export type CallType = 'Incoming' | 'Outgoing' | 'Missed';
+
+export interface Call {
+  id: string;
+  callerName: string;
+  callerPhone: string;
+  hostId: string;
+  callType: CallType;
+  purpose: string;
+  durationMinutes: number;
+  notes: string;
+  timestamp: string;
+}
+
+export interface MeetingRoom {
+  id: string;
+  name: string;
+  capacity: number | null;
+  floor: string;
+  photoUrl: string | null;
+  description: string | null;
+}
+
+export type ClockType = 'in' | 'out';
+
+export interface ClockRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  type: ClockType;
+  timestamp: string;
+}
+
+export type MeetingPriority = 'normal' | 'important' | 'urgent';
+export type MeetingResponseStatus = 'pending' | 'acknowledged' | 'declined';
+
+export interface RoomBookingResponse {
+  employeeId: string;
+  status: MeetingResponseStatus;
+  declineReason: string | null;
+  respondedAt: string | null;
+  absent: boolean;
+}
+
+export interface ExternalGuest {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface RoomBooking {
+  id: string;
+  roomId: string | null;
+  location: string;
+  organiserId: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  participantIds: string[];
+  externalGuests: ExternalGuest[];
+  priority: MeetingPriority;
+  responses: RoomBookingResponse[];
+}
+
+export type NotificationType =
+  | 'meeting_invite'
+  | 'meeting_declined'
+  | 'visit_admitted'
+  | 'visit_rejected'
+  | 'visit_checked_out'
+  | 'appointment_requested'
+  | 'appointment_rescheduled'
+  | 'call_logged'
+  | 'participant_absent';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  relatedId: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  price: number;
+  seatLimit: number;
+  features: string[];
+}
+
+export type BillingStatus = 'active' | 'trial' | 'past_due';
+
+export interface Billing {
+  planId: string;
+  status: BillingStatus;
+  seatsUsed: number;
+  renewalDate: string;
+  paymentLast4: string | null;
+}
+
+export type InvoiceStatus = 'paid' | 'failed';
+
+export interface Invoice {
+  id: string;
+  date: string;
+  amount: number;
+  status: InvoiceStatus;
+}
+
+// ---- operation input shapes ----
+
+export interface RegisterVisitorInput {
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email?: string;
+  company?: string;
+  purpose: string;
+  hostId: string;
+  notes?: string;
+}
+
+export interface BookVisitInput {
+  visitorName: string;
+  visitorPhone: string;
+  visitorEmail?: string;
+  visitorCompany?: string;
+  purpose: string;
+  hostId: string;
+  scheduledAt: string;
+}
+
+export interface LogCallInput {
+  callerName: string;
+  callerPhone: string;
+  hostId: string;
+  callType: string;
+  purpose: string;
+  durationMinutes: number | string;
+  notes?: string;
+}
+
+export interface EmployeeInput {
+  employeeId?: string;
+  name: string;
+  department?: string;
+  phone?: string;
+  email?: string;
+  role?: Role;
+}
+
+export interface BulkImportRowError {
+  row: number;
+  message: string;
+}
+
+export interface BulkImportResult<T> {
+  created: T[];
+  errors: BulkImportRowError[];
+}
+
+export interface MeetingRoomInput {
+  name: string;
+  capacity?: number | string | null;
+  floor?: string;
+  photoUrl?: string | null;
+  description?: string | null;
+}
+
+export interface BookRoomInput {
+  roomId?: string | null;
+  location?: string;
+  title?: string;
+  startTime: string;
+  endTime: string;
+  participantIds?: string[];
+  externalGuests?: ExternalGuest[];
+  priority?: MeetingPriority;
+}
+
+// No backend model exists for standalone NFC cards yet (the per-visit
+// NFC code lives on Appointment.nfcCode) -- DataContext seeds this as an
+// always-empty array, but NFCCardsScreen is written against this shape
+// so it's ready once/if a real NfcCard endpoint exists.
+export type NfcCardStatus = 'active' | 'revoked';
+export type NfcHolderType = 'employee' | 'visitor';
+
+export interface NfcCard {
+  id: string;
+  holderId: string;
+  holderType: NfcHolderType;
+  tokenHash: string;
+  issuedAt: string;
+  expiresAt: string;
+  status: NfcCardStatus;
+}
+
+export interface AuthResult {
+  ok: boolean;
+  error?: string;
+  organization?: Organization;
+}
+
+'@
+Write-File "src\types\index.ts" $f1
+$f2 = @'
 import React, {
   createContext,
   useContext,
@@ -30,8 +399,6 @@ import type {
   MeetingRoomInput,
   NfcCard,
   NotificationType,
-  OfficeLocation,
-  OfficeLocationInput,
   Plan,
   RegisterVisitorInput,
   Role,
@@ -169,7 +536,6 @@ interface DataContextValue {
   roomBookings: RoomBooking[];
   employees: Employee[];
   meetingRooms: MeetingRoom[];
-  officeLocations: OfficeLocation[];
   // lookup helpers
   employeeById: (id: string) => Employee | undefined;
   roomById: (id: string) => MeetingRoom | undefined;
@@ -193,9 +559,6 @@ interface DataContextValue {
   updateMeetingRoom: (id: string, input: MeetingRoomInput) => Promise<MeetingRoom>;
   bulkImportMeetingRooms: (rows: MeetingRoomInput[]) => Promise<BulkImportResult<MeetingRoom>>;
   removeMeetingRoom: (id: string) => Promise<void>;
-  addOfficeLocation: (input: OfficeLocationInput) => Promise<OfficeLocation>;
-  updateOfficeLocation: (id: string, input: OfficeLocationInput) => Promise<OfficeLocation>;
-  removeOfficeLocation: (id: string) => Promise<void>;
   bookVisit: (input: BookVisitInput) => Promise<Appointment>;
   findAppointmentByCode: (code: string) => Promise<Appointment | null>;
   // work attendance (clock in/out) + appointment rescheduling
@@ -206,7 +569,6 @@ interface DataContextValue {
   hasClockedInToday: (employeeId: string) => boolean;
   refreshClockRecords: () => Promise<void>;
   resetEmployeeDevice: (employeeId: string) => Promise<void>;
-  refreshEmployees: () => Promise<void>;
   rescheduleAppointment: (
     id: string,
     newScheduledAt: string,
@@ -254,7 +616,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [nfcCards] = useState<NfcCard[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [meetingRooms, setMeetingRooms] = useState<MeetingRoom[]>([]);
-  const [officeLocations, setOfficeLocations] = useState<OfficeLocation[]>([]);
   const [clockRecords, setClockRecords] = useState<ClockRecord[]>([]);
   const [roomBookings, setRoomBookings] = useState<RoomBooking[]>([]);
   const [billing, setBilling] = useState<Billing | null>(null);
@@ -276,7 +637,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const appointmentsPath =
       user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';
 
-    const [v, a, c, e, r, cr, rb, p, ol] = await Promise.all([
+    const [v, a, c, e, r, cr, rb, p] = await Promise.all([
       apiClient.get<VisitorDto[]>('/api/v1/visitors'),
       apiClient.get<AppointmentDto[]>(appointmentsPath),
       apiClient.get<CallDto[]>('/api/v1/calls'),
@@ -285,7 +646,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       apiClient.get<ClockRecordDto[]>('/api/v1/clock-records'),
       apiClient.get<RoomBookingDto[]>('/api/v1/room-bookings'),
       apiClient.get<PlanDto[]>('/api/v1/plans'),
-      apiClient.get<OfficeLocation[]>('/api/v1/office-locations'),
     ]);
     setVisitors(v.map(mapVisitor));
     setAppointments(a.map(mapAppointment));
@@ -295,7 +655,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setClockRecords(cr.map(mapClockRecord));
     setRoomBookings(rb.map(mapRoomBooking));
     setPlans(p.map(mapPlan));
-    setOfficeLocations(ol);
 
     if (isManager) {
       const [b, inv] = await Promise.all([
@@ -555,32 +914,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setMeetingRooms((rs) => rs.filter((r) => r.id !== id));
   };
 
-  // ---- office locations (clock-in/visitor geofence) ----
-  // The first is free on any plan; a second+ requires the enterprise
-  // plan (backend 409s with an upgrade message -- see
-  // OfficeLocationService, CompanySetupScreen surfaces that message
-  // as-is rather than pre-checking the plan client-side).
-
-  const addOfficeLocation = async (input: OfficeLocationInput): Promise<OfficeLocation> => {
-    const loc = await apiClient.post<OfficeLocation>('/api/v1/office-locations', input);
-    setOfficeLocations((ls) => [...ls, loc]);
-    return loc;
-  };
-
-  const updateOfficeLocation = async (
-    id: string,
-    input: OfficeLocationInput,
-  ): Promise<OfficeLocation> => {
-    const loc = await apiClient.patch<OfficeLocation>(`/api/v1/office-locations/${id}`, input);
-    setOfficeLocations((ls) => ls.map((l) => (l.id === id ? loc : l)));
-    return loc;
-  };
-
-  const removeOfficeLocation = async (id: string): Promise<void> => {
-    await apiClient.delete(`/api/v1/office-locations/${id}`);
-    setOfficeLocations((ls) => ls.filter((l) => l.id !== id));
-  };
-
   // ---- clock in/out (work attendance) ----
 
   const clockIn = async (employeeId: string, employeeName: string): Promise<ClockRecord> => {
@@ -614,16 +947,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const dto = await apiClient.post<EmployeeDto>(`/api/v1/employees/${id}/reset-device`, {});
     const employee = mapEmployee(dto);
     setEmployees((es) => es.map((e) => (e.id === id ? employee : e)));
-  };
-
-  // clockIn() only updates the clockRecords ledger, not the employees
-  // list -- so a staff member's deviceBound flag (set server-side the
-  // moment they first clock in) wouldn't show up here until the next
-  // full reload. EmployeeDetailScreen calls this on focus so reopening
-  // a profile after a clock-in reflects the real lock state.
-  const refreshEmployees = async (): Promise<void> => {
-    const es = await apiClient.get<EmployeeDto[]>('/api/v1/employees');
-    setEmployees(es.map(mapEmployee));
   };
 
   // Everything above only reflects actions taken in *this* signed-in
@@ -788,7 +1111,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         roomBookings,
         employees,
         meetingRooms,
-        officeLocations,
         // lookup helpers
         employeeById,
         roomById,
@@ -808,9 +1130,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         updateMeetingRoom,
         bulkImportMeetingRooms,
         removeMeetingRoom,
-        addOfficeLocation,
-        updateOfficeLocation,
-        removeOfficeLocation,
         bookVisit,
         findAppointmentByCode,
         // work attendance (clock in/out) + appointment rescheduling
@@ -821,7 +1140,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         hasClockedInToday,
         refreshClockRecords,
         resetEmployeeDevice,
-        refreshEmployees,
         rescheduleAppointment,
         // self-service room booking
         bookRoom,
@@ -852,3 +1170,262 @@ export const useData = (): DataContextValue => {
   if (!ctx) throw new Error('useData must be used within a DataProvider');
   return ctx;
 };
+
+'@
+Write-File "src\context\DataContext.tsx" $f2
+$f3 = @'
+import React from 'react';
+import { View, StyleSheet, Pressable, Linking, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Screen, Header, Text, Card, Avatar, Button } from '../components';
+import { useTheme } from '../theme/ThemeContext';
+import { spacing, radius } from '../theme/spacing';
+import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
+import { ApiError } from '../api/client';
+import type { RootStackScreenProps } from '../types/navigation';
+import type { IoniconName } from '../types';
+
+// EmployeeDetailScreen -- single staff member's profile.
+export default function EmployeeDetailScreen({
+  route,
+  navigation,
+}: RootStackScreenProps<'EmployeeDetail'>) {
+  const { colors } = useTheme();
+  const { employeeId } = route.params;
+  const { employees, removeEmployee, resetEmployeeDevice } = useData();
+  const { user } = useAuth();
+  const employee = employees.find((e) => e.id === employeeId);
+
+  if (!employee) {
+    return (
+      <Screen>
+        <Header title="Not found" rightIcon="close" onRightPress={() => navigation.goBack()} />
+      </Screen>
+    );
+  }
+
+  const onRemove = () => {
+    Alert.alert('Remove employee?', `${employee.name} will be removed from the directory.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await removeEmployee(employee.id);
+            navigation.goBack();
+          } catch (err) {
+            Alert.alert(
+              'Could not remove employee',
+              err instanceof ApiError ? err.message : 'Something went wrong.',
+            );
+          }
+        },
+      },
+    ]);
+  };
+
+  const onResetDevice = () => {
+    Alert.alert(
+      'Reset clocked-in device?',
+      `${employee.name} will be able to clock in from a new phone. Only do this if they've genuinely switched devices.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await resetEmployeeDevice(employee.id);
+            } catch (err) {
+              Alert.alert(
+                'Could not reset device',
+                err instanceof ApiError ? err.message : 'Something went wrong.',
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  return (
+    <Screen>
+      <Header title="Staff profile" rightIcon="close" onRightPress={() => navigation.goBack()} />
+
+      <Card>
+        <View style={styles.headerRow}>
+          <Avatar name={employee.name} size={64} />
+          <View style={{ flex: 1, marginLeft: spacing.sm }}>
+            <Text variant="h2">{employee.name}</Text>
+            <Text variant="caption" color={colors.textSecondary}>
+              {employee.department}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.actionRow}>
+          <ActionPill
+            icon="call"
+            label="Call"
+            onPress={() => Linking.openURL(`tel:${employee.phone}`)}
+          />
+          <ActionPill
+            icon="mail"
+            label="Email"
+            onPress={() => Linking.openURL(`mailto:${employee.email}`)}
+          />
+          <ActionPill
+            icon="chatbubble-ellipses"
+            label="Message"
+            onPress={() => Linking.openURL(`sms:${employee.phone}`)}
+          />
+        </View>
+      </Card>
+
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Contact
+      </Text>
+      <Card>
+        <Row icon="call-outline" label="Personal phone" value={employee.phone} />
+        <Divider />
+        <Row icon="mail-outline" label="Email" value={employee.email} />
+        <Divider />
+        <Row icon="briefcase-outline" label="Department" value={employee.department} />
+      </Card>
+
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Clock-in device
+      </Text>
+      <Card>
+        <View style={styles.row}>
+          <View style={[styles.icon, { backgroundColor: colors.surfaceAlt }]}>
+            <Ionicons
+              name={employee.deviceBound ? 'phone-portrait' : 'phone-portrait-outline'}
+              size={18}
+              color={colors.brand}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text variant="caption" color={colors.textSecondary}>
+              Status
+            </Text>
+            <Text variant="bodySemibold">
+              {employee.deviceBound ? 'Locked to a phone' : 'Not yet locked'}
+            </Text>
+          </View>
+        </View>
+        {user?.role === 'manager' && employee.deviceBound && (
+          <Button
+            label="Reset device"
+            variant="secondary"
+            icon="refresh-outline"
+            onPress={onResetDevice}
+            style={{ marginTop: spacing.sm }}
+          />
+        )}
+      </Card>
+
+      <Button
+        label="Remove from directory"
+        variant="secondary"
+        icon="trash-outline"
+        onPress={onRemove}
+        style={{ marginTop: spacing.xl }}
+      />
+    </Screen>
+  );
+}
+
+function Row({ icon, label, value }: { icon: IoniconName; label: string; value: string }) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.row}>
+      <View style={[styles.icon, { backgroundColor: colors.surfaceAlt }]}>
+        <Ionicons name={icon} size={18} color={colors.brand} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text variant="caption" color={colors.textSecondary}>
+          {label}
+        </Text>
+        <Text variant="bodySemibold">{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+function Divider() {
+  const { colors } = useTheme();
+  return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
+}
+
+function ActionPill({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IoniconName;
+  label: string;
+  onPress: () => void;
+}) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.pill,
+        { backgroundColor: colors.primarySurface },
+        pressed && { opacity: 0.85 },
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={colors.primary} />
+      <Text variant="caption" color={colors.brand} style={{ marginTop: 2 }}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
+  actionRow: { flexDirection: 'row', gap: spacing.xs },
+  pill: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.xs },
+  icon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  divider: { height: 1, marginVertical: spacing.xs, marginLeft: 32 + spacing.sm },
+});
+
+'@
+Write-File "src\screens\EmployeeDetailScreen.tsx" $f3
+
+Write-Host "--- Files written, verifying ---"
+$paths = @(
+    "src\api\deviceId.ts",
+    "src\types\index.ts",
+    "src\context\DataContext.tsx",
+    "src\screens\EmployeeDetailScreen.tsx"
+)
+foreach ($p in $paths) {
+    $full = Join-Path $PSScriptRoot $p
+    if (Test-Path $full) { Write-Host "OK   $p" } else { Write-Host "MISSING   $p" }
+}
+
+Stop-Transcript | Out-Null
+Write-Host ""
+Write-Host "Done. Next steps:"
+Write-Host "  1. npx expo install expo-application"
+Write-Host "  2. npx tsc --noEmit"

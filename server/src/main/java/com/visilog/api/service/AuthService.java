@@ -327,7 +327,9 @@ public class AuthService {
     private AuthResponse buildAuthResponse(AppUser user, Organization org) {
         String token = jwtService.issueToken(
                 user.getId(), org.getId(), user.getRole().name(), user.getEmail(), user.getEmployeeId());
-        return new AuthResponse(token, UserDto.from(user, org), OrganizationDto.from(org));
+        String planId = orgBillingRepository.findByOrganizationId(org.getId())
+                .map(OrgBilling::getPlanId).orElse(null);
+        return new AuthResponse(token, UserDto.from(user, org), OrganizationDto.from(org, planId));
     }
 
     private String randomUnusablePassword() {

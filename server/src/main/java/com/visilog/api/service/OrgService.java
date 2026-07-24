@@ -1,30 +1,41 @@
 package com.visilog.api.service;
 
-import com.visilog.api.dto.OfficeLocationRequest;
 import com.visilog.api.dto.OrganizationDto;
 import com.visilog.api.dto.UpdateOrgRequest;
+import com.visilog.api.entity.OrgBilling;
 import com.visilog.api.entity.Organization;
 import com.visilog.api.exception.ApiException;
+import com.visilog.api.repository.OrgBillingRepository;
 import com.visilog.api.repository.OrganizationRepository;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Company Setup > branding + office location â€” manager-only, enforced
-// at the controller via @PreAuthorize("hasRole('MANAGER')").
+// Company Setup > branding -- manager-only, enforced at the controller
+// via @PreAuthorize("hasRole('MANAGER')"). Office location moved to
+// OfficeLocationService/Controller (see V21 migration).
 @Service
 public class OrgService {
 
     private final OrganizationRepository organizationRepository;
+    private final OrgBillingRepository orgBillingRepository;
     private final PlanFeatureService planFeatureService;
 
-    public OrgService(OrganizationRepository organizationRepository, PlanFeatureService planFeatureService) {
+    public OrgService(
+            OrganizationRepository organizationRepository, OrgBillingRepository orgBillingRepository,
+            PlanFeatureService planFeatureService) {
         this.organizationRepository = organizationRepository;
+        this.orgBillingRepository = orgBillingRepository;
         this.planFeatureService = planFeatureService;
     }
 
     public OrganizationDto get(UUID organizationId) {
-        return OrganizationDto.from(findOrThrow(organizationId));
+        return OrganizationDto.from(findOrThrow(organizationId), currentPlanId(organizationId));
+    }
+
+    private String currentPlanId(UUID organizationId) {
+        return orgBillingRepository.findByOrganizationId(organizationId)
+                .map(OrgBilling::getPlanId).orElse(null);
     }
 
     @Transactional
@@ -58,16 +69,7 @@ public class OrgService {
             org.setPrimarySurface(t.primarySurface());
             org.setPrimarySurfaceStrong(t.primarySurfaceStrong());
         }
-        return OrganizationDto.from(organizationRepository.save(org));
-    }
-
-    @Transactional
-    public OrganizationDto updateOfficeLocation(UUID organizationId, OfficeLocationRequest req) {
-        Organization org = findOrThrow(organizationId);
-        org.setOfficeLatitude(req.latitude());
-        org.setOfficeLongitude(req.longitude());
-        org.setOfficeRadiusMeters(req.radiusMeters());
-        return OrganizationDto.from(organizationRepository.save(org));
+        return OrganizationDto.from(organizationRepository.save(org), currentPlanId(organizationId));
     }
 
     private Organization findOrThrow(UUID organizationId) {

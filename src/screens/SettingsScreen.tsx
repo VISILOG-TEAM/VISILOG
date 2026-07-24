@@ -5,6 +5,7 @@ import { Screen, Header, Text, Card, Button, Input, Avatar, Badge } from '../com
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import type { RootStackNavigation } from '../types/navigation';
 import type { IoniconName } from '../types';
 
@@ -18,6 +19,14 @@ interface SettingsScreenProps {
 export default function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { colors, dark, setOrgTheme, setDarkOverride } = useTheme();
   const { user, logout } = useAuth();
+  const { plans, billing } = useData();
+
+  // Priority support is just a listed perk on the Pro/Enterprise plan's
+  // features array (see V20 migration) -- no separate enforcement
+  // needed since nothing is being blocked, just a different badge and
+  // help message shown below.
+  const currentPlan = plans.find((p) => p.id === billing?.planId);
+  const hasPrioritySupport = !!currentPlan?.features.includes('Priority support');
 
   const [notifyAppts, setNotifyAppts] = useState(true);
   const [notifyCalls, setNotifyCalls] = useState(true);
@@ -246,16 +255,21 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
         <LinkRow
           icon="help-circle-outline"
           title="Help & support"
+          badge={user?.role === 'manager' && hasPrioritySupport ? 'Priority' : undefined}
           sub={
             user?.role === 'manager'
-              ? 'Contact the VisiLog help desk'
+              ? hasPrioritySupport
+                ? 'Priority line to the VisiLog team'
+                : 'Contact the VisiLog help desk'
               : 'Contact your VisiLog administrator'
           }
           onPress={() =>
             Alert.alert(
               'Help & support',
               user?.role === 'manager'
-                ? "As the Administrator, reach the VisiLog help desk directly for anything you can't resolve in Company Setup:\n\nPhone: 0509343709\nEmail: voldyabbey@gmail.com"
+                ? hasPrioritySupport
+                  ? 'Your plan includes priority support -- reach the VisiLog team directly for a faster response:\n\nPhone: 0509343709\nEmail: voldyabbey@gmail.com'
+                  : "As the Administrator, reach the VisiLog help desk directly for anything you can't resolve in Company Setup:\n\nPhone: 0509343709\nEmail: voldyabbey@gmail.com"
                 : "For access issues, incorrect roster entries, or anything else you need changed, contact your organization's Administrator -- they manage your staff roster and company settings in Company Setup.",
             )
           }
@@ -322,11 +336,13 @@ function LinkRow({
   icon,
   title,
   sub,
+  badge,
   onPress,
 }: {
   icon: IoniconName;
   title: string;
   sub?: string;
+  badge?: string;
   onPress?: () => void;
 }) {
   const { colors } = useTheme();
@@ -343,7 +359,14 @@ function LinkRow({
           </Text>
         ) : null}
       </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      {badge ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+          <Badge label={badge} status="info" size="sm" dot={false} />
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </View>
+      ) : (
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      )}
     </Pressable>
   );
 }

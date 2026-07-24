@@ -30,7 +30,13 @@ export interface User {
   organizationName: string;
 }
 
+// A named GPS point + radius the clock-in/visitor-check-in geofence
+// check (locationCheck.ts) can be satisfied against -- an org can have
+// more than one (see DataContext.officeLocations); the first is free
+// on any plan, a second+ requires the enterprise plan.
 export interface OfficeLocation {
+  id: string;
+  name: string;
   latitude: number;
   longitude: number;
   radiusMeters: number;
@@ -42,8 +48,11 @@ export interface Organization {
   name: string;
   logoUrl: string | null;
   theme: BrandTheme;
-  officeLocation: OfficeLocation | null;
   wifiNetworkName: string | null;
+  // The org's current plan id -- lets every role (not just managers,
+  // who alone can see full Billing) do client-side plan-feature checks
+  // like SettingsScreen's priority-support badge.
+  planId: string | null;
 }
 
 export interface Employee {
@@ -259,6 +268,13 @@ export interface BulkImportRowError {
 export interface BulkImportResult<T> {
   created: T[];
   errors: BulkImportRowError[];
+}
+
+export interface OfficeLocationInput {
+  name: string;
+  latitude: number;
+  longitude: number;
+  radiusMeters: number;
 }
 
 export interface MeetingRoomInput {

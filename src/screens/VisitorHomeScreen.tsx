@@ -23,8 +23,12 @@ interface VisitorHomeScreenProps {
 // timeline, and the company map/tour section.
 export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps) {
   const { colors } = useTheme();
-  const { user } = useAuth();
-  const { employees, appointments, unreadNotificationCount, refreshAll } = useData();
+  const { user, organization } = useAuth();
+  const { employees, appointments, unreadNotificationCount, refreshAll, plans } = useData();
+  // organization.planId (not the manager-only billing.planId) since
+  // visitors don't have access to Billing -- see OrganizationDto.
+  const currentPlan = plans.find((p) => p.id === organization?.planId);
+  const hasTourMap = !!currentPlan?.features.includes('Interactive tour map');
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
     setRefreshing(true);
@@ -193,7 +197,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
         </Card>
       )}
 
-      <CompanyMapSection />
+      {hasTourMap && <CompanyMapSection />}
     </Screen>
   );
 }
