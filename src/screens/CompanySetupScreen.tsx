@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import { Screen, Header, Text, Card, Button, Input } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
+import { fonts } from '../theme/typography';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { ApiError } from '../api/client';
@@ -556,7 +557,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginVertical: 4,
   },
-  code: { fontSize: 22, fontWeight: '700', letterSpacing: 1 },
+  // fontFamily, never fontWeight: Android can't synthesize a bold face
+  // for a loaded custom font -- a bare fontWeight here silently swaps
+  // the whole run of text to the system font instead.
+  code: { fontSize: 22, fontFamily: fonts.displayBold, letterSpacing: 1 },
   shareBtn: {
     flexDirection: 'row',
     alignItems: 'center',

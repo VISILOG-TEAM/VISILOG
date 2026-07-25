@@ -110,19 +110,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setInitializing(false);
         return;
       }
-      try {
-        const [userDto, org] = await Promise.all([
-          apiClient.get<UserDto>('/api/v1/auth/me'),
-          apiClient.get<Organization>('/api/v1/org'),
-        ]);
-        setUser(mapUser(userDto));
-        setOrganization(org);
-      } catch {
-        // Stored token is stale/invalid -- sign out quietly.
-        await clearToken();
-      } finally {
-        setInitializing(false);
+      // The backend's free-tier host spins down when idle and takes up
+      // to a minute to wake, so the first request after a quiet spell
+      // often fails with a network error or 5xx -- NOT because the
+      // stored session is bad. Retry through that window, and only
+      // clear the token when the server itself rejects it (401/403).
+      // Clearing on any failure -- what this used to do -- silently
+      // logged people out whenever the app opened against a sleeping
+      // backend, which reads as "the app forgot everything".
+      for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+          const [userDto, org] = await Promise.all([
+            apiClient.get<UserDto>('/api/v1/auth/me'),
+            apiClient.get<Organization>('/api/v1/org'),
+          ]);
+          setUser(mapUser(userDto));
+          setOrganization(org);
+          break;
+        } catch (err) {
+          if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+            // Genuinely stale/invalid token -- sign out quietly.
+            await clearToken();
+            break;
+          }
+          if (attempt < 3) {
+            await new Promise((resolve) => setTimeout(resolve, (attempt + 1) * 5000));
+          }
+          // After the last attempt: keep the token (the backend may
+          // just be waking up) and land on Login -- signing in again
+          // once it's awake works, and the next app open restores the
+          // session normally.
+        }
       }
+      setInitializing(false);
     })();
   }, []);
 

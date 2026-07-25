@@ -270,48 +270,62 @@ export function DataProvider({ children }: { children: ReactNode }) {
   // refetched on its own. Billing/invoices are manager-only on the
   // backend, so non-managers skip those calls entirely rather than
   // getting a 403.
+  //
+  // Each fetch applies (or fails) INDEPENDENTLY. This used to be one
+  // Promise.all, which meant a single failing endpoint -- a backend
+  // deploy that's a version behind the app, a Render free-tier cold
+  // start timing out one request -- rejected the whole batch before
+  // any setter ran, and every list in the app just showed empty. That
+  // presented as "all our employees and meeting rooms vanished" when
+  // the data was sitting safely in the database the entire time.
+  const loadOne = async <T,>(path: string, apply: (data: T) => void): Promise<void> => {
+    try {
+      apply(await apiClient.get<T>(path));
+    } catch (err) {
+      // Keep whatever we already have for this collection rather than
+      // blanking it -- stale beats empty for every screen we render.
+      console.warn(`[DataContext] failed to load ${path}`, err);
+    }
+  };
+
   const loadAll = async (): Promise<void> => {
     if (!user) return;
     const isManager = user.role === 'manager';
     const appointmentsPath =
       user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';
 
-    const [v, a, c, e, r, cr, rb, p, ol] = await Promise.all([
-      apiClient.get<VisitorDto[]>('/api/v1/visitors'),
-      apiClient.get<AppointmentDto[]>(appointmentsPath),
-      apiClient.get<CallDto[]>('/api/v1/calls'),
-      apiClient.get<EmployeeDto[]>('/api/v1/employees'),
-      apiClient.get<MeetingRoom[]>('/api/v1/meeting-rooms'),
-      apiClient.get<ClockRecordDto[]>('/api/v1/clock-records'),
-      apiClient.get<RoomBookingDto[]>('/api/v1/room-bookings'),
-      apiClient.get<PlanDto[]>('/api/v1/plans'),
-      apiClient.get<OfficeLocation[]>('/api/v1/office-locations'),
+    await Promise.all([
+      loadOne<VisitorDto[]>('/api/v1/visitors', (v) => setVisitors(v.map(mapVisitor))),
+      loadOne<AppointmentDto[]>(appointmentsPath, (a) => setAppointments(a.map(mapAppointment))),
+      loadOne<CallDto[]>('/api/v1/calls', (c) => setCalls(c.map(mapCall))),
+      loadOne<EmployeeDto[]>('/api/v1/employees', (e) => setEmployees(e.map(mapEmployee))),
+      loadOne<MeetingRoom[]>('/api/v1/meeting-rooms', (r) => setMeetingRooms(r)),
+      loadOne<ClockRecordDto[]>('/api/v1/clock-records', (cr) =>
+        setClockRecords(cr.map(mapClockRecord)),
+      ),
+      loadOne<RoomBookingDto[]>('/api/v1/room-bookings', (rb) =>
+        setRoomBookings(rb.map(mapRoomBooking)),
+      ),
+      loadOne<PlanDto[]>('/api/v1/plans', (p) => setPlans(p.map(mapPlan))),
+      loadOne<OfficeLocation[]>('/api/v1/office-locations', (ol) => setOfficeLocations(ol)),
+      ...(isManager
+        ? [
+            loadOne<BillingDto>('/api/v1/billing', (b) => setBilling(mapBilling(b))),
+            loadOne<InvoiceDto[]>('/api/v1/billing/invoices', (inv) =>
+              setInvoices(inv.map(mapInvoice)),
+            ),
+          ]
+        : []),
+      // Visitors have no employeeId, so there's nothing for them to be
+      // notified about (meeting invites only ever target staff).
+      ...(user.employeeId
+        ? [
+            loadOne<NotificationDto[]>('/api/v1/notifications', (n) =>
+              setNotifications(n.map(mapNotification)),
+            ),
+          ]
+        : []),
     ]);
-    setVisitors(v.map(mapVisitor));
-    setAppointments(a.map(mapAppointment));
-    setCalls(c.map(mapCall));
-    setEmployees(e.map(mapEmployee));
-    setMeetingRooms(r);
-    setClockRecords(cr.map(mapClockRecord));
-    setRoomBookings(rb.map(mapRoomBooking));
-    setPlans(p.map(mapPlan));
-    setOfficeLocations(ol);
-
-    if (isManager) {
-      const [b, inv] = await Promise.all([
-        apiClient.get<BillingDto>('/api/v1/billing'),
-        apiClient.get<InvoiceDto[]>('/api/v1/billing/invoices'),
-      ]);
-      setBilling(mapBilling(b));
-      setInvoices(inv.map(mapInvoice));
-    }
-
-    // Visitors have no employeeId, so there's nothing for them to be
-    // notified about (meeting invites only ever target staff).
-    if (user.employeeId) {
-      const n = await apiClient.get<NotificationDto[]>('/api/v1/notifications');
-      setNotifications(n.map(mapNotification));
-    }
   };
 
   useEffect(() => {
@@ -329,7 +343,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setNotifications([]);
       return;
     }
-    loadAll();
+    loadAll().catch(() => {});
   }, [user?.id]);
 
   const refreshAll = async (): Promise<void> => {
