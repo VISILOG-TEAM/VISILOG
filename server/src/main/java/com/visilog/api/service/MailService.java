@@ -65,6 +65,20 @@ public class MailService {
         send(toEmail, subject, body, "password reset");
     }
 
+    public void sendVerificationEmail(String toEmail, String name, String code) {
+        String subject = "Your VisiLog verification code";
+        String body =
+                "Hi " + (name == null || name.isBlank() ? "there" : name) + ",\n\n"
+                + "Here's the code to confirm your email address and finish setting up your "
+                + "VisiLog account:\n\n"
+                + "  " + code + "\n\n"
+                + "Enter this in the app. It expires in 30 minutes -- if it runs out, tap "
+                + "\"Resend code\" for a new one.\n\n"
+                + "If you didn't sign up for VisiLog, you can ignore this email.\n\n"
+                + "-- VisiLog";
+        send(toEmail, subject, body, "email verification");
+    }
+
     public void sendWelcomeEmail(String toEmail, String name, String companyName) {
         String subject = "Welcome to VisiLog";
         String body =

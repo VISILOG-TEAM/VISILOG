@@ -9,8 +9,8 @@ import {
   Button,
   Input,
   Select,
-  DateChips,
-  TimeChips,
+  DatePicker,
+  TimePicker,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
@@ -167,11 +167,11 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
         <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
           Date
         </Text>
-        <DateChips value={date} onChange={setDate} />
+        <DatePicker value={date} onChange={setDate} />
         <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
           Time
         </Text>
-        <TimeChips value={time} onChange={setTime} />
+        <TimePicker value={time} onChange={setTime} />
       </Card>
 
       <View style={[styles.notice, { backgroundColor: colors.primarySurface }]}>

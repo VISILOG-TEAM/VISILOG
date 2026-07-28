@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import {
-  View, ImageBackground, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, ScrollView, Alert,
+  View,
+  StyleSheet,
+  Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -51,7 +57,10 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
 
   const onResetPassword = async () => {
     if (!code.trim() || newPassword.length < 6) {
-      Alert.alert('Almost there', 'Enter the code from your email and a password of at least 6 characters.');
+      Alert.alert(
+        'Almost there',
+        'Enter the code from your email and a password of at least 6 characters.',
+      );
       return;
     }
     setSubmitting(true);
@@ -67,13 +76,8 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
   };
 
   return (
-    <ImageBackground
-      source={require('../../assets/login-bg.jpg')}
-      style={styles.bg}
-      resizeMode="cover"
-    >
+    <View style={styles.bg}>
       <StatusBar style="light" />
-      <View style={styles.wash} />
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <ScrollView
@@ -83,7 +87,11 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
           >
             <BlurView intensity={25} tint="light" style={styles.card}>
               <View style={styles.cardInner}>
-                <Pressable style={styles.backRow} onPress={() => navigation.navigate('Login')} hitSlop={8}>
+                <Pressable
+                  style={styles.backRow}
+                  onPress={() => navigation.navigate('Login')}
+                  hitSlop={8}
+                >
                   <Ionicons name="chevron-back" size={18} color="#FFFFFF" />
                   <Text style={styles.backText}>Back to login</Text>
                 </Pressable>
@@ -123,9 +131,11 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
                       />
                     </View>
 
-                    <Pressable onPress={onRequestCode} disabled={submitting} style={({ pressed }) => [
-                      { opacity: pressed || submitting ? 0.85 : 1 },
-                    ]}>
+                    <Pressable
+                      onPress={onRequestCode}
+                      disabled={submitting}
+                      style={({ pressed }) => [{ opacity: pressed || submitting ? 0.85 : 1 }]}
+                    >
                       <LinearGradient
                         colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
                         start={{ x: 0, y: 0 }}
@@ -153,7 +163,11 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
                       />
                     </View>
                     <View style={styles.fieldRow}>
-                      <Ionicons name="lock-closed-outline" size={18} color="rgba(255,255,255,0.85)" />
+                      <Ionicons
+                        name="lock-closed-outline"
+                        size={18}
+                        color="rgba(255,255,255,0.85)"
+                      />
                       <TextInput
                         value={newPassword}
                         onChangeText={setNewPassword}
@@ -172,9 +186,11 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
                     </View>
                     <Text style={styles.hint}>At least 6 characters.</Text>
 
-                    <Pressable onPress={onResetPassword} disabled={submitting} style={({ pressed }) => [
-                      { opacity: pressed || submitting ? 0.85 : 1 },
-                    ]}>
+                    <Pressable
+                      onPress={onResetPassword}
+                      disabled={submitting}
+                      style={({ pressed }) => [{ opacity: pressed || submitting ? 0.85 : 1 }]}
+                    >
                       <LinearGradient
                         colors={['#5ECFC9', '#1B8A82', '#0B4A47']}
                         start={{ x: 0, y: 0 }}
@@ -187,7 +203,11 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
                       </LinearGradient>
                     </Pressable>
 
-                    <Pressable onPress={() => setStep('request')} hitSlop={6} style={{ marginTop: spacing.md }}>
+                    <Pressable
+                      onPress={() => setStep('request')}
+                      hitSlop={6}
+                      style={{ marginTop: spacing.md }}
+                    >
                       <Text style={styles.resendText}>Didn&apos;t get a code? Send again</Text>
                     </Pressable>
                   </>
@@ -197,13 +217,15 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: '#0E4E55' },
-  wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
+  // Solid brand green -- replaced the decorative photo background so
+  // the auth screens read as part of the branded app rather than a
+  // stock image. Uses the emerald brand ink from theme/colors.ts.
+  bg: { flex: 1, backgroundColor: '#0F3D2A' },
   safe: { flex: 1 },
   scroll: {
     flexGrow: 1,
@@ -220,7 +242,8 @@ const styles = StyleSheet.create({
   },
   cardInner: {
     padding: spacing.xl,
-    backgroundColor: Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+    backgroundColor:
+      Platform.OS === 'android' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
   },
 
   backRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.lg },

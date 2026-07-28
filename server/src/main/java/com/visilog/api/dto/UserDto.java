@@ -11,11 +11,12 @@ public record UserDto(
         String role,
         UUID employeeId,
         UUID organizationId,
-        String organizationName
+        String organizationName,
+        boolean emailVerified
 ) {
     public static UserDto from(AppUser user, Organization org) {
         return new UserDto(
                 user.getId(), user.getEmail(), user.getName(), user.getRole().name(),
-                user.getEmployeeId(), org.getId(), org.getName());
+                user.getEmployeeId(), org.getId(), org.getName(), user.isEmailVerified());
     }
 }

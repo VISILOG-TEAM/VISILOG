@@ -18,6 +18,7 @@ interface UserDto {
   employeeId: string | null;
   organizationId: string;
   organizationName: string;
+  emailVerified: boolean;
 }
 
 interface AuthResponse {
@@ -68,9 +69,12 @@ interface AuthContextValue {
     adminEmail: string,
     adminPassword: string,
   ) => Promise<AuthResult>;
+  verifyEmail: (code: string) => Promise<{ ok: boolean; error?: string }>;
+  resendVerification: () => Promise<MessageResult>;
   logout: () => Promise<void>;
   verifyPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
   updateOrganization: (patch: OrganizationPatch) => Promise<AuthResult>;
+  updateProfile: (name: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -85,6 +89,11 @@ const mapUser = (userDto: UserDto): User => ({
   employeeId: userDto.employeeId,
   organizationId: userDto.organizationId,
   organizationName: userDto.organizationName,
+  // Accounts created before email verification existed were backfilled
+  // as verified server-side; the `!== false` guard covers a response
+  // from an older backend build that doesn't send the field at all,
+  // which would otherwise strand everyone on the verify screen.
+  emailVerified: userDto.emailVerified !== false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -303,6 +312,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Email verification. Both calls run on the token handed out at
+  // signup -- which the backend deliberately restricts to these two
+  // endpoints plus /auth/me until the code is entered.
+  //
+  // A successful verify returns a *replacement* token: the one we're
+  // holding has "unverified" signed into it and would keep being
+  // refused. applyAuthResponse swaps it in and updates `user`, which
+  // is what lets RootNavigator move on to the real app.
+  const verifyEmail = async (code: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!code.trim()) {
+      return { ok: false, error: 'Enter the 6-digit code from your email.' };
+    }
+    try {
+      const res = await apiClient.post<AuthResponse>('/api/v1/auth/verify-email', {
+        code: code.trim(),
+      });
+      await applyAuthResponse(res);
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof ApiError ? err.message : 'Could not verify that code.',
+      };
+    }
+  };
+
+  const resendVerification = async (): Promise<MessageResult> => {
+    try {
+      const res = await apiClient.post<{ message: string }>('/api/v1/auth/resend-verification', {});
+      return { ok: true, message: res.message };
+    } catch (err) {
+      return {
+        ok: false,
+        message: err instanceof ApiError ? err.message : 'Could not send a new code.',
+      };
+    }
+  };
+
   // Step-up confirmation before a sensitive action on the *current*
   // session -- currently just clock-in (see ClockCard). Re-checks the
   // signed-in user's own password without touching the stored token.
@@ -339,6 +386,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Settings > "Your profile" -- rename yourself. The JWT doesn't carry
+  // the display name (see the backend's JwtService), so the existing
+  // session stays valid and we just swap our own copy of the user.
+  const updateProfile = async (name: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!name.trim()) {
+      return { ok: false, error: 'Enter a name.' };
+    }
+    try {
+      const dto = await apiClient.patch<UserDto>('/api/v1/auth/me', { name: name.trim() });
+      setUser(mapUser(dto));
+      return { ok: true };
+    } catch (err) {
+      return {
+        ok: false,
+        error: err instanceof ApiError ? err.message : 'Could not update your name.',
+      };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -349,11 +415,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         loginWithGoogle,
         registerCompany,
+        verifyEmail,
+        resendVerification,
         logout,
         verifyPassword,
         forgotPassword,
         resetPassword,
         updateOrganization,
+        updateProfile,
       }}
     >
       {children}

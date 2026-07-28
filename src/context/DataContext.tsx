@@ -289,7 +289,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const loadAll = async (): Promise<void> => {
-    if (!user) return;
+    // An account that hasn't confirmed its email yet holds a token the
+    // backend refuses everywhere but the verify endpoints, so firing
+    // these off would just log a dozen 403s for no benefit -- it can't
+    // see any of this data until it's through VerifyEmailScreen.
+    if (!user || !user.emailVerified) return;
     const isManager = user.role === 'manager';
     const appointmentsPath =
       user.role === 'visitor' ? '/api/v1/appointments?mine=true' : '/api/v1/appointments';

@@ -8,8 +8,10 @@ import com.visilog.api.dto.MessageResponse;
 import com.visilog.api.dto.OrganizationDto;
 import com.visilog.api.dto.RegisterCompanyRequest;
 import com.visilog.api.dto.ResetPasswordRequest;
+import com.visilog.api.dto.UpdateProfileRequest;
 import com.visilog.api.dto.SignupRequest;
 import com.visilog.api.dto.UserDto;
+import com.visilog.api.dto.VerifyEmailRequest;
 import com.visilog.api.entity.AppUser;
 import com.visilog.api.entity.BillingStatus;
 import com.visilog.api.entity.Employee;
@@ -63,6 +65,12 @@ public class AuthService {
     // login form with no other rate-limit layer in front of it.
     private static final int MAX_LOGIN_ATTEMPTS = 5;
     private static final Duration LOCKOUT_DURATION = Duration.ofMinutes(15);
+
+    // Longer than the 15-minute password-reset window on purpose: this
+    // one is entered while someone is mid-signup and may be switching
+    // apps to find the email on a phone that's asking them to log into
+    // their mailbox first.
+    private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(30);
 
     // Generic response for forgotPassword regardless of whether the email
     // actually matched an account -- never confirm/deny account existence.
@@ -148,7 +156,11 @@ public class AuthService {
         billing.setRenewalDate(Instant.now().plus(730, ChronoUnit.DAYS));
         orgBillingRepository.save(billing);
 
-        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
+        // The welcome email waits until the address is actually
+        // confirmed (see verifyEmail) -- sending "welcome!" to an
+        // address nobody has proved they own is how a typo'd signup
+        // ends up mailing a stranger.
+        sendVerificationCode(user);
         return buildAuthResponse(user, org);
     }
 
@@ -177,7 +189,7 @@ public class AuthService {
         }
         user = appUserRepository.save(user);
 
-        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
+        sendVerificationCode(user);
         return buildAuthResponse(user, org);
     }
 
@@ -210,6 +222,11 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(randomUnusablePassword()));
         user.setName(googleUser.name());
         user.setRole(role);
+        // No verification step for a Google account: Google only issued
+        // us that ID token because the person signed into that mailbox,
+        // so mailing them a code to prove the same thing again would be
+        // a pointless extra screen.
+        user.setEmailVerified(true);
         if (match.isPresent()) {
             user.setEmployeeId(match.get().getId());
         }
@@ -217,6 +234,66 @@ public class AuthService {
 
         mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
         return buildAuthResponse(user, org);
+    }
+
+    // Confirms the address an account signed up with. The account is
+    // identified by its own token, not by anything in the body -- the
+    // signup response already handed the client a (restricted) token,
+    // so there's nothing to look up and nothing an attacker could aim
+    // at somebody else's account.
+    //
+    // On success a *fresh* token is returned, because the old one has
+    // verified=false baked into it (see JwtService) and would keep
+    // being refused by JwtAuthFilter otherwise.
+    @Transactional
+    public AuthResponse verifyEmail(AuthPrincipal principal, VerifyEmailRequest req) {
+        AppUser user = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+        Organization org = organizationRepository.findById(principal.organizationId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+
+        // Already verified: hand back a good token rather than an error.
+        // This is what a double-tap on "Verify" looks like, and failing
+        // it would strand the caller on the verify screen holding a
+        // stale unverified token.
+        if (user.isEmailVerified()) {
+            return buildAuthResponse(user, org);
+        }
+
+        if (user.getVerificationCode() == null || user.getVerificationCodeExpiresAt() == null
+                || !user.getVerificationCode().equals(req.code().trim())
+                || Instant.now().isAfter(user.getVerificationCodeExpiresAt())) {
+            throw ApiException.badRequest(
+                    "That code is incorrect or has expired. Tap \"Resend code\" to get a new one.");
+        }
+
+        user.setEmailVerified(true);
+        user.setVerificationCode(null);
+        user.setVerificationCodeExpiresAt(null);
+        user = appUserRepository.save(user);
+
+        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
+        return buildAuthResponse(user, org);
+    }
+
+    @Transactional
+    public MessageResponse resendVerification(AuthPrincipal principal) {
+        AppUser user = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+        if (user.isEmailVerified()) {
+            return new MessageResponse("Your email address is already verified.");
+        }
+        sendVerificationCode(user);
+        return new MessageResponse("We've sent a new code to " + user.getEmail() + ".");
+    }
+
+    // Issues a fresh code (replacing any outstanding one) and mails it.
+    private void sendVerificationCode(AppUser user) {
+        String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+        user.setVerificationCode(code);
+        user.setVerificationCodeExpiresAt(Instant.now().plus(VERIFICATION_CODE_TTL));
+        appUserRepository.save(user);
+        mailService.sendVerificationEmail(user.getEmail(), user.getName(), code);
     }
 
     // Forgot Password: a numeric code emailed to the account, entered
@@ -305,6 +382,22 @@ public class AuthService {
         return UserDto.from(user, org);
     }
 
+    // Settings > "Your profile" -- the caller renaming themselves. No
+    // new token is issued: the JWT carries userId/org/role/email but not
+    // the display name (see JwtService), so the existing session stays
+    // valid and the frontend just refreshes its own copy of the user.
+    // Only the display name is editable -- email is the login identity
+    // and role comes from the staff roster at signup.
+    @Transactional
+    public UserDto updateProfile(AuthPrincipal principal, UpdateProfileRequest req) {
+        AppUser user = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+        Organization org = organizationRepository.findById(principal.organizationId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+        user.setName(req.name().trim());
+        return UserDto.from(appUserRepository.save(user), org);
+    }
+
     // Step-up confirmation for a sensitive action on an *already signed
     // in* session (currently: clocking in) -- re-checks the caller's own
     // password without issuing a new token. Doesn't stop someone who
@@ -326,7 +419,8 @@ public class AuthService {
 
     private AuthResponse buildAuthResponse(AppUser user, Organization org) {
         String token = jwtService.issueToken(
-                user.getId(), org.getId(), user.getRole().name(), user.getEmail(), user.getEmployeeId());
+                user.getId(), org.getId(), user.getRole().name(), user.getEmail(), user.getEmployeeId(),
+                user.isEmailVerified());
         String planId = orgBillingRepository.findByOrganizationId(org.getId())
                 .map(OrgBilling::getPlanId).orElse(null);
         return new AuthResponse(token, UserDto.from(user, org), OrganizationDto.from(org, planId));

@@ -28,6 +28,10 @@ export interface User {
   employeeId: string | null;
   organizationId: string;
   organizationName: string;
+  // False between signing up and entering the 6-digit code emailed to
+  // this address. RootNavigator holds such an account on the verify
+  // screen, and the backend refuses its token everywhere else.
+  emailVerified: boolean;
 }
 
 // A named GPS point + radius the clock-in/visitor-check-in geofence

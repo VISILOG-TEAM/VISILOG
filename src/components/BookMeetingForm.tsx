@@ -8,7 +8,8 @@ import Select from './Select';
 import MultiSelect from './MultiSelect';
 import Segmented from './Segmented';
 import Text from './Text';
-import { DateChips, TimeChips } from './QuickDateTime';
+import { DatePicker, TimePicker } from './QuickDateTime';
+import { StepProgress, StepNav } from './FormSteps';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -31,6 +32,17 @@ interface BookMeetingFormProps {
 // a restaurant, etc.) for meetings that don't happen on-site. The
 // organiser is derived server-side from the signed-in user's own
 // employee record -- see RoomBookingController.
+//
+// Split across four steps rather than one very long scroll: on a phone
+// the single-page version ran well past two screenfuls, so the Book
+// button was invisible from the top and it was genuinely unclear
+// whether anything was still required. Order follows what has to be
+// decided first -- you can't invite people to a meeting that doesn't
+// have a subject or a place yet -- and the last step is a plain
+// summary, because the one thing worth double-checking before
+// committing is the details, not re-editing them.
+const STEPS = ['Details', 'People', 'When', 'Review'];
+
 export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
   const { colors } = useTheme();
   const { employees, meetingRooms, bookRoom } = useData();
@@ -50,6 +62,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
   const [endTime, setEndTime] = useState('11:00');
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const [step, setStep] = useState(0);
 
   const onAddGuest = () => {
     if (!guestName.trim()) {
@@ -80,16 +93,39 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
     setExternalGuests((gs) => gs.filter((_, i) => i !== index));
   };
 
+  // Step 1 is the only one with anything mandatory: a meeting needs a
+  // subject and somewhere to happen. Attendees are optional (a solo
+  // room booking is legitimate) and the times always have a value.
+  const detailsProblem = (): string | null => {
+    if (!title.trim()) return 'Give the meeting a title.';
+    if (locationType === 'room' && !roomId) return 'Pick a meeting room.';
+    if (locationType === 'outside' && !outsideLocation.trim()) return 'Enter a location.';
+    return null;
+  };
+
+  const onNext = () => {
+    if (step === 0) {
+      const problem = detailsProblem();
+      if (problem) {
+        Alert.alert('Almost there', problem);
+        return;
+      }
+    }
+    if (step === STEPS.length - 1) {
+      onSubmit();
+      return;
+    }
+    setStep((s) => s + 1);
+  };
+
   const onSubmit = async () => {
     if (submittingRef.current) return;
-    const hasPlace = locationType === 'room' ? !!roomId : !!outsideLocation.trim();
-    if (!title.trim() || !hasPlace) {
-      Alert.alert(
-        'Almost there',
-        locationType === 'room'
-          ? 'Give the meeting a title and pick a room.'
-          : 'Give the meeting a title and enter a location.',
-      );
+    // Re-checked here rather than trusting that step 1 was passed --
+    // this is what actually guards the API call.
+    const problem = detailsProblem();
+    if (problem) {
+      Alert.alert('Almost there', problem);
+      setStep(0);
       return;
     }
     submittingRef.current = true;
@@ -117,9 +153,19 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
     }
   };
 
+  const placeLabel =
+    locationType === 'room'
+      ? meetingRooms.find((r) => r.id === roomId)?.name || 'No room picked'
+      : outsideLocation.trim() || 'No location entered';
+  const peopleCount = attendeeIds.length + externalGuests.length;
+
   return (
     <>
       <Card>
+        <StepProgress steps={STEPS} current={step} />
+
+        {step === 0 ? (
+          <>
         <Input
           label="Meeting title"
           value={title}
@@ -165,6 +211,11 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
               value: r.id,
               sublabel: `${r.floor} - Capacity ${r.capacity}`,
             }))}
+            emptyMessage={
+              'No meeting rooms have been set up yet.\n\n' +
+              'Ask your Administrator to add one in Company Setup > Meeting rooms, ' +
+              'or switch to "Outside location" above to book somewhere else.'
+            }
           />
         ) : (
           <Input
@@ -175,7 +226,11 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             icon="location-outline"
           />
         )}
+          </>
+        ) : null}
 
+        {step === 1 ? (
+          <>
         <MultiSelect
           label="Invite staff (optional)"
           placeholder="Anyone from the staff directory..."
@@ -187,6 +242,11 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             value: e.id,
             sublabel: e.department,
           }))}
+          emptyMessage={
+            'No staff have been added to the directory yet.\n\n' +
+            'Ask your Administrator to add them in Company Setup > Staff roster. ' +
+            'You can still invite outside guests below.'
+          }
         />
 
         <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
@@ -245,29 +305,90 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             Add guest
           </Text>
         </Pressable>
+          </>
+        ) : null}
 
+        {step === 2 ? (
+          <>
         <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
           Date
         </Text>
-        <DateChips value={date} onChange={setDate} />
+        <DatePicker value={date} onChange={setDate} />
         <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
           Start time
         </Text>
-        <TimeChips value={startTime} onChange={setStartTime} />
+        <TimePicker value={startTime} onChange={setStartTime} />
         <Text variant="label" color={colors.textSecondary} style={styles.chipsLabel}>
           End time
         </Text>
-        <TimeChips value={endTime} onChange={setEndTime} />
+        <TimePicker value={endTime} onChange={setEndTime} />
+          </>
+        ) : null}
+
+        {step === 3 ? (
+          <>
+            <Text variant="h3" style={{ marginBottom: spacing.sm }}>
+              {title.trim() || 'Untitled meeting'}
+            </Text>
+            <SummaryRow icon="location-outline" label="Where" value={placeLabel} />
+            <SummaryRow icon="calendar-outline" label="Date" value={date} />
+            <SummaryRow icon="time-outline" label="Time" value={`${startTime} - ${endTime}`} />
+            <SummaryRow
+              icon="people-outline"
+              label="People"
+              value={
+                peopleCount === 0
+                  ? 'Just you'
+                  : `${peopleCount} invited` +
+                    (externalGuests.length ? ` (${externalGuests.length} outside)` : '')
+              }
+            />
+            <SummaryRow
+              icon="flag-outline"
+              label="Priority"
+              value={priority.charAt(0).toUpperCase() + priority.slice(1)}
+            />
+            <Text variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
+              Tap Back to change anything. Everyone invited gets a notification, and outside
+              guests are emailed an invitation.
+            </Text>
+          </>
+        ) : null}
       </Card>
 
-      <Button
-        label="Book meeting"
-        icon="checkmark-circle-outline"
-        onPress={onSubmit}
+      <StepNav
+        current={step}
+        total={STEPS.length}
+        onBack={() => setStep((s) => Math.max(0, s - 1))}
+        onNext={onNext}
+        finishLabel="Book meeting"
+        finishIcon="checkmark-circle-outline"
         loading={submitting}
-        style={{ marginTop: spacing.md }}
       />
     </>
+  );
+}
+
+function SummaryRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  value: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={styles.summaryRow}>
+      <Ionicons name={icon} size={16} color={colors.textMuted} />
+      <Text variant="caption" color={colors.textSecondary} style={styles.summaryLabel}>
+        {label}
+      </Text>
+      <Text variant="bodyMd" style={{ flex: 1, textAlign: 'right' }} numberOfLines={2}>
+        {value}
+      </Text>
+    </View>
   );
 }
 
@@ -289,6 +410,8 @@ function toInstant(dateStr: string, timeStr: string): string {
 
 const styles = StyleSheet.create({
   chipsLabel: { marginBottom: spacing.xs },
+  summaryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6 },
+  summaryLabel: { marginLeft: 8, width: 68 },
   guestRow: {
     flexDirection: 'row',
     alignItems: 'center',

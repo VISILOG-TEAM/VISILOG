@@ -14,6 +14,8 @@ interface MultiSelectProps<T> {
   options?: Option<T>[];
   onChange?: (values: T[]) => void;
   icon?: IoniconName;
+  /** Shown inside the picker when `options` is empty, explaining why. */
+  emptyMessage?: string;
 }
 
 // Like Select, but lets the user tick more than one option before
@@ -26,6 +28,7 @@ export default function MultiSelect<T>({
   options = [],
   onChange,
   icon,
+  emptyMessage,
 }: MultiSelectProps<T>) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
@@ -87,6 +90,13 @@ export default function MultiSelect<T>({
 
             <FlatList
               data={options}
+              ListEmptyComponent={
+                <View style={styles.empty}>
+                  <Text variant="bodyMd" color={colors.textSecondary} style={{ textAlign: 'center' }}>
+                    {emptyMessage || 'Nothing to choose from yet.'}
+                  </Text>
+                </View>
+              }
               keyExtractor={(item) => String(item.value)}
               ItemSeparatorComponent={() => (
                 <View style={[styles.sep, { backgroundColor: colors.border }]} />
@@ -167,5 +177,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  empty: { paddingVertical: spacing.xl, paddingHorizontal: spacing.md },
   sep: { height: 1 },
 });

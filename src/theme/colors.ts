@@ -109,16 +109,20 @@ const palette = {
   blueDarkBg: '#122A4A',
   blueDarkFg: '#60A5FA',
 
-  // Deep, near-black neutrals (dark mode) -- slightly green-tinted to
-  // stay consistent with the brand rather than reading as pure grey.
-  ink900: '#0B1512', // background
-  ink800: '#132019', // surface
-  ink700: '#1A2921', // surfaceAlt
-  ink600: '#24352B', // border
-  ink500: '#34493D', // borderStrong
-  mist100: '#F1F5F2', // textPrimary
-  mist300: '#A9B7AF', // textSecondary
-  mist500: '#78877E', // textMuted
+  // Deep, near-black neutrals (dark mode). Deliberately neutral slate,
+  // NOT brand-tinted: an earlier green-tinted set made the whole app
+  // read as "dark green UI" rather than a dark theme. Brand identity in
+  // dark mode comes from the gold/primary accents on buttons, chips and
+  // highlights -- the surfaces underneath stay neutral so those accents
+  // actually pop instead of blending into a green wash.
+  ink900: '#0F1214', // background
+  ink800: '#171B1F', // surface
+  ink700: '#20262B', // surfaceAlt
+  ink600: '#2C333A', // border
+  ink500: '#3D454E', // borderStrong
+  mist100: '#F2F4F6', // textPrimary
+  mist300: '#AEB6BF', // textSecondary
+  mist500: '#7C858F', // textMuted
 };
 
 // VRA's own brand shades, used when no organization theme is supplied

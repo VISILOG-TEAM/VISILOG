@@ -14,6 +14,10 @@ interface SelectProps<T> {
   onChange?: (value: T) => void;
   icon?: IoniconName;
   error?: string;
+  /** Shown inside the picker when `options` is empty, so the user
+   * learns WHY there's nothing to choose (e.g. no rooms added yet)
+   * instead of staring at a blank sheet. */
+  emptyMessage?: string;
 }
 
 // A labelled "select"-style field. Tapping it opens a modal list of
@@ -26,6 +30,7 @@ export default function Select<T>({
   onChange,
   icon,
   error,
+  emptyMessage,
 }: SelectProps<T>) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
@@ -82,6 +87,13 @@ export default function Select<T>({
 
             <FlatList
               data={options}
+              ListEmptyComponent={
+                <View style={styles.empty}>
+                  <Text variant="bodyMd" color={colors.textSecondary} style={{ textAlign: 'center' }}>
+                    {emptyMessage || 'Nothing to choose from yet.'}
+                  </Text>
+                </View>
+              }
               keyExtractor={(item) => String(item.value)}
               ItemSeparatorComponent={() => (
                 <View style={[styles.sep, { backgroundColor: colors.border }]} />
@@ -152,5 +164,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
   },
+  empty: { paddingVertical: spacing.xl, paddingHorizontal: spacing.md },
   sep: { height: 1 },
 });

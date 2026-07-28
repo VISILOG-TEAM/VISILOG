@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, View, Pressable, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Text from './Text';
 import Input from './Input';
@@ -7,87 +7,49 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 
 const pad = (n: number): string => String(n).padStart(2, '0');
-const toDateStr = (d: Date): string =>
-  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-interface DateChipsProps {
+interface DatePickerProps {
   value: string;
   onChange: (dateStr: string) => void;
-  days?: number;
 }
 
-// Tap-to-pick date, no native picker module (so it works in plain Expo
-// Go, not just a custom dev client) -- a row of the next N days as
-// chips, plus a "Pick a date" fallback for anything further out or in
-// the past, since the quick-pick row alone was too restrictive.
-export function DateChips({ value, onChange, days = 10 }: DateChipsProps) {
+// A single "Pick a date" control. This used to also show a scrolling row
+// of quick-pick chips (Today / Tomorrow / Thu 30 ...) above the picker,
+// which meant two competing ways to set one field and a very tall form
+// -- the chips are gone and only the picker remains.
+//
+// Deliberately a plain text field rather than the OS date picker module:
+// keeps this working in stock Expo Go instead of requiring a custom dev
+// client build.
+export function DatePicker({ value, onChange }: DatePickerProps) {
   const { colors } = useTheme();
-  const [customOpen, setCustomOpen] = useState(false);
-  const options = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return Array.from({ length: days }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() + i);
-      const dateStr = toDateStr(d);
-      const label =
-        i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : `${WEEKDAYS[d.getDay()]} ${d.getDate()}`;
-      return { dateStr, label };
-    });
-  }, [days]);
-  const isQuickPick = options.some((opt) => opt.dateStr === value);
+  const [open, setOpen] = useState(false);
+  const expanded = open || !!value;
 
   return (
-    <View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
-        {options.map((opt) => {
-          const selected = opt.dateStr === value;
-          return (
-            <Pressable
-              key={opt.dateStr}
-              onPress={() => {
-                onChange(opt.dateStr);
-                setCustomOpen(false);
-              }}
-              style={[
-                styles.chip,
-                { borderColor: colors.border, backgroundColor: colors.surface },
-                selected && { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
-            >
-              <Text variant="label" color={selected ? colors.textInverse : colors.textPrimary}>
-                {opt.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+    <View style={styles.wrap}>
       <Pressable
-        onPress={() => setCustomOpen((o) => !o)}
+        onPress={() => setOpen((o) => !o)}
         style={[
-          styles.customToggle,
+          styles.toggle,
           { borderColor: colors.border, backgroundColor: colors.surface },
-          (customOpen || !isQuickPick) && {
-            backgroundColor: colors.primary,
-            borderColor: colors.primary,
-          },
+          expanded && { backgroundColor: colors.primary, borderColor: colors.primary },
         ]}
       >
         <Ionicons
           name="calendar-outline"
           size={16}
-          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
+          color={expanded ? colors.textInverse : colors.textPrimary}
         />
         <Text
           variant="label"
-          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
+          color={expanded ? colors.textInverse : colors.textPrimary}
           style={{ marginLeft: 6 }}
         >
-          Pick a date
+          {value ? `Date: ${value}` : 'Pick a date'}
         </Text>
       </Pressable>
-      {customOpen || !isQuickPick ? (
+      {expanded ? (
         <Input
           value={value}
           onChangeText={onChange}
@@ -100,92 +62,50 @@ export function DateChips({ value, onChange, days = 10 }: DateChipsProps) {
   );
 }
 
-interface TimeChipsProps {
+interface TimePickerProps {
   value: string;
   onChange: (timeStr: string) => void;
-  startHour?: number;
-  endHour?: number;
-  stepMinutes?: number;
 }
 
-// Same idea for time -- half-hour slots across the working day as
-// chips, plus a tap-to-open hour/minute stepper (up/down arrows) for
-// anything off the half-hour grid.
-export function TimeChips({
-  value,
-  onChange,
-  startHour = 7,
-  endHour = 19,
-  stepMinutes = 30,
-}: TimeChipsProps) {
+// Single "Pick a time" control -- opens an hour/minute stepper. Same
+// reasoning as DatePicker: the half-hour quick-pick chip row that used
+// to sit above this has been removed.
+export function TimePicker({ value, onChange }: TimePickerProps) {
   const { colors } = useTheme();
-  const [customOpen, setCustomOpen] = useState(false);
-  const options = useMemo(() => {
-    const slots: string[] = [];
-    for (let mins = startHour * 60; mins <= endHour * 60; mins += stepMinutes) {
-      slots.push(`${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`);
-    }
-    return slots;
-  }, [startHour, endHour, stepMinutes]);
-  const isQuickPick = options.includes(value);
+  const [open, setOpen] = useState(false);
+  const expanded = open || !!value;
 
   return (
-    <View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.row}>
-        {options.map((t) => {
-          const selected = t === value;
-          return (
-            <Pressable
-              key={t}
-              onPress={() => {
-                onChange(t);
-                setCustomOpen(false);
-              }}
-              style={[
-                styles.chip,
-                { borderColor: colors.border, backgroundColor: colors.surface },
-                selected && { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
-            >
-              <Text variant="label" color={selected ? colors.textInverse : colors.textPrimary}>
-                {t}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+    <View style={styles.wrap}>
       <Pressable
-        onPress={() => setCustomOpen((o) => !o)}
+        onPress={() => setOpen((o) => !o)}
         style={[
-          styles.customToggle,
+          styles.toggle,
           { borderColor: colors.border, backgroundColor: colors.surface },
-          (customOpen || !isQuickPick) && {
-            backgroundColor: colors.primary,
-            borderColor: colors.primary,
-          },
+          expanded && { backgroundColor: colors.primary, borderColor: colors.primary },
         ]}
       >
         <Ionicons
           name="time-outline"
           size={16}
-          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
+          color={expanded ? colors.textInverse : colors.textPrimary}
         />
         <Text
           variant="label"
-          color={customOpen || !isQuickPick ? colors.textInverse : colors.textPrimary}
+          color={expanded ? colors.textInverse : colors.textPrimary}
           style={{ marginLeft: 6 }}
         >
-          Pick a time
+          {value ? `Time: ${value}` : 'Pick a time'}
         </Text>
       </Pressable>
-      {customOpen || !isQuickPick ? <TimeStepper value={value} onChange={onChange} /> : null}
+      {expanded ? <TimeStepper value={value} onChange={onChange} /> : null}
     </View>
   );
 }
 
 function TimeStepper({ value, onChange }: { value: string; onChange: (t: string) => void }) {
   const { colors } = useTheme();
-  const [hStr, mStr] = value.split(':');
+  const [hStr, mStr] = (value || '09:00').split(':');
   const h = Number(hStr) || 0;
   const m = Number(mStr) || 0;
 
@@ -205,8 +125,8 @@ function TimeStepper({ value, onChange }: { value: string; onChange: (t: string)
       </Text>
       <StepperColumn
         value={pad(m)}
-        onUp={() => setMinute(m + 1)}
-        onDown={() => setMinute(m - 1)}
+        onUp={() => setMinute(m + 5)}
+        onDown={() => setMinute(m - 5)}
         colors={colors}
       />
     </View>
@@ -246,15 +166,8 @@ function StepperColumn({
 }
 
 const styles = StyleSheet.create({
-  row: { marginBottom: spacing.xs },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    marginRight: spacing.xs,
-  },
-  customToggle: {
+  wrap: { marginBottom: spacing.md },
+  toggle: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -262,7 +175,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
     borderWidth: 1,
-    marginBottom: spacing.md,
   },
 });
 
@@ -274,7 +186,7 @@ const stepperStyles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
-    marginBottom: spacing.md,
+    marginTop: spacing.xs,
   },
   col: { alignItems: 'center', width: 64 },
   btn: {

@@ -10,6 +10,7 @@ import SignupScreen from '../screens/SignupScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import RegisterCompanyScreen from '../screens/RegisterCompanyScreen';
 import LegalAgreementScreen from '../screens/LegalAgreementScreen';
+import VerifyEmailScreen from '../screens/VerifyEmailScreen';
 
 // Per-role app shells (each is its own bottom-tab navigator)
 import TabNavigator from './TabNavigator';
@@ -61,6 +62,18 @@ export default function RootNavigator() {
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="RegisterCompany" component={RegisterCompanyScreen} />
           <Stack.Screen name="LegalAgreement" component={LegalAgreementScreen} />
+        </Stack.Group>
+      ) : !user.emailVerified ? (
+        // ---------- Signed in, but email not confirmed yet ----------
+        // Registering an account gets you a token, not the app: until
+        // the code we emailed is entered, this is the only screen in
+        // the stack, so there is nowhere else to navigate to. The
+        // backend enforces the same thing independently (JwtAuthFilter
+        // refuses that token everywhere but the verify endpoints), so
+        // this is the visible half of a real gate rather than a screen
+        // that merely hides the app.
+        <Stack.Group>
+          <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         </Stack.Group>
       ) : (
         // ---------- Signed-in, role-resolved stack ----------

@@ -18,7 +18,7 @@ interface SettingsScreenProps {
 // preferences, organisation branding, sign-out.
 export default function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { colors, dark, setOrgTheme, setDarkOverride } = useTheme();
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
   const { plans, billing } = useData();
 
   // Priority support is just a listed perk on the Pro/Enterprise plan's
@@ -30,7 +30,21 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 
   const [notifyAppts, setNotifyAppts] = useState(true);
   const [notifyCalls, setNotifyCalls] = useState(true);
-  const [notifyNfc, setNotifyNfc] = useState(false);
+
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState(user?.name || '');
+  const [savingName, setSavingName] = useState(false);
+
+  const onSaveName = async () => {
+    setSavingName(true);
+    const result = await updateProfile(nameDraft);
+    setSavingName(false);
+    if (!result.ok) {
+      Alert.alert('Could not update your name', result.error || 'Something went wrong.');
+      return;
+    }
+    setEditingName(false);
+  };
 
   const [editingPassword, setEditingPassword] = useState(false);
   const [currentPw, setCurrentPw] = useState('');
@@ -94,6 +108,50 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             </View>
           </View>
         </View>
+
+        {/* Only the display name is editable here: email is the login
+            identity, and role is fixed at signup from the staff roster
+            (see AuthService.signup), so neither belongs behind a
+            self-service edit. */}
+        {editingName ? (
+          <View style={{ marginTop: spacing.md }}>
+            <Input
+              label="Display name"
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              placeholder="Your name"
+              icon="person-outline"
+            />
+            <View style={{ flexDirection: 'row' }}>
+              <Button
+                label="Cancel"
+                variant="ghost"
+                onPress={() => {
+                  setEditingName(false);
+                  setNameDraft(user?.name || '');
+                }}
+                style={{ flex: 1, marginRight: spacing.xs }}
+              />
+              <Button
+                label={savingName ? 'Saving...' : 'Save'}
+                onPress={onSaveName}
+                disabled={savingName}
+                style={{ flex: 1, marginLeft: spacing.xs }}
+              />
+            </View>
+          </View>
+        ) : (
+          <Button
+            label="Change display name"
+            variant="secondary"
+            icon="create-outline"
+            onPress={() => {
+              setNameDraft(user?.name || '');
+              setEditingName(true);
+            }}
+            style={{ marginTop: spacing.md }}
+          />
+        )}
       </Card>
 
       {/* Password */}
@@ -194,13 +252,10 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
               value={notifyCalls}
               onChange={setNotifyCalls}
             />
-            <Divider />
-            <ToggleRow
-              label="NFC access events"
-              sub="Notify on revoked or denied card taps."
-              value={notifyNfc}
-              onChange={setNotifyNfc}
-            />
+            {/* No "NFC access events" toggle: standalone NFC cards have
+                no backend model yet (the per-visit pass code lives on the
+                appointment), so there are no card-tap events to notify
+                about. Re-add this alongside real card issuance. */}
           </Card>
         </>
       ) : null}
@@ -293,7 +348,7 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 
       <Button
         label="Sign out"
-        variant="secondary"
+        variant="dangerSubtle"
         icon="log-out-outline"
         onPress={onLogout}
         style={{ marginTop: spacing.xl }}

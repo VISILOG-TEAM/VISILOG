@@ -15,7 +15,7 @@ import { spacing, radius } from '../theme/spacing';
 
 const HEIGHTS = { sm: 40, md: 48, lg: 56 };
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'dangerSubtle';
 type ButtonSize = keyof typeof HEIGHTS;
 
 interface ButtonProps {
@@ -71,6 +71,17 @@ export default function Button({
       fg: colors.textInverse,
       border: 'transparent',
       pressed: '#B91C1C',
+    },
+    // Red-tinted rather than solid red: for destructive actions that
+    // sit among ordinary rows (Sign out) where a full red slab would
+    // shout louder than it deserves. Label AND icon both take the red
+    // foreground -- on the solid `danger` variant the icon has to be
+    // white to stay legible, so a genuinely red icon needs this.
+    dangerSubtle: {
+      bg: colors.status.error.bg,
+      fg: colors.status.error.fg,
+      border: colors.status.error.fg,
+      pressed: colors.status.error.solid,
     },
   };
   const v = VARIANTS[variant] || VARIANTS.primary;

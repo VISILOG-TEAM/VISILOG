@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
 import { Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard } from '../components';
+import ManagerTour from '../components/ManagerTour';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
@@ -124,6 +125,10 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
             </View>
           ))}
       </Card>
+      {/* First-run orientation, shown once per Administrator. Lives
+          here rather than in the navigator so it appears over the
+          screen a new manager actually lands on. */}
+      <ManagerTour />
     </Screen>
   );
 }

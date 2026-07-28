@@ -47,6 +47,19 @@ public class AppUser {
     private String resetCode;
     private Instant resetCodeExpiresAt;
 
+    // Email verification. False until the account owner enters the
+    // 6-digit code we emailed them at signup; until then the JWT carries
+    // verified=false and JwtAuthFilter refuses everything except the
+    // handful of endpoints the verify screen itself needs. Accounts that
+    // predate this feature were backfilled as true (see V22) -- and
+    // Google accounts are created as true, since Google has already
+    // proved the person controls that mailbox.
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
+    private String verificationCode;
+    private Instant verificationCodeExpiresAt;
+
     // Login lockout -- resets to 0 on any successful login. Once it
     // hits AuthService.MAX_LOGIN_ATTEMPTS, lockedUntil is set and
     // login() rejects attempts (even with the right password) until

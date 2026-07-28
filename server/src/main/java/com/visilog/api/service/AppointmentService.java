@@ -51,9 +51,17 @@ public class AppointmentService {
     // Managers only see appointments where *they* are the host: an
     // Administrator is staff too, and neither role should be able to see,
     // let alone admit or reject, a visit that isn't theirs to answer for.
+    // Receptionists and Managers see every appointment in the org;
+    // Employees see only the ones they're hosting.
+    //
+    // Managers used to be filtered down to their own hosted visits like
+    // an Employee, which meant the person responsible for the whole
+    // organization couldn't see what anyone else had booked. They're
+    // the Administrator role (same one that owns Company Setup, the
+    // staff roster and billing), so org-wide visibility is the point.
     public List<AppointmentDto> list(UUID organizationId, AuthPrincipal me) {
         List<Appointment> all = appointmentRepository.findByOrganizationIdOrderByScheduledAtDesc(organizationId);
-        if (("EMPLOYEE".equals(me.role()) || "MANAGER".equals(me.role())) && me.employeeId() != null) {
+        if ("EMPLOYEE".equals(me.role()) && me.employeeId() != null) {
             all = all.stream().filter(a -> me.employeeId().equals(a.getHostId())).toList();
         }
         return all.stream().map(AppointmentDto::from).toList();

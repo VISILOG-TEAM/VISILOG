@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  ImageBackground,
   StyleSheet,
   Pressable,
   TextInput,
@@ -64,13 +63,8 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
     // On success the root navigator will swap to the app stack.
   };
   return (
-    <ImageBackground
-      source={require('../../assets/login-bg.jpg')}
-      style={styles.bg}
-      resizeMode="cover"
-    >
+    <View style={styles.bg}>
       <StatusBar style="light" />
-      <View style={styles.wash} />
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <ScrollView
@@ -167,7 +161,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -202,8 +196,10 @@ function Field({
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: '#0E4E55' },
-  wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
+  // Solid brand green -- replaced the decorative photo background so
+  // the auth screens read as part of the branded app rather than a
+  // stock image. Uses the emerald brand ink from theme/colors.ts.
+  bg: { flex: 1, backgroundColor: '#0F3D2A' },
   safe: { flex: 1 },
   scroll: {
     flexGrow: 1,

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  ImageBackground,
   StyleSheet,
   Pressable,
   TextInput,
@@ -61,13 +60,8 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
   };
 
   return (
-    <ImageBackground
-      source={require('../../assets/login-bg.jpg')}
-      style={styles.bg}
-      resizeMode="cover"
-    >
+    <View style={styles.bg}>
       <StatusBar style="light" />
-      <View style={styles.wash} />
       <SafeAreaView style={styles.safe}>
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
           <ScrollView
@@ -83,10 +77,6 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
               <View style={styles.cardInner}>
                 <Text style={styles.wordmark}>VisiLog</Text>
                 <Text style={styles.heading}>Register your company</Text>
-                <Text style={styles.subheading}>
-                  Set up VisiLog for your organization. You'll be the first Administrator -- add
-                  your staff roster and office details afterwards in Company Setup.
-                </Text>
 
                 <Field
                   icon="business-outline"
@@ -149,7 +139,7 @@ export default function RegisterCompanyScreen({ navigation }: RegisterCompanyScr
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -182,8 +172,10 @@ function Field({
 }
 
 const styles = StyleSheet.create({
-  bg: { flex: 1, backgroundColor: '#0E4E55' },
-  wash: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(8, 30, 36, 0.25)' },
+  // Solid brand green -- replaced the decorative photo background so
+  // the auth screens read as part of the branded app rather than a
+  // stock image. Uses the emerald brand ink from theme/colors.ts.
+  bg: { flex: 1, backgroundColor: '#0F3D2A' },
   safe: { flex: 1 },
   scroll: {
     flexGrow: 1,

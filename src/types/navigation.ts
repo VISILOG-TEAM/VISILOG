@@ -18,6 +18,11 @@ export type RootStackParamList = {
   Signup: undefined;
   ForgotPassword: undefined;
   RegisterCompany: undefined;
+
+  // Signed in but unverified -- the whole stack is just this one
+  // screen (see RootNavigator).
+  VerifyEmail: undefined;
+
   LegalAgreement:
     | {
         pending?: {

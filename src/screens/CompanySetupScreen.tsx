@@ -13,6 +13,15 @@ import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
 import type { BrandTheme, IoniconName, OfficeLocation } from '../types';
 
+// Resolves to null if `promise` hasn't settled within `ms`. Used to put
+// a ceiling on a GPS fix, which has no built-in timeout.
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 interface CompanySetupScreenProps {
   navigation: RootStackNavigation;
 }
@@ -133,6 +142,10 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
   const [radiusMeters, setRadiusMeters] = useState('500');
   const [savingLocation, setSavingLocation] = useState(false);
   const [locating, setLocating] = useState(false);
+  // Set once a GPS attempt has failed -- reveals the manual latitude/
+  // longitude fields. They stay hidden until then on purpose: typing
+  // coordinates is the fallback, not the way this is meant to be used.
+  const [gpsFailed, setGpsFailed] = useState(false);
 
   const onStartAddLocation = () => {
     setEditingId(null);
@@ -140,6 +153,9 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     setLatitude('');
     setLongitude('');
     setRadiusMeters('500');
+    // Each new form starts on the GPS-first path again -- a failure
+    // last time doesn't mean this attempt will fail too.
+    setGpsFailed(false);
     setFormOpen(true);
   };
 
@@ -149,26 +165,62 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     setLatitude(String(loc.latitude));
     setLongitude(String(loc.longitude));
     setRadiusMeters(String(loc.radiusMeters));
+    setGpsFailed(false);
     setFormOpen(true);
   };
 
   // Fills lat/lng from the phone's own GPS instead of making someone
   // look up coordinates manually -- stand at the office and tap this.
+  //
+  // Every failure path here ends by revealing the manual coordinate
+  // fields (setGpsFailed). Without that, a manager whose phone can't
+  // get a fix -- indoors, location services off, permission declined --
+  // has no way at all to set an office location, and since clock-in is
+  // gated on being inside one, that silently breaks attendance for the
+  // whole company with nothing on screen explaining why.
   const onUseCurrentLocation = async () => {
     setLocating(true);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Allow location access to use your current position.');
+        setGpsFailed(true);
+        Alert.alert(
+          'Permission needed',
+          'Allow location access to use your current position, or enter the coordinates yourself below.',
+        );
         return;
       }
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
+
+      // A fresh GPS fix indoors can take a very long time (or never
+      // arrive) on Android, and getCurrentPositionAsync has no timeout
+      // of its own -- left alone it spins forever and reads as a
+      // broken button. Fall back to the last known fix, and give up
+      // after 15 seconds either way.
+      const position =
+        (await Location.getLastKnownPositionAsync({ maxAge: 5 * 60 * 1000 })) ??
+        (await withTimeout(
+          Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+          15000,
+        ));
+
+      if (!position) {
+        setGpsFailed(true);
+        Alert.alert(
+          'Could not get location',
+          'Your phone did not return a position in time. Try again outdoors, or enter the coordinates yourself below.',
+        );
+        return;
+      }
+
       setLatitude(String(position.coords.latitude));
       setLongitude(String(position.coords.longitude));
+      setGpsFailed(false);
     } catch {
-      Alert.alert('Could not get location', 'Enable location services and try again.');
+      setGpsFailed(true);
+      Alert.alert(
+        'Could not get location',
+        'Enable location services and try again, or enter the coordinates yourself below.',
+      );
     } finally {
       setLocating(false);
     }
@@ -454,6 +506,37 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
               {latitude.trim() && longitude.trim() ? 'Location set' : 'No location set yet'}
             </Text>
           </View>
+
+          {/* Only appears once GPS has actually failed -- see gpsFailed.
+              These fields were deliberately removed as the primary way
+              to set a location (nobody should have to type coordinates
+              normally), but with no fallback at all a phone that can't
+              get a fix leaves the whole company unable to clock in. */}
+          {gpsFailed ? (
+            <View style={{ marginTop: spacing.sm }}>
+              <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: 6 }}>
+                Or enter the coordinates yourself: open Google Maps, press and hold on your
+                office, and copy the two numbers it shows.
+              </Text>
+              <Input
+                label="Latitude"
+                value={latitude}
+                onChangeText={setLatitude}
+                placeholder="e.g. 5.6037"
+                icon="navigate-outline"
+                keyboardType="numbers-and-punctuation"
+              />
+              <Input
+                label="Longitude"
+                value={longitude}
+                onChangeText={setLongitude}
+                placeholder="e.g. -0.1870"
+                icon="navigate-outline"
+                keyboardType="numbers-and-punctuation"
+              />
+            </View>
+          ) : null}
+
           <Input
             label="Radius (meters)"
             value={radiusMeters}
