@@ -47,15 +47,10 @@ export default function Avatar({ name = '', uri, size = 44 }: AvatarProps) {
     );
   }
 
-  // The signed-in org's own accent, not one of the hashed TINTS above.
-  // A company that sets its brand colour in Company Setup expects to
-  // see it on its own people -- the hashed palette ignored the theme
-  // entirely, so the profile card stayed teal-or-whatever no matter
-  // what the org picked. primarySurface is already derived per light/
-  // dark mode, so the initials stay legible in both.
+  const tint = tintFor(name);
   return (
-    <View style={[dim, styles.circle, { backgroundColor: colors.primarySurface }]}>
-      <Text style={{ fontFamily: fonts.displayBold, fontSize: size * 0.36, color: colors.primary }}>
+    <View style={[dim, styles.circle, { backgroundColor: tint + '22' }]}>
+      <Text style={{ fontFamily: fonts.displayBold, fontSize: size * 0.36, color: tint }}>
         {initials(name)}
       </Text>
     </View>

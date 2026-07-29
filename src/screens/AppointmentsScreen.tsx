@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,13 +50,12 @@ interface AppointmentsScreenProps {
 type AppointmentsView = 'appointments' | 'rooms';
 
 // AppointmentsScreen
-// Pre-scheduled visits with three statuses from the spec:
-// - Pending (needs receptionist action)
-// - Admitted (already approved + checked in)
-// - Rejected (denied entry)
-// Each pending row has one-tap Admit / Reject buttons. A top-level
-// slider also switches over to a Meeting Rooms view (available /
-// booked / in-use), since reception manages both from one screen.
+// Pre-scheduled visits with status tabs:
+// - Awaiting: pending approval from the host
+// - Upcoming: admitted visits still in the future (ready to check in)
+// - Admitted: all admitted visits
+// - Rejected: denied entry
+// A top-level slider also switches over to a Meeting Rooms view.
 export default function AppointmentsScreen({ navigation }: AppointmentsScreenProps) {
   const [view, setView] = useState<AppointmentsView>('appointments');
 
@@ -92,19 +92,16 @@ export default function AppointmentsScreen({ navigation }: AppointmentsScreenPro
   );
 }
 
-type AppointmentFilter = AppointmentStatus | 'all';
+type AppointmentFilter = 'awaiting' | 'upcoming' | 'admitted' | 'rejected';
 
 function AppointmentsList() {
   const { user } = useAuth();
-  const { appointments, updateAppointmentStatus, admitAppointment, refreshAll } = useData();
-  const [filter, setFilter] = useState<AppointmentFilter>('pending');
+  const { appointments, updateAppointmentStatus, admitAppointment, checkInAppointment, refreshAll } = useData();
+  const [filter, setFilter] = useState<AppointmentFilter>('awaiting');
   const [rescheduling, setRescheduling] = useState<Appointment | null>(null);
   const [rejecting, setRejecting] = useState<Appointment | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Previously the only way to see a new pending appointment someone
-  // else just booked was to sign out and back in -- pull down to
-  // refetch everything instead.
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -113,47 +110,85 @@ function AppointmentsList() {
       setRefreshing(false);
     }
   };
-  // Only Employees (and Visitors, on their own Visits screen) can edit
-  // an appointment's time -- Receptionist/Manager use Admit/Reject instead.
-  const canReschedule = user?.role === 'employee';
-  // Tapping "Admit" twice before the first request finishes used to
-  // check the same visitor in twice -- the row doesn't leave the
-  // pending list until the response comes back, so a second tap in
-  // that window fired a second, real admit. Track in-flight ids
-  // synchronously (a ref, not state) so the second tap is ignored.
-  const admittingRef = useRef(new Set<string>());
 
-  const filtered = useMemo(
-    () =>
-      appointments
-        .filter((a) => filter === 'all' || a.status === filter)
-        .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime()),
-    [appointments, filter],
-  );
+  // All roles can reschedule a non-rejected appointment.
+  const canReschedule = true;
+
+  const admittingRef = useRef(new Set<string>());
+  const checkingInRef = useRef(new Set<string>());
+
+  const now = Date.now();
+
+  const filtered = useMemo(() => {
+    const sorted = [...appointments].sort(
+      (a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
+    );
+    if (filter === 'awaiting') return sorted.filter((a) => a.status === 'pending');
+    if (filter === 'upcoming')
+      return sorted.filter(
+        (a) => a.status === 'admitted' && new Date(a.scheduledAt).getTime() > now,
+      );
+    if (filter === 'admitted') return sorted.filter((a) => a.status === 'admitted');
+    if (filter === 'rejected') return sorted.filter((a) => a.status === 'rejected');
+    return sorted;
+  }, [appointments, filter, now]);
 
   const onAdmit = (appt: Appointment) => {
     if (admittingRef.current.has(appt.id)) return;
-    Alert.alert('Admit visitor?', `${appt.visitorName} will be registered and checked in.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Admit',
-        onPress: async () => {
-          if (admittingRef.current.has(appt.id)) return;
-          admittingRef.current.add(appt.id);
-          try {
-            const v = await admitAppointment(appt);
-            Alert.alert('Admitted', `${v.fullName} - ${v.badgeId}`);
-          } catch (err) {
-            Alert.alert(
-              'Could not admit visitor',
-              err instanceof ApiError ? err.message : 'Something went wrong.',
-            );
-          } finally {
-            admittingRef.current.delete(appt.id);
-          }
+    Alert.alert(
+      'Admit visitor?',
+      `${appt.visitorName} will be approved. Reception can check them in when they arrive.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Admit',
+          onPress: async () => {
+            if (admittingRef.current.has(appt.id)) return;
+            admittingRef.current.add(appt.id);
+            try {
+              await admitAppointment(appt);
+              Alert.alert('Admitted', `${appt.visitorName} has been approved.`);
+            } catch (err) {
+              Alert.alert(
+                'Could not admit visitor',
+                err instanceof ApiError ? err.message : 'Something went wrong.',
+              );
+            } finally {
+              admittingRef.current.delete(appt.id);
+            }
+          },
         },
-      },
-    ]);
+      ],
+    );
+  };
+
+  const onCheckIn = (appt: Appointment) => {
+    if (checkingInRef.current.has(appt.id)) return;
+    Alert.alert(
+      'Check in visitor?',
+      `${appt.visitorName} will be registered as on-site. Only press this when they have physically arrived.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Check in',
+          onPress: async () => {
+            if (checkingInRef.current.has(appt.id)) return;
+            checkingInRef.current.add(appt.id);
+            try {
+              await checkInAppointment(appt.id);
+              Alert.alert('Checked in', `${appt.visitorName} is now on-site.`);
+            } catch (err) {
+              Alert.alert(
+                'Could not check in',
+                err instanceof ApiError ? err.message : 'Something went wrong.',
+              );
+            } finally {
+              checkingInRef.current.delete(appt.id);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const onReject = (appt: Appointment) => setRejecting(appt);
@@ -178,10 +213,10 @@ function AppointmentsList() {
           value={filter}
           onChange={setFilter}
           options={[
-            { label: 'Pending', value: 'pending' },
+            { label: 'Awaiting', value: 'awaiting' },
+            { label: 'Upcoming', value: 'upcoming' },
             { label: 'Admitted', value: 'admitted' },
             { label: 'Rejected', value: 'rejected' },
-            { label: 'All', value: 'all' },
           ]}
         />
       </View>
@@ -197,9 +232,11 @@ function AppointmentsList() {
             icon="calendar-outline"
             title="No appointments here"
             message={
-              filter === 'pending'
-                ? "You're all caught up - no visitors waiting for approval."
-                : 'Try a different filter to see appointments in other states.'
+              filter === 'awaiting'
+                ? "You're all caught up — no visits waiting for approval."
+                : filter === 'upcoming'
+                  ? 'No admitted visits coming up. Admit a pending visit first.'
+                  : 'Try a different filter to see appointments in other states.'
             }
           />
         }
@@ -209,7 +246,8 @@ function AppointmentsList() {
             canAct={!!user?.employeeId && user.employeeId === item.hostId}
             onAdmit={() => onAdmit(item)}
             onReject={() => onReject(item)}
-            onReschedule={canReschedule ? () => setRescheduling(item) : null}
+            onCheckIn={() => onCheckIn(item)}
+            onReschedule={canReschedule && item.status !== 'rejected' ? () => setRescheduling(item) : null}
           />
         )}
       />
@@ -241,6 +279,7 @@ interface AppointmentRowProps {
   canAct: boolean;
   onAdmit: () => void;
   onReject: () => void;
+  onCheckIn: () => void;
   onReschedule: (() => void) | null;
 }
 
@@ -249,6 +288,7 @@ function AppointmentRow({
   canAct,
   onAdmit,
   onReject,
+  onCheckIn,
   onReschedule,
 }: AppointmentRowProps) {
   const { colors } = useTheme();
@@ -287,8 +327,6 @@ function AppointmentRow({
           icon="time-outline"
           text={`${fmtDate(appointment.scheduledAt)} - ${fmtTime(appointment.scheduledAt)}`}
         />
-        {/* NFC code, visible so reception can read it aloud if a card fails --
- only assigned once admitted, see AppointmentService.admit */}
         <MetaRow icon="card-outline" text={`Code: ${appointment.nfcCode || 'Not yet issued'}`} />
         {appointment.rescheduleReason ? (
           <MetaRow
@@ -307,6 +345,15 @@ function AppointmentRow({
           variant="secondary"
           icon="calendar-outline"
           onPress={onReschedule}
+          style={{ marginBottom: spacing.xs }}
+        />
+      )}
+
+      {appointment.status === 'admitted' && !appointment.checkedIn && (
+        <Button
+          label="Check in visitor"
+          icon="log-in-outline"
+          onPress={onCheckIn}
           style={{ marginBottom: spacing.xs }}
         />
       )}
@@ -341,10 +388,6 @@ interface RejectReasonModalProps {
   onRescheduleInstead: () => void;
 }
 
-// A reason is now required to reject a visit (per the backend guard in
-// AppointmentService.updateStatus) so the host always has a record of
-// why -- and if the real issue is just bad timing, "Reschedule instead"
-// routes to RescheduleModal rather than turning the visitor away.
 function RejectReasonModal({
   visible,
   visitorName,
@@ -413,16 +456,28 @@ function RejectReasonModal({
   );
 }
 
-function MetaRow({ icon, text }: { icon: IoniconName; text: string }) {
+function MetaRow({ icon, text, onPress }: { icon: IoniconName; text: string; onPress?: () => void }) {
   const { colors } = useTheme();
-  return (
+  const content = (
     <View style={styles.metaRow}>
-      <Ionicons name={icon} size={14} color={colors.textMuted} />
-      <Text variant="caption" color={colors.textSecondary} style={{ marginLeft: 6 }}>
+      <Ionicons name={icon} size={14} color={onPress ? colors.primary : colors.textMuted} />
+      <Text
+        variant="caption"
+        color={onPress ? colors.primary : colors.textSecondary}
+        style={{ marginLeft: 6 }}
+      >
         {text}
       </Text>
     </View>
   );
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} hitSlop={6}>
+        {content}
+      </Pressable>
+    );
+  }
+  return content;
 }
 
 // ---- Meeting Rooms view: available / booked / in-use ----
@@ -452,16 +507,6 @@ const ROOM_STATUS_META: Record<RoomStatus, { label: string; badge: StatusKey }> 
   inuse: { label: 'In use', badge: 'onsite' },
 };
 
-// A single FlatList drives the whole screen (every upcoming meeting,
-// room-based or an outside location -- previously an outside-location
-// booking never showed up *anywhere* after you made it, and a room
-// with several bookings only ever showed the single soonest one). The
-// per-room availability cards sit in the header as a plain, short,
-// non-virtualized list -- nesting a second FlatList in there would
-// trigger RN's "VirtualizedLists should never be nested" warning.
-// Lets the organiser tell at a glance who's seen the invite and who's
-// declined (and see the reason via the row itself is enough detail for
-// now -- a full per-person breakdown wasn't asked for).
 function responseSummary(responses: RoomBooking['responses']): string {
   const acknowledged = responses.filter((r) => r.status === 'acknowledged').length;
   const declined = responses.filter((r) => r.status === 'declined').length;
@@ -482,9 +527,11 @@ function MeetingsView() {
     employeeById,
     roomById,
     refreshRoomBookings,
+    rescheduleMeeting,
     markParticipantAbsent,
   } = useData();
   const [attendanceForId, setAttendanceForId] = useState<string | null>(null);
+  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
@@ -503,6 +550,7 @@ function MeetingsView() {
   };
 
   const attendanceBooking = roomBookings.find((b) => b.id === attendanceForId) || null;
+  const reschedulingBooking = roomBookings.find((b) => b.id === reschedulingId) || null;
 
   const onToggleAbsent = (employeeId: string, absent: boolean) => {
     if (!attendanceForId) return;
@@ -519,12 +567,6 @@ function MeetingsView() {
     [roomBookings, meetingRooms],
   );
 
-  // Not filtered by time at all -- BookMeetingForm defaults to today's
-  // date with a fixed 10:00-11:00 window, so a meeting booked later in
-  // the day is technically "in the past" the instant it's created; an
-  // "upcoming only" filter made it vanish immediately with no way to
-  // find it. Newest-booked first, so whatever you just booked is right
-  // at the top regardless of what time you picked.
   const sortedMeetings = useMemo(
     () =>
       [...roomBookings].sort(
@@ -590,13 +632,16 @@ function MeetingsView() {
         renderItem={({ item }) => {
           const organiser = employeeById(item.organiserId);
           const room = item.roomId ? roomById(item.roomId) : null;
+          const isOrganiser = item.organiserId === user?.employeeId;
+          const locationText = room ? room.name : item.location || 'Outside location';
+          const hasGoogleMapsLocation = !item.roomId && !!item.location;
           return (
             <Card style={{ marginHorizontal: spacing.md }}>
               <View style={styles.headRow}>
                 <View style={{ flex: 1 }}>
                   <Text variant="bodySemibold">{item.title}</Text>
                   <Text variant="caption" color={colors.textSecondary}>
-                    {room ? room.name : item.location || 'Outside location'}
+                    {locationText}
                   </Text>
                 </View>
                 {item.priority !== 'normal' ? (
@@ -614,6 +659,17 @@ function MeetingsView() {
                   text={`${fmtDate(item.startTime)} - ${fmtTime(item.startTime)} - ${fmtTime(item.endTime)}`}
                 />
                 <MetaRow icon="person-outline" text={`Organiser: ${organiser?.name || '--'}`} />
+                {hasGoogleMapsLocation ? (
+                  <MetaRow
+                    icon="location-outline"
+                    text={item.location}
+                    onPress={() =>
+                      Linking.openURL(
+                        `https://maps.google.com/?q=${encodeURIComponent(item.location)}`,
+                      )
+                    }
+                  />
+                ) : null}
                 {item.participantIds?.length ? (
                   <MetaRow
                     icon="people-outline"
@@ -632,8 +688,23 @@ function MeetingsView() {
                 {item.responses?.length ? (
                   <MetaRow icon="checkmark-done-outline" text={responseSummary(item.responses)} />
                 ) : null}
+                {item.rescheduleReason ? (
+                  <MetaRow
+                    icon="swap-horizontal-outline"
+                    text={`Rescheduled: ${item.rescheduleReason}`}
+                  />
+                ) : null}
               </View>
-              {item.organiserId === user?.employeeId &&
+              {isOrganiser && (
+                <Button
+                  label="Reschedule"
+                  variant="secondary"
+                  icon="calendar-outline"
+                  onPress={() => setReschedulingId(item.id)}
+                  style={{ marginBottom: spacing.xs }}
+                />
+              )}
+              {isOrganiser &&
               item.participantIds?.length &&
               new Date(item.endTime).getTime() < Date.now() ? (
                 <Button
@@ -653,7 +724,123 @@ function MeetingsView() {
         onClose={() => setAttendanceForId(null)}
         onToggle={onToggleAbsent}
       />
+      <RescheduleMeetingModal
+        visible={!!reschedulingId}
+        booking={reschedulingBooking}
+        onClose={() => setReschedulingId(null)}
+        onSave={rescheduleMeeting}
+      />
     </>
+  );
+}
+
+interface RescheduleMeetingModalProps {
+  visible: boolean;
+  booking: RoomBooking | null;
+  onClose: () => void;
+  onSave: (id: string, newStartTime: string, newEndTime: string, reason?: string) => Promise<RoomBooking>;
+}
+
+function RescheduleMeetingModal({ visible, booking, onClose, onSave }: RescheduleMeetingModalProps) {
+  const { colors } = useTheme();
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [reason, setReason] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const onSubmit = async () => {
+    if (!booking) return;
+    if (!date.trim() || !startTime.trim() || !endTime.trim()) {
+      Alert.alert('Almost there', 'New date, start time and end time are all required.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await onSave(
+        booking.id,
+        new Date(`${date}T${startTime}:00`).toISOString(),
+        new Date(`${date}T${endTime}:00`).toISOString(),
+        reason.trim() || undefined,
+      );
+      setDate('');
+      setStartTime('');
+      setEndTime('');
+      setReason('');
+      onClose();
+    } catch (err) {
+      Alert.alert(
+        'Could not reschedule',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={rejectStyles.wrap} behavior="padding">
+        <View style={[rejectStyles.card, { backgroundColor: colors.surface }]}>
+          <Text variant="h3">Reschedule meeting</Text>
+          <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
+            {booking?.title}
+          </Text>
+          <ModalField label="New date (YYYY-MM-DD)" value={date} onChangeText={setDate} colors={colors} />
+          <ModalField label="Start time (HH:MM)" value={startTime} onChangeText={setStartTime} colors={colors} />
+          <ModalField label="End time (HH:MM)" value={endTime} onChangeText={setEndTime} colors={colors} />
+          <ModalField label="Reason (optional)" value={reason} onChangeText={setReason} colors={colors} multiline />
+          <View style={rejectStyles.row}>
+            <Pressable
+              onPress={onClose}
+              style={[rejectStyles.btn, { backgroundColor: colors.surfaceAlt }]}
+            >
+              <Text variant="bodySemibold" color={colors.textSecondary}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onSubmit}
+              disabled={saving}
+              style={[rejectStyles.btn, { backgroundColor: colors.brand, opacity: saving ? 0.6 : 1 }]}
+            >
+              <Text variant="bodySemibold" color={colors.textInverse}>
+                Save
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+function ModalField({
+  label,
+  value,
+  onChangeText,
+  colors,
+  multiline,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (v: string) => void;
+  colors: ReturnType<typeof useTheme>['colors'];
+  multiline?: boolean;
+}) {
+  return (
+    <View style={{ marginBottom: spacing.sm }}>
+      <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+        {label}
+      </Text>
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        multiline={multiline}
+        style={[rejectStyles.input, { borderColor: colors.border, color: colors.textPrimary }]}
+        placeholderTextColor={colors.textMuted}
+      />
+    </View>
   );
 }
 
@@ -664,11 +851,6 @@ interface MarkAttendanceModalProps {
   onToggle: (employeeId: string, absent: boolean) => void;
 }
 
-// Lets the organiser mark who actually showed up, after the meeting --
-// independent of whether that person acknowledged or declined
-// beforehand (acknowledging an invite doesn't guarantee attendance).
-// Only invited staff have a response row to toggle; external guests
-// aren't tracked here.
 function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttendanceModalProps) {
   const { colors } = useTheme();
   const { employeeById } = useData();

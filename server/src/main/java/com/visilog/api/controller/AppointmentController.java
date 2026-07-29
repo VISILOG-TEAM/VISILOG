@@ -62,14 +62,14 @@ public class AppointmentController {
         return ResponseEntity.ok(appointmentService.admit(me.organizationId(), id, me));
     }
 
-    // Employee & Visitor only, per spec — enforced here rather than
-    // with @PreAuthorize since it's an either/or across two roles.
+    @PostMapping("/{id}/check-in")
+    public ResponseEntity<AppointmentDto> checkIn(@CurrentUser AuthPrincipal me, @PathVariable UUID id) {
+        return ResponseEntity.ok(appointmentService.checkIn(me.organizationId(), id));
+    }
+
     @PatchMapping("/{id}/reschedule")
     public ResponseEntity<AppointmentDto> reschedule(
             @CurrentUser AuthPrincipal me, @PathVariable UUID id, @Valid @RequestBody RescheduleRequest request) {
-        if (!"EMPLOYEE".equals(me.role()) && !"VISITOR".equals(me.role())) {
-            throw com.visilog.api.exception.ApiException.badRequest("Only employees and visitors can reschedule an appointment.");
-        }
         return ResponseEntity.ok(appointmentService.reschedule(me.organizationId(), id, request));
     }
 }

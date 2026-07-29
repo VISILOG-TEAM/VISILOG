@@ -12,7 +12,6 @@ import {
   Segmented,
   BookMeetingForm,
 } from '../components';
-import { DatePicker, TimePicker } from '../components/QuickDateTime';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
@@ -193,14 +192,27 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
               }))}
             />
 
-            <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-              Date
-            </Text>
-            <DatePicker value={date} onChange={setDate} />
-            <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-              Time
-            </Text>
-            <TimePicker value={time} onChange={setTime} />
+            <View style={styles.dateRow}>
+              <View style={{ flex: 1 }}>
+                <Input
+                  label="Date"
+                  value={date}
+                  onChangeText={setDate}
+                  placeholder="YYYY-MM-DD"
+                  icon="calendar-outline"
+                />
+              </View>
+              <View style={{ width: spacing.sm }} />
+              <View style={{ flex: 1 }}>
+                <Input
+                  label="Time"
+                  value={time}
+                  onChangeText={setTime}
+                  placeholder="HH:MM"
+                  icon="time-outline"
+                />
+              </View>
+            </View>
           </Card>
 
           <Button

@@ -183,7 +183,8 @@ interface DataContextValue {
     status: AppointmentStatus,
     reason?: string,
   ) => Promise<Appointment>;
-  admitAppointment: (appointment: Appointment) => Promise<Visitor>;
+  admitAppointment: (appointment: Appointment) => Promise<Appointment>;
+  checkInAppointment: (appointmentId: string) => Promise<Appointment>;
   logCall: (input: LogCallInput) => Promise<Call>;
   addEmployee: (input: EmployeeInput) => Promise<Employee>;
   updateEmployee: (id: string, input: EmployeeInput) => Promise<Employee>;
@@ -214,6 +215,12 @@ interface DataContextValue {
   ) => Promise<Appointment>;
   // self-service room booking
   bookRoom: (input: BookRoomInput) => Promise<RoomBooking>;
+  rescheduleMeeting: (
+    id: string,
+    newStartTime: string,
+    newEndTime: string,
+    reason?: string,
+  ) => Promise<RoomBooking>;
   refreshRoomBookings: () => Promise<void>;
   respondToMeeting: (
     bookingId: string,
@@ -429,20 +436,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return appointment;
   };
 
-  // Admitting also registers + checks in the visitor server-side. The
-  // admit response is only the updated appointment, so we refetch the
-  // visitor list (newest-first) and hand back that just-created record.
-  const admitAppointment = async (appointment: Appointment): Promise<Visitor> => {
+  // Admit = approve the visit. Visitor is not yet on-site; reception
+  // checks them in physically when they arrive (see checkInAppointment).
+  const admitAppointment = async (appointment: Appointment): Promise<Appointment> => {
     const apptDto = await apiClient.post<AppointmentDto>(
       `/api/v1/appointments/${appointment.id}/admit`,
     );
     const updated = mapAppointment(apptDto);
     setAppointments((as) => as.map((a) => (a.id === updated.id ? updated : a)));
+    return updated;
+  };
 
-    const visitorDtos = await apiClient.get<VisitorDto[]>('/api/v1/visitors');
-    const mapped = visitorDtos.map(mapVisitor);
-    setVisitors(mapped);
-    return mapped[0];
+  // Check-in = visitor physically arrives. Creates the Visitor on-site
+  // record and marks the appointment as checked-in.
+  const checkInAppointment = async (appointmentId: string): Promise<Appointment> => {
+    const apptDto = await apiClient.post<AppointmentDto>(
+      `/api/v1/appointments/${appointmentId}/check-in`,
+    );
+    const updated = mapAppointment(apptDto);
+    setAppointments((as) => as.map((a) => (a.id === updated.id ? updated : a)));
+    // Refetch visitors so the new on-site visitor shows up everywhere.
+    apiClient.get<VisitorDto[]>('/api/v1/visitors').then((dtos) =>
+      setVisitors(dtos.map(mapVisitor)),
+    ).catch(() => {});
+    return updated;
   };
 
   // ---- call log operations ----
@@ -690,6 +707,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return booking;
   };
 
+  const rescheduleMeeting = async (
+    id: string,
+    newStartTime: string,
+    newEndTime: string,
+    reason?: string,
+  ): Promise<RoomBooking> => {
+    const dto = await apiClient.patch<RoomBookingDto>(`/api/v1/room-bookings/${id}/reschedule`, {
+      newStartTime,
+      newEndTime,
+      reason: reason || '',
+    });
+    const updated = mapRoomBooking(dto);
+    setRoomBookings((rs) => rs.map((b) => (b.id === id ? updated : b)));
+    return updated;
+  };
+
   // A participant acknowledging ("seen it") or declining (with a
   // reason) their invite to someone else's meeting.
   const respondToMeeting = async (
@@ -817,6 +850,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         checkOutVisitor,
         updateAppointmentStatus,
         admitAppointment,
+        checkInAppointment,
         logCall,
         addEmployee,
         updateEmployee,
@@ -843,6 +877,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         rescheduleAppointment,
         // self-service room booking
         bookRoom,
+        rescheduleMeeting,
         refreshRoomBookings,
         respondToMeeting,
         markParticipantAbsent,

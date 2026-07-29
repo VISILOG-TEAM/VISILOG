@@ -33,15 +33,9 @@ interface HeaderProps {
 
 function ActionButton({ icon, onPress, badge, danger }: HeaderAction) {
   const { colors } = useTheme();
-  // A close button is always red, whether or not the caller thought to
-  // say so. Every X in this app dismisses a screen, which is the same
-  // "you're leaving" action as Sign out -- and there are a dozen of
-  // them across the screens, so making each one remember to opt in
-  // would guarantee some of them didn't.
-  const isDanger = danger || icon === 'close';
-  const background = isDanger ? colors.status.error.bg : colors.surface;
-  const border = isDanger ? colors.status.error.fg : colors.border;
-  const foreground = isDanger ? colors.status.error.fg : colors.brand;
+  const background = danger ? colors.status.error.bg : colors.surface;
+  const border = danger ? colors.status.error.fg : colors.border;
+  const foreground = danger ? colors.status.error.fg : colors.brand;
   return (
     <Pressable
       onPress={onPress}

@@ -53,4 +53,7 @@ public class Appointment {
 
     @Column(name = "reject_reason", length = 1000)
     private String rejectReason;
+
+    @Column(nullable = false)
+    private boolean checkedIn = false;
 }

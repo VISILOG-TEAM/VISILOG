@@ -9,7 +9,8 @@ import java.util.UUID;
 public record RoomBookingDto(
         UUID id, UUID roomId, String location, UUID organiserId, String title,
         Instant startTime, Instant endTime, List<UUID> participantIds, List<ExternalGuestDto> externalGuests,
-        String priority, List<RoomBookingResponseDto> responses
+        String priority, List<RoomBookingResponseDto> responses,
+        String rescheduleReason, Instant rescheduledAt
 ) {
     public record ExternalGuestDto(String name, String email, String phone) {
         public static ExternalGuestDto from(ExternalGuest g) {
@@ -22,6 +23,7 @@ public record RoomBookingDto(
                 b.getId(), b.getRoomId(), b.getLocation(), b.getOrganiserId(), b.getTitle(),
                 b.getStartTime(), b.getEndTime(), List.copyOf(b.getParticipantIds()),
                 b.getExternalGuests().stream().map(ExternalGuestDto::from).toList(),
-                b.getPriority().name(), responses);
+                b.getPriority().name(), responses,
+                b.getRescheduleReason(), b.getRescheduledAt());
     }
 }

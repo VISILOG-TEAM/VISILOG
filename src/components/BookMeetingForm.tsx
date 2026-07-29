@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Pressable, StyleSheet, Alert } from 'react-native';
+import { View, Pressable, StyleSheet, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Card from './Card';
 import Button from './Button';
@@ -218,6 +218,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             }
           />
         ) : (
+          <>
           <Input
             label="Location"
             value={outsideLocation}
@@ -225,6 +226,22 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             placeholder="e.g. Client's office, Accra Mall"
             icon="location-outline"
           />
+          {outsideLocation.trim() ? (
+            <Pressable
+              onPress={() =>
+                Linking.openURL(
+                  `https://maps.google.com/?q=${encodeURIComponent(outsideLocation.trim())}`,
+                )
+              }
+              style={[styles.mapsLink, { borderColor: colors.primary }]}
+            >
+              <Ionicons name="map-outline" size={16} color={colors.primary} />
+              <Text variant="caption" color={colors.primary} style={{ marginLeft: 6 }}>
+                Verify on Google Maps
+              </Text>
+            </Pressable>
+          ) : null}
+          </>
         )}
           </>
         ) : null}
@@ -281,6 +298,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
               placeholder="them@example.com"
               icon="mail-outline"
               autoCapitalize="none"
+              autoComplete="off"
               keyboardType="email-address"
             />
           </View>
@@ -296,21 +314,12 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             />
           </View>
         </View>
-        {/* Plain button for the first guest, "+ Add guest" for each one
-            after. The plus reads as "another" -- on an empty form it
-            suggested there was already a guest above it to add to. */}
         <Pressable
           onPress={onAddGuest}
           style={[styles.addGuestBtn, { borderColor: colors.primary }]}
         >
-          {externalGuests.length > 0 ? (
-            <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-          ) : null}
-          <Text
-            variant="bodySemibold"
-            color={colors.primary}
-            style={externalGuests.length > 0 ? { marginLeft: 6 } : undefined}
-          >
+          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          <Text variant="bodySemibold" color={colors.primary} style={{ marginLeft: 6 }}>
             Add guest
           </Text>
         </Pressable>
@@ -339,7 +348,19 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             <Text variant="h3" style={{ marginBottom: spacing.sm }}>
               {title.trim() || 'Untitled meeting'}
             </Text>
-            <SummaryRow icon="location-outline" label="Where" value={placeLabel} />
+            <SummaryRow
+              icon="location-outline"
+              label="Where"
+              value={placeLabel}
+              onPress={
+                locationType === 'outside' && outsideLocation.trim()
+                  ? () =>
+                      Linking.openURL(
+                        `https://maps.google.com/?q=${encodeURIComponent(outsideLocation.trim())}`,
+                      )
+                  : undefined
+              }
+            />
             <SummaryRow icon="calendar-outline" label="Date" value={date} />
             <SummaryRow icon="time-outline" label="Time" value={`${startTime} - ${endTime}`} />
             <SummaryRow
@@ -382,23 +403,38 @@ function SummaryRow({
   icon,
   label,
   value,
+  onPress,
 }: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   label: string;
   value: string;
+  onPress?: () => void;
 }) {
   const { colors } = useTheme();
-  return (
+  const row = (
     <View style={styles.summaryRow}>
-      <Ionicons name={icon} size={16} color={colors.textMuted} />
+      <Ionicons name={icon} size={16} color={onPress ? colors.primary : colors.textMuted} />
       <Text variant="caption" color={colors.textSecondary} style={styles.summaryLabel}>
         {label}
       </Text>
-      <Text variant="bodyMd" style={{ flex: 1, textAlign: 'right' }} numberOfLines={2}>
+      <Text
+        variant="bodyMd"
+        color={onPress ? colors.primary : undefined}
+        style={{ flex: 1, textAlign: 'right' }}
+        numberOfLines={2}
+      >
         {value}
       </Text>
     </View>
   );
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} hitSlop={6}>
+        {row}
+      </Pressable>
+    );
+  }
+  return row;
 }
 
 function formatDate(d: Date): string {
@@ -441,5 +477,16 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     height: 44,
     marginBottom: spacing.md,
+  },
+  mapsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    borderStyle: 'dashed',
+    height: 36,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.md,
+    marginTop: -spacing.sm,
   },
 });

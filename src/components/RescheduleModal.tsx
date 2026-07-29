@@ -10,7 +10,6 @@ import {
   type TextInputProps,
 } from 'react-native';
 import Text from './Text';
-import { DatePicker, TimePicker } from './QuickDateTime';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -63,14 +62,8 @@ export default function RescheduleModal({ appointment, visible, onClose }: Resch
             {appointment?.visitorName}
           </Text>
 
-          <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-            New date
-          </Text>
-          <DatePicker value={date} onChange={setDate} />
-          <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-            New time
-          </Text>
-          <TimePicker value={time} onChange={setTime} />
+          <Field label="New date (YYYY-MM-DD)" value={date} onChangeText={setDate} />
+          <Field label="New time (HH:MM)" value={time} onChangeText={setTime} />
           <Field label="Reason for change" value={reason} onChangeText={setReason} multiline />
 
           <View style={styles.row}>

@@ -158,45 +158,14 @@ const mix = (hexA: string, hexB: string, weight: number): string => {
   return `#${blend(1)}${blend(2)}${blend(3)}`;
 };
 
-// Rough relative luminance, 0 (black) to 1 (white). Good enough to
-// answer "would this read as text on a near-black surface".
-const luminance = (hex: string): number => {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  if (!m) return 1;
-  const [r, g, bl] = [1, 2, 3].map((i) => parseInt(m[i], 16) / 255);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
-};
-
-// Lifts a brand colour until it reads against the dark surfaces.
-//
-// An org's brand shades are authored for a WHITE background -- the
-// default brand is #0F3D2A, a near-black green. Used unchanged in dark
-// mode (which is what happened before) it lands almost exactly on the
-// #171B1F surface behind it, so anything drawn in the brand colour --
-// secondary button labels, header icons, the "Change display name"
-// button -- became invisible. Rather than asking every org to supply a
-// second dark palette, the colour is blended toward the light neutral
-// until it clears a legibility threshold. A brand that's already light
-// enough passes through untouched.
-const liftForDark = (hex: string): string => {
-  let out = hex;
-  for (let i = 0; i < 8 && luminance(out) < 0.42; i++) {
-    out = mix(palette.mist100, out, 0.2);
-  }
-  return out;
-};
-
 export const buildColors = (brandTheme?: BrandTheme | null, dark = false): Colors => {
   const b = brandTheme || DEFAULT_BRAND_THEME;
   return {
-    // Brand shades are used as FOREGROUNDS (labels, icons) far more
-    // than as fills, so in dark mode they get lifted to stay legible.
-    brand: dark ? liftForDark(b.brand) : b.brand,
-    brandDark: dark ? liftForDark(b.brandDark) : b.brandDark,
-    brandTint: dark ? liftForDark(b.brandTint) : b.brandTint,
-    // primary is the opposite: it's mostly a button FILL with white
-    // text on top, so lifting it would wreck that contrast instead of
-    // helping. Left as the org chose it.
+    // Brand + primary action -- same hex in both modes (already
+    // saturated enough to read on a dark background).
+    brand: b.brand,
+    brandDark: b.brandDark,
+    brandTint: b.brandTint,
     primary: b.primary,
     primaryPressed: b.primaryPressed,
 
