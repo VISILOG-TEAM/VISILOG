@@ -19,6 +19,7 @@ import { useData } from '../context/DataContext';
 import { fmtDate } from '../data/format';
 import type { RootStackNavigation } from '../types/navigation';
 import type { NfcCard as NfcCardType } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 interface NFCCardsScreenProps {
   navigation: RootStackNavigation;
@@ -31,6 +32,7 @@ type NfcCardFilter = 'active' | 'revoked' | 'all';
 // an expiry, and a status ('active' | 'revoked'). Receptionists can
 // revoke (or in this demo, "rotate") a card.
 export default function NFCCardsScreen({ navigation }: NFCCardsScreenProps) {
+  const refreshControl = usePullToRefresh();
   const { nfcCards, employeeById } = useData();
   const [filter, setFilter] = useState<NfcCardFilter>('active');
 
@@ -79,6 +81,7 @@ export default function NFCCardsScreen({ navigation }: NFCCardsScreenProps) {
       </View>
 
       <FlatList
+        refreshControl={refreshControl}
         data={list}
         keyExtractor={(c) => c.id}
         contentContainerStyle={styles.list}

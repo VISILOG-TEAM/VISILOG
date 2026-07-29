@@ -16,6 +16,7 @@ import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import type { RootStackNavigation } from '../types/navigation';
 import type { Employee, EmployeeInput, Role } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 interface DirectoryScreenProps {
   navigation: RootStackNavigation;
@@ -54,6 +55,7 @@ function mapCsvRow(record: Record<string, string>): EmployeeInput {
 // Lists every staff member; tap a row to open their detail page; tap
 // the phone icon to dial straight from the device.
 export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
+  const refreshControl = usePullToRefresh();
   const { employees, bulkImportEmployees } = useData();
   const [query, setQuery] = useState('');
   const [importVisible, setImportVisible] = useState(false);
@@ -90,6 +92,7 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
       </View>
 
       <FlatList
+        refreshControl={refreshControl}
         data={filtered}
         keyExtractor={(e) => e.id}
         contentContainerStyle={styles.list}

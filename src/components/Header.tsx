@@ -10,6 +10,10 @@ interface HeaderAction {
   icon: IoniconName;
   onPress?: () => void;
   badge?: number;
+  /** Red treatment for an action that signs you out of the app. Matches
+   *  the `dangerSubtle` Button variant used by Sign out in Settings, so
+   *  leaving VisiLog looks the same wherever you do it. */
+  danger?: boolean;
 }
 
 interface HeaderProps {
@@ -27,19 +31,22 @@ interface HeaderProps {
   onBackPress?: () => void;
 }
 
-function ActionButton({ icon, onPress, badge }: HeaderAction) {
+function ActionButton({ icon, onPress, badge, danger }: HeaderAction) {
   const { colors } = useTheme();
+  const background = danger ? colors.status.error.bg : colors.surface;
+  const border = danger ? colors.status.error.fg : colors.border;
+  const foreground = danger ? colors.status.error.fg : colors.brand;
   return (
     <Pressable
       onPress={onPress}
       hitSlop={8}
       style={({ pressed }) => [
         styles.iconBtn,
-        { backgroundColor: colors.surface, borderColor: colors.border },
+        { backgroundColor: background, borderColor: border },
         pressed && { opacity: 0.6 },
       ]}
     >
-      <Ionicons name={icon} size={20} color={colors.brand} />
+      <Ionicons name={icon} size={20} color={foreground} />
       {badge ? (
         <View style={[styles.badge, { backgroundColor: colors.palette.red600 }]}>
           <Text variant="caption" color={colors.textInverse} style={styles.badgeText}>

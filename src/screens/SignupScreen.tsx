@@ -98,7 +98,7 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
 
                 <Field
                   icon="business-outline"
-                  placeholder="Company code"
+                  placeholder="Company name"
                   value={companyCode}
                   onChangeText={setCompanyCode}
                   autoCapitalize="characters"

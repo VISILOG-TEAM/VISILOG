@@ -16,12 +16,14 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtDate, fmtTime } from '../data/format';
 import type { Appointment, AppointmentStatus, StatusKey } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 // VisitorVisitsScreen -- every booking this visitor has made, past and
 // pending (VisitorHomeScreen only ever showed the single latest one).
 // Visitors can also reschedule a pending visit, with a reason, same as
 // Employees can on their own Appointments tab.
 export default function VisitorVisitsScreen() {
+  const refreshControl = usePullToRefresh();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { appointments, employeeById } = useData();
@@ -45,6 +47,7 @@ export default function VisitorVisitsScreen() {
       </View>
 
       <FlatList
+        refreshControl={refreshControl}
         data={mine}
         keyExtractor={(a) => a.id}
         contentContainerStyle={styles.list}

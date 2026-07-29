@@ -118,7 +118,7 @@ class AuthServiceTest {
         assertThatThrownBy(() ->
                 authService.signup(new SignupRequest("NOPE9999", "a@b.com", "password123", "A")))
                 .isInstanceOf(ApiException.class)
-                .hasMessageContaining("valid company code");
+                .hasMessageContaining("couldn't find a company");
     }
 
     @Test

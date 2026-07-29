@@ -6,6 +6,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { fmtTime, fmtDate } from '../data/format';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 // ManagerClockInsScreen -- every clock-in/out record, for record
 // keeping. Sourced from DataContext's shared `clockRecords` ledger --
@@ -15,6 +16,7 @@ import { fmtTime, fmtDate } from '../data/format';
 // websockets/polling in this build) -- refetch on focus so re-opening
 // this tab always shows what everyone else has actually done.
 export default function ManagerClockInsScreen() {
+  const refreshControl = usePullToRefresh();
   const { colors } = useTheme();
   const { clockRecords, refreshClockRecords } = useData();
 
@@ -51,6 +53,7 @@ export default function ManagerClockInsScreen() {
       </View>
 
       <FlatList
+        refreshControl={refreshControl}
         data={sorted}
         keyExtractor={(r) => r.id}
         contentContainerStyle={styles.list}

@@ -26,6 +26,7 @@ import {
 } from '../data/export';
 import type { RootStackNavigation } from '../types/navigation';
 import type { Visitor } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 interface VisitorsScreenProps {
   navigation: RootStackNavigation;
@@ -41,6 +42,7 @@ type StatusFilter = 'all' | 'onsite' | 'completed';
 // - each row links into a detail page where check-out happens
 // A floating "Register" button opens the registration modal.
 export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
+  const refreshControl = usePullToRefresh();
   const { colors } = useTheme();
   const { visitors, employeeById } = useData();
   const [query, setQuery] = useState('');
@@ -118,6 +120,7 @@ export default function VisitorsScreen({ navigation }: VisitorsScreenProps) {
       </View>
 
       <SectionList
+        refreshControl={refreshControl}
         sections={sections}
         keyExtractor={(v) => v.id}
         contentContainerStyle={styles.list}

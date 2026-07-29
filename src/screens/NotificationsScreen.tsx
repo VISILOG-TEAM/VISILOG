@@ -21,6 +21,7 @@ import { fmtRelative } from '../data/format';
 import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
 import type { AppNotification, IoniconName, NotificationType, RoomBookingResponse } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 // One icon per notification type -- anything not listed (shouldn't
 // happen, but keeps this forward-compatible with a type this build
@@ -47,6 +48,7 @@ interface NotificationsScreenProps {
 // this list (fetched on focus) is the only place these show up -- see
 // NotificationService on the backend.
 export default function NotificationsScreen({ navigation }: NotificationsScreenProps) {
+  const refreshControl = usePullToRefresh();
   const { user } = useAuth();
   const {
     notifications,
@@ -124,6 +126,7 @@ export default function NotificationsScreen({ navigation }: NotificationsScreenP
       </View>
 
       <FlatList
+        refreshControl={refreshControl}
         data={sorted}
         keyExtractor={(n) => n.id}
         contentContainerStyle={styles.list}

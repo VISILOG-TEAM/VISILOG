@@ -13,6 +13,7 @@ import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { spacing } from '../theme/spacing';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useRefreshState } from './usePullToRefresh';
 
 interface ScreenProps {
   children?: ReactNode;
@@ -21,9 +22,14 @@ interface ScreenProps {
   style?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   edges?: Edge[];
-  // Pull-to-refresh -- only wired up on the scroll={true} (default)
-  // variant, since scroll={false} screens manage their own FlatList
-  // (which takes its own refreshControl prop directly).
+  // Pull-to-refresh. Optional: leave both out and the screen still
+  // pulls to refresh, reloading everything from the API (see below).
+  // Pass them to take over -- a screen that has its own local state to
+  // reset alongside the reload needs to drive it itself.
+  //
+  // Only applies to the scroll={true} (default) variant; scroll={false}
+  // screens render their own FlatList and pass usePullToRefresh() into
+  // its refreshControl prop directly.
   refreshing?: boolean;
   onRefresh?: () => void;
 }
@@ -70,6 +76,13 @@ export default function Screen({
   onRefresh,
 }: ScreenProps) {
   const { colors: themeColors } = useTheme();
+  // Every scrolling screen gets pull-to-refresh for free. Doing it here
+  // rather than per screen is the only way "every screen" stays true --
+  // wiring it up individually meant 7 of 29 screens had it and the rest
+  // silently didn't, with no way to tell which was which from the UI.
+  const fallback = useRefreshState();
+  const handleRefresh = onRefresh ?? fallback.onRefresh;
+  const isRefreshing = onRefresh ? !!refreshing : fallback.refreshing;
   if (scroll) {
     return (
       <SafeAreaView
@@ -83,13 +96,11 @@ export default function Screen({
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
             refreshControl={
-              onRefresh ? (
-                <RefreshControl
-                  refreshing={!!refreshing}
-                  onRefresh={onRefresh}
-                  tintColor={themeColors.primary}
-                />
-              ) : undefined
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={themeColors.primary}
+              />
             }
           >
             {children}

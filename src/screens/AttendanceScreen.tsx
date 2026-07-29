@@ -25,6 +25,7 @@ import {
 } from '../data/export';
 import type { RootStackNavigation } from '../types/navigation';
 import type { ClockRecord, ClockType, Employee } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 interface AttendanceScreenProps {
   navigation: RootStackNavigation;
@@ -35,6 +36,7 @@ interface AttendanceScreenProps {
 // reads the same shared clockRecords ledger as the Employee/Receptionist
 // "on the clock" cards and ManagerClockInsScreen.)
 export default function AttendanceScreen({ navigation }: AttendanceScreenProps) {
+  const refreshControl = usePullToRefresh();
   const { clockRecords, employeeById } = useData();
   const [exporting, setExporting] = useState(false);
 
@@ -95,6 +97,7 @@ export default function AttendanceScreen({ navigation }: AttendanceScreenProps) 
       </View>
 
       <FlatList
+        refreshControl={refreshControl}
         data={sorted}
         keyExtractor={(t) => t.id}
         contentContainerStyle={styles.list}

@@ -57,7 +57,7 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
             onPress: () => navigation.navigate('Notifications'),
             badge: unreadNotificationCount,
           },
-          { icon: 'log-out-outline', onPress: onLogout },
+          { icon: 'log-out-outline', onPress: onLogout, danger: true },
         ]}
       />
 

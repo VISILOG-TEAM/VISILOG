@@ -112,7 +112,7 @@ export default function ForgotPasswordScreen({ navigation }: ForgotPasswordScree
                       <TextInput
                         value={companyCode}
                         onChangeText={setCompanyCode}
-                        placeholder="Company code"
+                        placeholder="Company name"
                         placeholderTextColor="rgba(255,255,255,0.65)"
                         autoCapitalize="characters"
                         style={styles.input}

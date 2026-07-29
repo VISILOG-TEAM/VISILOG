@@ -18,6 +18,7 @@ import { useData } from '../context/DataContext';
 import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
 import type { MeetingRoom, MeetingRoomInput } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 interface MeetingRoomsScreenProps {
   navigation: RootStackNavigation;
@@ -40,6 +41,7 @@ function mapCsvRow(record: Record<string, string>): MeetingRoomInput {
 // The rooms managed here are exactly what BookMeetingForm and
 // AppointmentsScreen's "Meeting Rooms" tab draw from.
 export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenProps) {
+  const refreshControl = usePullToRefresh();
   const { colors } = useTheme();
   const { meetingRooms, addMeetingRoom, bulkImportMeetingRooms, removeMeetingRoom } = useData();
 
@@ -200,6 +202,7 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
       </View>
 
       <FlatList
+        refreshControl={refreshControl}
         data={meetingRooms}
         keyExtractor={(r) => r.id}
         contentContainerStyle={styles.list}

@@ -412,9 +412,24 @@ public class AuthService {
         }
     }
 
+    // Resolves the tenant from whatever the person typed into the
+    // "Company name" field on Login/Signup/Forgot password.
+    //
+    // Normalised exactly the way generateUniqueCompanyCode builds the
+    // stored code -- uppercased, with spaces and punctuation stripped --
+    // so someone who types their company's actual name gets a match:
+    // "Acme Logistics", "acme logistics" and "ACMELOGISTICS" all resolve
+    // to the same organization. Without this, the field would promise a
+    // company name and then reject every name with a space in it.
+    //
+    // This is a superset of the old behaviour, so codes in the previous
+    // format (ACMELO4821) still resolve exactly as before.
     private Organization findOrgByCodeOrThrow(String code) {
-        return organizationRepository.findByCode(code.trim().toUpperCase(Locale.ROOT))
-                .orElseThrow(() -> ApiException.badRequest("Enter a valid company code."));
+        String normalized = code.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
+        return organizationRepository.findByCode(normalized)
+                .orElseThrow(() -> ApiException.badRequest(
+                        "We couldn't find a company with that name. Check the spelling, "
+                        + "or ask your Administrator for your company's code."));
     }
 
     private AuthResponse buildAuthResponse(AppUser user, Organization org) {
@@ -431,6 +446,7 @@ public class AuthService {
         RANDOM.nextBytes(bytes);
         return java.util.Base64.getEncoder().encodeToString(bytes);
     }
+
     // The company's own name, uppercased with spaces and punctuation
     // stripped: "Acme Logistics" -> ACMELOGISTICS. This code is what a
     // company's entire staff and every visitor types on the login

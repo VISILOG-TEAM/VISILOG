@@ -171,13 +171,18 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 <Text style={styles.heading}>Login</Text>
                 <Text style={styles.subheading}>Welcome back. Please sign in to continue.</Text>
 
-                {/* Company code -- resolves which organization this login is for */}
+                {/* The company you belong to -- resolves which organization this
+                    login is for. Labelled "Company name" because that IS the
+                    code for companies registered from now on (see
+                    AuthService.generateUniqueCompanyCode); the backend strips
+                    spaces and punctuation so "Acme Logistics" and
+                    "ACMELOGISTICS" both resolve. */}
                 <View style={styles.fieldRow}>
                   <Ionicons name="business-outline" size={18} color="rgba(255,255,255,0.85)" />
                   <TextInput
                     value={companyCode}
                     onChangeText={setCompanyCode}
-                    placeholder="Company code"
+                    placeholder="Company name"
                     placeholderTextColor="rgba(255,255,255,0.65)"
                     autoCapitalize="characters"
                     style={styles.input}

@@ -8,6 +8,7 @@ import { useData } from '../context/DataContext';
 import { fmtDateTime, splitRecentOlder } from '../data/format';
 import type { RootStackNavigation } from '../types/navigation';
 import type { Call, StatusKey } from '../types';
+import { usePullToRefresh } from '../components/usePullToRefresh';
 
 interface CallLogScreenProps {
   navigation: RootStackNavigation;
@@ -18,6 +19,7 @@ type CallFilter = 'all' | 'incoming' | 'outgoing' | 'missed';
 // CallLogScreen -- every incoming / outgoing / missed call.
 // Fields per the User Guide: date+time, caller name+phone, host, duration, purpose.
 export default function CallLogScreen({ navigation }: CallLogScreenProps) {
+  const refreshControl = usePullToRefresh();
   const { colors } = useTheme();
   const { calls, employeeById } = useData();
   const [query, setQuery] = useState('');
@@ -69,6 +71,7 @@ export default function CallLogScreen({ navigation }: CallLogScreenProps) {
       </View>
 
       <SectionList
+        refreshControl={refreshControl}
         sections={sections}
         keyExtractor={(c) => c.id}
         contentContainerStyle={styles.list}

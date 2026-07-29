@@ -282,5 +282,9 @@ const styles = StyleSheet.create({
   },
 
   signOutRow: { alignItems: 'center', marginTop: spacing.lg },
-  signOutText: { fontFamily: fonts.regular, fontSize: 12, color: 'rgba(255,255,255,0.75)' },
+  // Red, like every other way out of the app. A literal theme red would
+  // disappear against this dark green card, so this is the same soft
+  // red the error text on this screen uses -- reads as "red" at a
+  // glance while staying legible on the brand background.
+  signOutText: { fontFamily: fonts.bold, fontSize: 12, color: '#FFB4B4' },
 });
