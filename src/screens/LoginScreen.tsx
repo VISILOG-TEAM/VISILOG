@@ -286,8 +286,6 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
                 </View>
               </View>
             </BlurView>
-
-            <Text style={styles.footer}>VisiLog 2.0 - Secure visitor management</Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>

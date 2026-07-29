@@ -296,12 +296,21 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
             />
           </View>
         </View>
+        {/* Plain button for the first guest, "+ Add guest" for each one
+            after. The plus reads as "another" -- on an empty form it
+            suggested there was already a guest above it to add to. */}
         <Pressable
           onPress={onAddGuest}
           style={[styles.addGuestBtn, { borderColor: colors.primary }]}
         >
-          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-          <Text variant="bodySemibold" color={colors.primary} style={{ marginLeft: 6 }}>
+          {externalGuests.length > 0 ? (
+            <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          ) : null}
+          <Text
+            variant="bodySemibold"
+            color={colors.primary}
+            style={externalGuests.length > 0 ? { marginLeft: 6 } : undefined}
+          >
             Add guest
           </Text>
         </Pressable>

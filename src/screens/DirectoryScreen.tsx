@@ -28,8 +28,8 @@ interface DirectoryScreenProps {
 // column, and FirstName+LastName combine into one name if there's no
 // single "name" column at all.
 function mapCsvRow(record: Record<string, string>): EmployeeInput {
-  const firstName = record['firstname'] || record['first name'] || '';
-  const lastName = record['lastname'] || record['last name'] || '';
+  const firstName = record['firstname'] || record['givenname'] || record['surname'] || '';
+  const lastName = record['lastname'] || record['familyname'] || record['othernames'] || '';
   const combinedName = [firstName, lastName].filter(Boolean).join(' ');
 
   return {
@@ -42,7 +42,16 @@ function mapCsvRow(record: Record<string, string>): EmployeeInput {
       record['staff id'] ||
       record['id'] ||
       '',
-    name: record['name'] || record['full name'] || record['fullname'] || combinedName || '',
+    name:
+      record['name'] ||
+      record['names'] ||
+      record['fullname'] ||
+      record['employeename'] ||
+      record['staffname'] ||
+      record['membername'] ||
+      record['displayname'] ||
+      combinedName ||
+      '',
     department: record['department'] || '',
     phone:
       record['phone'] || record['phone number'] || record['phonenumber'] || record['mobile'] || '',
@@ -117,7 +126,7 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
         visible={importVisible}
         onClose={() => setImportVisible(false)}
         title="Import staff"
-        columnsHint="Needs a name and an email for each person. Staff ID, department, phone and role\nare used if your file has them -- a missing staff ID is generated, and a missing or\nunrecognised role becomes employee."
+        columnsHint="Needs a name and an email for each person. Staff ID, department, phone and role are used if your file has them."
         mapRow={mapCsvRow}
         onImport={bulkImportEmployees}
       />
