@@ -52,13 +52,22 @@ public class EmployeeService {
 
     @Transactional
     public EmployeeDto create(UUID organizationId, EmployeeRequest req) {
-        if (employeeRepository.existsByOrganizationIdAndEmployeeCodeIgnoreCase(organizationId, req.employeeCode())) {
+        // A blank staff ID means the row came from a CSV that didn't
+        // carry one; generate it rather than refusing the row.
+        String code = req.employeeCode() == null || req.employeeCode().isBlank()
+                ? generateEmployeeCode(organizationId)
+                : req.employeeCode().trim();
+        if (employeeRepository.existsByOrganizationIdAndEmployeeCodeIgnoreCase(organizationId, code)) {
             throw ApiException.conflict("An employee with that code already exists.");
         }
+        // The seat cap is deliberately the LAST check: it's the only
+        // reason a well-formed row should ever be turned away, and the
+        // message needs to be the one the admin sees.
         checkSeatCap(organizationId);
         Employee e = new Employee();
         e.setOrganizationId(organizationId);
         applyRequest(e, req);
+        e.setEmployeeCode(code);
         return EmployeeDto.from(employeeRepository.save(e));
     }
 
@@ -114,19 +123,38 @@ public class EmployeeService {
         return new BulkImportResult<>(created, errors);
     }
 
+    // Only rejects a row the app genuinely cannot use. A name identifies
+    // the person and an email is what AuthService.signup matches against
+    // to hand out their role -- without those two the row is worthless.
+    //
+    // Everything else is filled in rather than refused. A staff ID gets
+    // generated (see applyRequest) and a missing role defaults to
+    // EMPLOYEE, because a spreadsheet exported from a payroll or HR
+    // system won't have VisiLog's own columns in it, and rejecting
+    // 1,668 perfectly good rows over a column the file was never going
+    // to have is not a validation rule -- it's a broken importer.
     private void validateRow(EmployeeRequest req) {
-        if (req.employeeCode() == null || req.employeeCode().isBlank()) {
-            throw ApiException.badRequest("Employee code is required.");
-        }
         if (req.name() == null || req.name().isBlank()) {
             throw ApiException.badRequest("Name is required.");
         }
         if (req.email() == null || !req.email().contains("@")) {
             throw ApiException.badRequest("A valid email is required.");
         }
-        if (req.role() == null || req.role().isBlank()) {
-            throw ApiException.badRequest("Role is required.");
+    }
+
+    // "<ORGCODE>-0001"-style, counting up from however many staff the
+    // org already has, and retried on the (rare) clash with a code that
+    // came from an imported file.
+    private String generateEmployeeCode(UUID organizationId) {
+        long existing = employeeRepository.countByOrganizationId(organizationId);
+        for (int attempt = 0; attempt < 10000; attempt++) {
+            String candidate = String.format("EMP-%04d", existing + 1 + attempt);
+            if (!employeeRepository.existsByOrganizationIdAndEmployeeCodeIgnoreCase(
+                    organizationId, candidate)) {
+                return candidate;
+            }
         }
+        throw ApiException.badRequest("Could not generate a staff ID for this row.");
     }
 
     @Transactional
@@ -146,8 +174,13 @@ public class EmployeeService {
         return EmployeeDto.from(employeeRepository.save(e));
     }
 
+    // Callers that can generate a code (see create) overwrite it after
+    // this; the null-guard is for the ones that can't reach here with a
+    // blank one anyway.
     private void applyRequest(Employee e, EmployeeRequest req) {
-        e.setEmployeeCode(req.employeeCode().trim());
+        if (req.employeeCode() != null && !req.employeeCode().isBlank()) {
+            e.setEmployeeCode(req.employeeCode().trim());
+        }
         e.setName(req.name().trim());
         e.setDepartment(req.department());
         e.setPhone(req.phone());
@@ -155,11 +188,20 @@ public class EmployeeService {
         e.setRole(parseRole(req.role()));
     }
 
+    // A missing or unrecognised role becomes EMPLOYEE rather than an
+    // error: a roster exported from an HR system has job titles in that
+    // column, if it has the column at all, and "Senior Analyst" should
+    // land someone in the app as an ordinary employee rather than
+    // rejecting their row. Elevated roles are set deliberately by the
+    // Administrator in Company Setup, never inferred from a spreadsheet.
     private Role parseRole(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Role.EMPLOYEE;
+        }
         try {
             return Role.valueOf(raw.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
-            throw ApiException.badRequest("role must be one of: employee, receptionist, manager, visitor.");
+            return Role.EMPLOYEE;
         }
     }
 }

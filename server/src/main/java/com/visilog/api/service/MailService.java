@@ -26,6 +26,7 @@ public class MailService {
 
     private static final Logger log = LoggerFactory.getLogger(MailService.class);
     private static final URI RESEND_ENDPOINT = URI.create("https://api.resend.com/emails");
+    private static final URI BREVO_ENDPOINT = URI.create("https://api.brevo.com/v3/smtp/email");
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
 
     private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(TIMEOUT).build();
@@ -36,6 +37,12 @@ public class MailService {
 
     @Value("${visilog.resend.from:VisiLog <onboarding@resend.dev>}")
     private String fromAddress;
+
+    @Value("${visilog.brevo.api-key:}")
+    private String brevoApiKey;
+
+    @Value("${visilog.brevo.from:VisiLog <onboarding@resend.dev>}")
+    private String brevoFrom;
 
     public void sendMeetingInvite(
             String toEmail, String guestName, String organiserName, String companyName, String companyCode,
@@ -89,11 +96,52 @@ public class MailService {
         send(toEmail, subject, body, "welcome");
     }
 
+    // Brevo first when it's configured, Resend otherwise. See the
+    // comment on visilog.brevo in application.yml for why: Resend needs
+    // a verified domain to reach arbitrary recipients, Brevo needs only
+    // a verified sender address, and VisiLog has to email visitors and
+    // outside guests at whatever address they give us.
     private void send(String toEmail, String subject, String textBody, String kind) {
-        if (apiKey == null || apiKey.isBlank()) {
-            log.info("Mail not configured -- skipping {} email to {}", kind, toEmail);
+        if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+            sendViaBrevo(toEmail, subject, textBody, kind);
             return;
         }
+        if (apiKey != null && !apiKey.isBlank()) {
+            sendViaResend(toEmail, subject, textBody, kind);
+            return;
+        }
+        log.info("Mail not configured -- skipping {} email to {}", kind, toEmail);
+    }
+
+    private void sendViaBrevo(String toEmail, String subject, String textBody, String kind) {
+        try {
+            String[] from = splitFrom(brevoFrom);
+            String json = objectMapper.writeValueAsString(Map.of(
+                    "sender", Map.of("name", from[0], "email", from[1]),
+                    "to", List.of(Map.of("email", toEmail)),
+                    "subject", subject,
+                    "textContent", textBody));
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(BREVO_ENDPOINT)
+                    .timeout(TIMEOUT)
+                    .header("api-key", brevoApiKey)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(json))
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() >= 400) {
+                log.warn("Could not send {} email to {}: Brevo returned {} - {}",
+                        kind, toEmail, response.statusCode(), response.body());
+            } else {
+                log.info("Sent {} email to {} via Brevo", kind, toEmail);
+            }
+        } catch (Exception ex) {
+            log.warn("Could not send {} email to {}: {}", kind, toEmail, ex.getMessage());
+        }
+    }
+
+    private void sendViaResend(String toEmail, String subject, String textBody, String kind) {
         try {
             String json = objectMapper.writeValueAsString(Map.of(
                     "from", fromAddress,
@@ -111,9 +159,27 @@ public class MailService {
             if (response.statusCode() >= 400) {
                 log.warn("Could not send {} email to {}: Resend returned {} - {}",
                         kind, toEmail, response.statusCode(), response.body());
+            } else {
+                log.info("Sent {} email to {} via Resend", kind, toEmail);
             }
         } catch (Exception ex) {
             log.warn("Could not send {} email to {}: {}", kind, toEmail, ex.getMessage());
         }
+    }
+
+    // Accepts either "VisiLog <mail@example.com>" or a bare
+    // "mail@example.com", and returns {displayName, emailAddress} --
+    // Brevo wants the two as separate JSON fields, where Resend takes
+    // the combined string.
+    private String[] splitFrom(String raw) {
+        String value = raw == null ? "" : raw.trim();
+        int open = value.indexOf('<');
+        int close = value.lastIndexOf('>');
+        if (open >= 0 && close > open) {
+            String name = value.substring(0, open).trim();
+            String email = value.substring(open + 1, close).trim();
+            return new String[] {name.isEmpty() ? "VisiLog" : name, email};
+        }
+        return new String[] {"VisiLog", value};
     }
 }

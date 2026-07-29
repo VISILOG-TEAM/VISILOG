@@ -34,6 +34,16 @@ visilog:
     api-key: ${RESEND_API_KEY:}
     from: ${RESEND_FROM:VisiLog <onboarding@resend.dev>}
 
+  # Brevo is preferred over Resend when both are configured, because
+  # Brevo verifies a single SENDER ADDRESS while Resend requires a whole
+  # verified DOMAIN. On Resend's shared onboarding@resend.dev sender,
+  # delivery is silently restricted to the account owner's own inbox --
+  # which is why mail to everyone else vanished. Brevo lets a plain
+  # Gmail address send to anybody once that one address is confirmed.
+  brevo:
+    api-key: ${BREVO_API_KEY:}
+    from: ${BREVO_FROM:${RESEND_FROM:VisiLog <onboarding@resend.dev>}}
+
 logging:
   level:
     com.visilog: INFO
