@@ -431,16 +431,44 @@ public class AuthService {
         RANDOM.nextBytes(bytes);
         return java.util.Base64.getEncoder().encodeToString(bytes);
     }
-
-    // "<NAMEPART><4 random digits>", e.g. "VRA2026"-shaped -- retried
-    // until it doesn't collide (astronomically unlikely, but cheap to
-    // guard against for a company code that gets printed on letters).
+    // The company's own name, uppercased with spaces and punctuation
+    // stripped: "Acme Logistics" -> ACMELOGISTICS. This code is what a
+    // company's entire staff and every visitor types on the login
+    // screen, and gets printed on letters and shared in messages, so
+    // it should read as the company rather than as a serial number.
+    // It used to be a 6-character truncation plus 4 random digits
+    // ("ACMELO4821"), which was unique but meant nothing to anyone.
+    //
+    // A number is appended ONLY on a collision, and counts up from 2
+    // (ACMELOGISTICS2) rather than being random -- two unrelated firms
+    // really can share a name, and this code is the only thing that
+    // resolves which tenant a login belongs to, so it must stay
+    // globally unique.
+    //
+    // Capped at 20 characters. The binding constraint isn't the code
+    // column (VARCHAR(32)) but the admin's roster entry created in
+    // registerCompany as "<code>-1001", which lands in employee_code
+    // -- also VARCHAR(32). 20 leaves room for both a collision suffix
+    // and that "-1001", so a company with a very long name can still
+    // register instead of failing on a truncation error.
     private String generateUniqueCompanyCode(String companyName) {
         String base = companyName.toUpperCase(Locale.ROOT).replaceAll("[^A-Z0-9]", "");
         if (base.isEmpty()) {
             base = "VISILOG";
         }
-        base = base.substring(0, Math.min(base.length(), 6));
+        base = base.substring(0, Math.min(base.length(), 20));
+
+        if (!organizationRepository.existsByCode(base)) {
+            return base;
+        }
+        for (int suffix = 2; suffix < 1000; suffix++) {
+            String candidate = base + suffix;
+            if (!organizationRepository.existsByCode(candidate)) {
+                return candidate;
+            }
+        }
+        // 999 companies sharing one name is not a real scenario, but
+        // falling back beats looping forever.
         String code;
         do {
             code = base + (1000 + RANDOM.nextInt(9000));
