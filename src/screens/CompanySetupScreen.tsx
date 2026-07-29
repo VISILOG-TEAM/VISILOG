@@ -13,6 +13,13 @@ import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
 import type { BrandTheme, IoniconName, OfficeLocation } from '../types';
 
+// A raw GPS reading carries about 14 decimal places, which is both
+// unreadable and false precision. 5 places is roughly a metre.
+function trimCoord(value: string): string {
+  const n = parseFloat(value);
+  return Number.isNaN(n) ? value : n.toFixed(5);
+}
+
 // Resolves to null if `promise` hasn't settled within `ms`. Used to put
 // a ceiling on a GPS fix, which has no built-in timeout.
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
@@ -502,8 +509,15 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
               size={18}
               color={latitude.trim() && longitude.trim() ? colors.primary : colors.textMuted}
             />
-            <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 8 }}>
-              {latitude.trim() && longitude.trim() ? 'Location set' : 'No location set yet'}
+            {/* Shows the actual coordinates once set, not just "Location
+                set". A bare confirmation is useless for the one thing an
+                admin needs to check -- whether the pin landed on their
+                office or on wherever the phone happened to think it was.
+                Trimmed to 5 decimal places, roughly a metre. */}
+            <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 8, flex: 1 }}>
+              {latitude.trim() && longitude.trim()
+                ? `Location set: ${trimCoord(latitude)}, ${trimCoord(longitude)}`
+                : 'No location set yet'}
             </Text>
           </View>
 

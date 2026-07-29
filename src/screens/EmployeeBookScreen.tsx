@@ -15,21 +15,14 @@ interface EmployeeBookScreenProps {
 export default function EmployeeBookScreen({ navigation }: EmployeeBookScreenProps) {
   return (
     <Screen>
-      <Header
-        eyebrow="Self-service"
-        title="Book a meeting"
-        subtitle="Reserve a room (or an outside spot) for your own meeting"
-      />
+      {/* No subtitle and no footnote: the four-step form below now says
+          what it does as you go (the location toggle offers "Meeting
+          room" or "Outside location" on step one), and the reschedule
+          hint was advice about a different screen entirely -- it just
+          pushed the form further down the page. */}
+      <Header eyebrow="Self-service" title="Book a meeting" />
 
       <BookMeetingForm onDone={() => navigation.navigate('Home')} />
-
-      <Text
-        variant="caption"
-        color="#94A3B8"
-        style={{ marginTop: spacing.sm, textAlign: 'center' }}
-      >
-        Need to reschedule? Edit the time from your appointment logs -- a reason is required.
-      </Text>
     </Screen>
   );
 }

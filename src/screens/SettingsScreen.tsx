@@ -87,11 +87,11 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
 
   return (
     <Screen>
+      {/* Close is red, like every other way out of a screen or the app. */}
       <Header
         title="Settings"
         subtitle="Profile, preferences & administration"
-        rightIcon="close"
-        onRightPress={() => navigation.goBack()}
+        rightActions={[{ icon: 'close', onPress: () => navigation.goBack(), danger: true }]}
       />
 
       {/* Profile */}

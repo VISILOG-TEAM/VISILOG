@@ -75,7 +75,7 @@ export default function LegalAgreementScreen({
     }
     Alert.alert(
       "You're all set",
-      `${result.organization!.name} is registered and active for the next ${TERM_YEARS} years. Your company code is ${result.organization!.code} -- share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`,
+      `${result.organization!.name} is registered and active for the next ${TERM_YEARS} years. Your company code is ${result.organization!.code}. Share it with your staff and visitors so they can sign up. You can find it again anytime in Company Setup.`,
       [
         {
           text: 'Continue',

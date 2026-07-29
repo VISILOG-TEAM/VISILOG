@@ -117,7 +117,7 @@ export default function DirectoryScreen({ navigation }: DirectoryScreenProps) {
         visible={importVisible}
         onClose={() => setImportVisible(false)}
         title="Import staff"
-        columnsHint="Columns: code, name, department, phone, email, role (employee/receptionist/manager)"
+        columnsHint="Needs a name and an email for each person. Staff ID, department, phone and role\nare used if your file has them -- a missing staff ID is generated, and a missing or\nunrecognised role becomes employee."
         mapRow={mapCsvRow}
         onImport={bulkImportEmployees}
       />
