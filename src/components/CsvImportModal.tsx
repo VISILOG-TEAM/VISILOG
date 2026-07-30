@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Modal, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as XLSX from 'xlsx';
 import Text from './Text';
 import Button from './Button';
 import { useTheme } from '../theme/ThemeContext';
@@ -48,18 +49,39 @@ export default function CsvImportModal<T>({
 
     setBusy(true);
     try {
-      const text = await FileSystem.readAsStringAsync(picked.assets[0].uri, { encoding: 'utf8' });
-      const records = csvRowsToRecords(parseCsv(text));
+      const asset = picked.assets[0];
+      const isXlsx = /\.xlsx?$/i.test(asset.name ?? '');
+
+      let rows: string[][];
+      if (isXlsx) {
+        let workbook: XLSX.WorkBook;
+        if (asset.file) {
+          const buf = await asset.file.arrayBuffer();
+          workbook = XLSX.read(buf, { type: 'array' });
+        } else {
+          const b64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
+          workbook = XLSX.read(b64, { type: 'base64' });
+        }
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as string[][];
+      } else {
+        const text = asset.file
+          ? await asset.file.text()
+          : await FileSystem.readAsStringAsync(asset.uri, { encoding: 'utf8' });
+        rows = parseCsv(text);
+      }
+
+      const records = csvRowsToRecords(rows);
       if (records.length === 0) {
         Alert.alert('Empty file', 'That file has no data rows to import.');
         return;
       }
-      const rows = records.map(mapRow);
-      const res = await onImport(rows);
+      const mapped = records.map(mapRow);
+      const res = await onImport(mapped);
       setResult(res);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : 'Check the file is a valid CSV and try again.';
+        err instanceof ApiError ? err.message : 'Check the file is a valid CSV or Excel file and try again.';
       Alert.alert('Could not import', message);
     } finally {
       setBusy(false);
@@ -107,7 +129,7 @@ export default function CsvImportModal<T>({
               <ActivityIndicator color={colors.primary} />
             </View>
           ) : (
-            <Button label="Choose CSV file" icon="document-attach-outline" onPress={onPickFile} />
+            <Button label="Choose CSV or Excel file" icon="document-attach-outline" onPress={onPickFile} />
           )}
 
           <Button
