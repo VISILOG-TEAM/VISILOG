@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { View, Modal, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as XLSX from 'xlsx';
 import Text from './Text';
 import Button from './Button';
 import { useTheme } from '../theme/ThemeContext';
@@ -53,8 +52,9 @@ export default function CsvImportModal<T>({
       const isXlsx = /\.xlsx?$/i.test(asset.name ?? '');
 
       let rows: string[][];
-      if (isXlsx) {
-        let workbook: XLSX.WorkBook;
+            if (isXlsx) {
+        const XLSX = await import('xlsx');
+        let workbook: any;
         if (asset.file) {
           const buf = await asset.file.arrayBuffer();
           workbook = XLSX.read(buf, { type: 'array' });
