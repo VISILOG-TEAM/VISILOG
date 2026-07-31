@@ -3,7 +3,7 @@ import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Button, Input, Select, Badge } from '../components';
 import { useTheme } from '../theme/ThemeContext';
-import { spacing } from '../theme/spacing';
+import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
 import { visitPurposes, nextBadgeId } from '../data/mockData';
 import { ApiError } from '../api/client';
