@@ -48,29 +48,12 @@ export default function CsvImportModal<T>({
 
     setBusy(true);
     try {
-      const asset = picked.assets[0];
-      const isXlsx = /\.xlsx?$/i.test(asset.name ?? '');
+const asset = picked.assets[0];
 
-      let rows: string[][];
-            if (isXlsx) {
-        const XLSX = await import('xlsx');
-        let workbook: any;
-        if (asset.file) {
-          const buf = await asset.file.arrayBuffer();
-          workbook = XLSX.read(buf, { type: 'array' });
-        } else {
-          const b64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
-          workbook = XLSX.read(b64, { type: 'base64' });
-        }
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as string[][];
-      } else {
-        const text = asset.file
-          ? await asset.file.text()
-          : await FileSystem.readAsStringAsync(asset.uri, { encoding: 'utf8' });
-        rows = parseCsv(text);
-      }
-
+const text = asset.file
+  ? await asset.file.text()
+  : await FileSystem.readAsStringAsync(asset.uri, { encoding: 'utf8' });
+const rows = parseCsv(text);
       const records = csvRowsToRecords(rows);
       if (records.length === 0) {
         Alert.alert('Empty file', 'That file has no data rows to import.');
