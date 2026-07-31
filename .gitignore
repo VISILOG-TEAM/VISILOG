@@ -4,3 +4,6 @@ dist/
 web-build/
 .env
 *.patch
+
+apply-*.ps1
+*-log.txt
