@@ -21,17 +21,22 @@ import org.springframework.web.filter.OncePerRequestFilter;
 // unauthenticated -- SecurityConfig decides what that's allowed to reach.
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    // The only endpoints an account with an unverified email may reach.
-    // Everything else is refused here rather than in each controller, so
-    // a new endpoint is gated by default instead of by remembering to
-    // gate it: /auth/me and GET /org are what the app needs to render
-    // the verify screen at all, and the other two are the verify step
-    // itself. (POST/PATCH /org -- Company Setup branding -- is NOT in
-    // this set; only the GET is allowed through, see below.)
-    private static final Set<String> UNVERIFIED_ALLOWED_PATHS = Set.of(
+    // The only endpoints an account with an unverified email, or one
+    // still awaiting owner approval, may reach. Everything else is
+    // refused here rather than in each controller, so a new endpoint is
+    // gated by default instead of by remembering to gate it: /auth/me
+    // and GET /org are what the app needs to render either waiting
+    // screen at all, verify-email/resend-verification are the email
+    // side of the flow, and refresh-token is how a pending-approval
+    // session picks up a fresh token once the owner (who is on a
+    // separate, unblocked session) has approved them. (POST/PATCH /org
+    // -- Company Setup branding -- is NOT in this set; only the GET is
+    // allowed through, see below.)
+    private static final Set<String> RESTRICTED_ALLOWED_PATHS = Set.of(
             "/api/v1/auth/me",
             "/api/v1/auth/verify-email",
-            "/api/v1/auth/resend-verification");
+            "/api/v1/auth/resend-verification",
+            "/api/v1/auth/refresh-token");
 
     private static final String ORG_PATH = "/api/v1/org";
 
@@ -61,12 +66,24 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                if (!isEmailVerified(claims) && !isAllowedWhileUnverified(request)) {
+                if (!isEmailVerified(claims) && !isAllowedWhileRestricted(request)) {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
                     response.getWriter().write(
                             "{\"error\":\"EMAIL_NOT_VERIFIED\","
                             + "\"message\":\"Verify your email address to finish setting up your account.\"}");
+                    return;
+                }
+
+                // Checked only once the email side has already passed --
+                // verify-email stays the first screen someone sees, and
+                // this is the second gate behind it.
+                if (isEmailVerified(claims) && !isOwnerApproved(claims) && !isAllowedWhileRestricted(request)) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write(
+                            "{\"error\":\"OWNER_APPROVAL_PENDING\","
+                            + "\"message\":\"Your account is waiting on your company owner's approval.\"}");
                     return;
                 }
             } catch (JwtException | IllegalArgumentException ex) {
@@ -86,14 +103,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         return verified == null || verified;
     }
 
-    private boolean isAllowedWhileUnverified(HttpServletRequest request) {
+    // Tokens issued before owner approval existed carry no `approved`
+    // claim at all -- treated as approved for the same reason
+    // isEmailVerified treats a missing `verified` claim as true (see
+    // V23's backfill): nobody signed in right now should be kicked into
+    // a waiting screen for a check that didn't exist when they signed
+    // up.
+    private boolean isOwnerApproved(io.jsonwebtoken.Claims claims) {
+        Boolean approved = claims.get("approved", Boolean.class);
+        return approved == null || approved;
+    }
+
+    private boolean isAllowedWhileRestricted(HttpServletRequest request) {
         String path = request.getRequestURI();
-        if (UNVERIFIED_ALLOWED_PATHS.contains(path)) {
+        if (RESTRICTED_ALLOWED_PATHS.contains(path)) {
             return true;
         }
-        // Reading the org is needed to theme the verify screen with the
-        // company's own colors and to show a manager their company code;
-        // changing it is not.
+        // Reading the org is needed to theme either waiting screen with
+        // the company's own colors and to show a manager their company
+        // code; changing it is not.
         return ORG_PATH.equals(path) && "GET".equalsIgnoreCase(request.getMethod());
     }
 }

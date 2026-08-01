@@ -32,6 +32,11 @@ export interface User {
   // this address. RootNavigator holds such an account on the verify
   // screen, and the backend refuses its token everywhere else.
   emailVerified: boolean;
+  // False between signing up and a Manager at this company entering
+  // the code emailed to them to approve this account. Checked after
+  // emailVerified -- RootNavigator holds a verified-but-unapproved
+  // account on the pending-approval screen instead.
+  ownerApproved: boolean;
 }
 
 // A named GPS point + radius the clock-in/visitor-check-in geofence

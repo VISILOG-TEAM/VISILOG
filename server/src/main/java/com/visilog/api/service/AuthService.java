@@ -1,11 +1,13 @@
 package com.visilog.api.service;
 
+import com.visilog.api.dto.ApproveUserRequest;
 import com.visilog.api.dto.AuthResponse;
 import com.visilog.api.dto.ForgotPasswordRequest;
 import com.visilog.api.dto.GoogleAuthRequest;
 import com.visilog.api.dto.LoginRequest;
 import com.visilog.api.dto.MessageResponse;
 import com.visilog.api.dto.OrganizationDto;
+import com.visilog.api.dto.PendingApprovalDto;
 import com.visilog.api.dto.RegisterCompanyRequest;
 import com.visilog.api.dto.ResetPasswordRequest;
 import com.visilog.api.dto.UpdateProfileRequest;
@@ -28,6 +30,7 @@ import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
@@ -140,6 +143,9 @@ public class AuthService {
         user.setName(req.adminName().trim());
         user.setRole(Role.MANAGER);
         user.setEmployeeId(adminEmployee.getId());
+        // The registrant IS the owner -- there's no one else to approve
+        // them, so this side of the gate starts already satisfied.
+        user.setOwnerApproved(true);
         user = appUserRepository.save(user);
 
         // The frontend only calls this endpoint after the admin has agreed
@@ -190,6 +196,7 @@ public class AuthService {
         user = appUserRepository.save(user);
 
         sendVerificationCode(user);
+        sendApprovalCode(org, user);
         return buildAuthResponse(user, org);
     }
 
@@ -225,14 +232,15 @@ public class AuthService {
         // No verification step for a Google account: Google only issued
         // us that ID token because the person signed into that mailbox,
         // so mailing them a code to prove the same thing again would be
-        // a pointless extra screen.
+        // a pointless extra screen. Owner approval is a separate concern
+        // (org membership, not mailbox ownership) and still applies.
         user.setEmailVerified(true);
         if (match.isPresent()) {
             user.setEmployeeId(match.get().getId());
         }
         user = appUserRepository.save(user);
 
-        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
+        sendApprovalCode(org, user);
         return buildAuthResponse(user, org);
     }
 
@@ -272,7 +280,13 @@ public class AuthService {
         user.setVerificationCodeExpiresAt(null);
         user = appUserRepository.save(user);
 
-        mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
+        // Welcome mail waits for BOTH gates -- if owner approval is
+        // still pending, approveUser() sends it once that side clears
+        // instead. Firing it here regardless would welcome someone into
+        // an account the owner hasn't unlocked yet.
+        if (user.isOwnerApproved()) {
+            mailService.sendWelcomeEmail(user.getEmail(), user.getName(), org.getName());
+        }
         return buildAuthResponse(user, org);
     }
 
@@ -294,6 +308,101 @@ public class AuthService {
         user.setVerificationCodeExpiresAt(Instant.now().plus(VERIFICATION_CODE_TTL));
         appUserRepository.save(user);
         mailService.sendVerificationEmail(user.getEmail(), user.getName(), code);
+    }
+
+    // Owner approval: a numeric code emailed to every Manager in the
+    // org (not to the pending account itself), entered by whichever of
+    // them gets there first on the Pending Approvals screen. Issues a
+    // fresh code, replacing any outstanding one, same as
+    // sendVerificationCode.
+    private void sendApprovalCode(Organization org, AppUser pendingUser) {
+        String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+        pendingUser.setApprovalCode(code);
+        pendingUser.setApprovalCodeExpiresAt(Instant.now().plus(VERIFICATION_CODE_TTL));
+        appUserRepository.save(pendingUser);
+
+        List<AppUser> managers = appUserRepository.findByOrganizationIdAndRole(org.getId(), Role.MANAGER);
+        for (AppUser manager : managers) {
+            mailService.sendOwnerApprovalEmail(
+                    manager.getEmail(), manager.getName(), pendingUser.getName(), pendingUser.getEmail(), code);
+        }
+    }
+
+    // Pending Approvals screen -- every account in this org still
+    // waiting on a Manager to approve them.
+    public List<PendingApprovalDto> listPendingApprovals(AuthPrincipal principal) {
+        return appUserRepository.findByOrganizationIdAndOwnerApprovedFalse(principal.organizationId()).stream()
+                .map(PendingApprovalDto::from)
+                .toList();
+    }
+
+    // A Manager entering the code from the owner-approval email against
+    // a specific pending account. Unlike verifyEmail, the caller isn't
+    // the account being unlocked, so it's looked up by id and checked
+    // against the caller's own org -- a Manager can only approve their
+    // own company's signups.
+    @Transactional
+    public MessageResponse approveUser(AuthPrincipal principal, ApproveUserRequest req) {
+        AppUser target = appUserRepository.findById(req.userId())
+                .filter(u -> u.getOrganizationId().equals(principal.organizationId()))
+                .orElseThrow(() -> ApiException.notFound("That account could not be found."));
+
+        if (target.isOwnerApproved()) {
+            return new MessageResponse(target.getName() + " is already approved.");
+        }
+
+        if (target.getApprovalCode() == null || target.getApprovalCodeExpiresAt() == null
+                || !target.getApprovalCode().equals(req.code().trim())
+                || Instant.now().isAfter(target.getApprovalCodeExpiresAt())) {
+            throw ApiException.badRequest("That code is incorrect or has expired. Resend a new one and try again.");
+        }
+
+        target.setOwnerApproved(true);
+        target.setApprovalCode(null);
+        target.setApprovalCodeExpiresAt(null);
+        target = appUserRepository.save(target);
+
+        // Symmetric to verifyEmail's guard: only send the welcome email
+        // once BOTH gates are clear, whichever finishes second.
+        if (target.isEmailVerified()) {
+            Organization org = organizationRepository.findById(target.getOrganizationId())
+                    .orElseThrow(() -> ApiException.notFound("That account could not be found."));
+            mailService.sendWelcomeEmail(target.getEmail(), target.getName(), org.getName());
+        }
+
+        return new MessageResponse(target.getName() + " has been approved.");
+    }
+
+    // Manager-triggered resend, scoped to one pending account -- the
+    // equivalent of resendVerification, but for the code that goes to
+    // the org's Managers rather than back to the account itself.
+    @Transactional
+    public MessageResponse resendApproval(AuthPrincipal principal, UUID userId) {
+        AppUser target = appUserRepository.findById(userId)
+                .filter(u -> u.getOrganizationId().equals(principal.organizationId()))
+                .orElseThrow(() -> ApiException.notFound("That account could not be found."));
+        if (target.isOwnerApproved()) {
+            return new MessageResponse(target.getName() + " is already approved.");
+        }
+        Organization org = organizationRepository.findById(principal.organizationId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+        sendApprovalCode(org, target);
+        return new MessageResponse("We've sent a new approval code for " + target.getName() + ".");
+    }
+
+    // Re-issues a token from the account's current DB state without
+    // changing anything -- the only way a session stuck on the verify
+    // or pending-approval screen can pick up a change made from
+    // *outside* that session (entering a code doesn't apply here; a
+    // Manager approving them on a different device does). Both waiting
+    // screens poll/tap this to check whether they can move on yet.
+    @Transactional
+    public AuthResponse refreshToken(AuthPrincipal principal) {
+        AppUser user = appUserRepository.findById(principal.userId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+        Organization org = organizationRepository.findById(principal.organizationId())
+                .orElseThrow(() -> ApiException.unauthorized("Session no longer valid."));
+        return buildAuthResponse(user, org);
     }
 
     // Forgot Password: a numeric code emailed to the account, entered
@@ -435,7 +544,7 @@ public class AuthService {
     private AuthResponse buildAuthResponse(AppUser user, Organization org) {
         String token = jwtService.issueToken(
                 user.getId(), org.getId(), user.getRole().name(), user.getEmail(), user.getEmployeeId(),
-                user.isEmailVerified());
+                user.isEmailVerified(), user.isOwnerApproved());
         String planId = orgBillingRepository.findByOrganizationId(org.getId())
                 .map(OrgBilling::getPlanId).orElse(null);
         return new AuthResponse(token, UserDto.from(user, org), OrganizationDto.from(org, planId));
