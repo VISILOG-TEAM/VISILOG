@@ -26,6 +26,7 @@ interface InputProps {
   keyboardType?: KeyboardTypeOptions;
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoComplete?: React.ComponentProps<typeof TextInput>['autoComplete'];
   multiline?: boolean;
   style?: StyleProp<ViewStyle>;
 }
@@ -43,6 +44,7 @@ export default function Input({
   keyboardType,
   secureTextEntry,
   autoCapitalize = 'sentences',
+  autoComplete,
   multiline = false,
   style,
 }: InputProps) {
@@ -88,6 +90,7 @@ export default function Input({
           keyboardType={keyboardType}
           secureTextEntry={isPassword && !revealed}
           autoCapitalize={autoCapitalize}
+          autoComplete={autoComplete}
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'center'}
           onFocus={() => setFocused(true)}

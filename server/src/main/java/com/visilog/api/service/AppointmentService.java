@@ -150,11 +150,10 @@ public class AppointmentService {
         return AppointmentDto.from(saved);
     }
 
-    // Admitting = approve the pending request AND check the visitor in,
-    // in one step, so reception doesn't repeat the visitor's details.
-    // Only valid from PENDING -- without this guard, a double-tap (or a
-    // retry after a slow response) created a brand new Visitor check-in
-    // record every single time it was called, with no limit.
+    // Admitting = approve the pending request. The visitor is not yet
+    // on-site; reception still has to physically check them in when they
+    // arrive (see checkIn below). Only valid from PENDING -- without this
+    // guard, a double-tap created duplicate records.
     @Transactional
     public AppointmentDto admit(UUID organizationId, UUID appointmentId, AuthPrincipal me) {
         Appointment a = findOrThrow(organizationId, appointmentId);
@@ -166,6 +165,23 @@ public class AppointmentService {
         a.setNfcCode(uniqueNfcCode(organizationId));
         appointmentRepository.save(a);
         notificationService.notifyAppointmentDecision(a, true);
+        return AppointmentDto.from(a);
+    }
+
+    // Check-in = visitor physically arrives at reception. Creates the
+    // Visitor on-site record. Only valid for an already-admitted appointment
+    // that hasn't been checked in yet.
+    @Transactional
+    public AppointmentDto checkIn(UUID organizationId, UUID appointmentId) {
+        Appointment a = findOrThrow(organizationId, appointmentId);
+        if (a.getStatus() != AppointmentStatus.ADMITTED) {
+            throw ApiException.conflict("This appointment must be admitted before checking in.");
+        }
+        if (a.isCheckedIn()) {
+            throw ApiException.conflict("This visitor has already been checked in.");
+        }
+        a.setCheckedIn(true);
+        Appointment saved = appointmentRepository.save(a);
 
         String[] parts = (a.getVisitorName() == null ? "" : a.getVisitorName()).trim().split(" ", 2);
         String firstName = parts.length > 0 ? parts[0] : "";
@@ -174,7 +190,7 @@ public class AppointmentService {
                 organizationId, firstName, lastName, a.getVisitorPhone(), a.getVisitorEmail(), a.getVisitorCompany(),
                 a.getPurpose(), a.getHostId());
 
-        return AppointmentDto.from(a);
+        return AppointmentDto.from(saved);
     }
 
     @Transactional

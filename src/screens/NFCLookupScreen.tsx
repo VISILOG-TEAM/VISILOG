@@ -18,7 +18,7 @@ interface NFCLookupScreenProps {
 // Receptionist enters a visitor's NFC code, sees their full booking.
 export default function NFCLookupScreen({ navigation }: NFCLookupScreenProps) {
   const { colors } = useTheme();
-  const { findAppointmentByCode, admitAppointment, employeeById } = useData();
+  const { findAppointmentByCode, admitAppointment, checkInAppointment, employeeById } = useData();
   const [code, setCode] = useState('');
   const [found, setFound] = useState<Appointment | null>(null);
 
@@ -78,17 +78,35 @@ export default function NFCLookupScreen({ navigation }: NFCLookupScreenProps) {
 
           {found.status === 'pending' && (
             <Button
-              label="Admit & check in"
+              label="Admit"
               icon="checkmark-circle-outline"
               onPress={async () => {
                 try {
-                  const v = await admitAppointment(found);
-                  Alert.alert('Admitted', `${v.fullName} (${v.badgeId}) is on-site.`);
-                  setFound(null);
-                  setCode('');
+                  const updated = await admitAppointment(found);
+                  setFound(updated);
+                  Alert.alert('Admitted', `${found.visitorName} has been approved.`);
                 } catch (err) {
                   Alert.alert(
                     'Could not admit visitor',
+                    err instanceof ApiError ? err.message : 'Something went wrong.',
+                  );
+                }
+              }}
+              style={{ marginTop: spacing.sm }}
+            />
+          )}
+          {found.status === 'admitted' && !found.checkedIn && (
+            <Button
+              label="Check in visitor"
+              icon="log-in-outline"
+              onPress={async () => {
+                try {
+                  const updated = await checkInAppointment(found.id);
+                  setFound(updated);
+                  Alert.alert('Checked in', `${found.visitorName} is now on-site.`);
+                } catch (err) {
+                  Alert.alert(
+                    'Could not check in',
                     err instanceof ApiError ? err.message : 'Something went wrong.',
                   );
                 }

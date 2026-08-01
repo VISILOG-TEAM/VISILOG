@@ -48,18 +48,23 @@ export default function CsvImportModal<T>({
 
     setBusy(true);
     try {
-      const text = await FileSystem.readAsStringAsync(picked.assets[0].uri, { encoding: 'utf8' });
-      const records = csvRowsToRecords(parseCsv(text));
+const asset = picked.assets[0];
+
+const text = asset.file
+  ? await asset.file.text()
+  : await FileSystem.readAsStringAsync(asset.uri, { encoding: 'utf8' });
+const rows = parseCsv(text);
+      const records = csvRowsToRecords(rows);
       if (records.length === 0) {
         Alert.alert('Empty file', 'That file has no data rows to import.');
         return;
       }
-      const rows = records.map(mapRow);
-      const res = await onImport(rows);
+      const mapped = records.map(mapRow);
+      const res = await onImport(mapped);
       setResult(res);
     } catch (err) {
       const message =
-        err instanceof ApiError ? err.message : 'Check the file is a valid CSV and try again.';
+        err instanceof ApiError ? err.message : 'Check the file is a valid CSV or Excel file and try again.';
       Alert.alert('Could not import', message);
     } finally {
       setBusy(false);
@@ -107,7 +112,7 @@ export default function CsvImportModal<T>({
               <ActivityIndicator color={colors.primary} />
             </View>
           ) : (
-            <Button label="Choose CSV file" icon="document-attach-outline" onPress={onPickFile} />
+            <Button label="Choose CSV or Excel file" icon="document-attach-outline" onPress={onPickFile} />
           )}
 
           <Button

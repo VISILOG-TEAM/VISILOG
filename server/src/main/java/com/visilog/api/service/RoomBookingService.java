@@ -3,6 +3,7 @@ package com.visilog.api.service;
 import com.visilog.api.dto.BookRoomRequest;
 import com.visilog.api.dto.MarkAbsentRequest;
 import com.visilog.api.dto.RespondToMeetingRequest;
+import com.visilog.api.dto.RescheduleMeetingRequest;
 import com.visilog.api.dto.RoomBookingDto;
 import com.visilog.api.dto.RoomBookingResponseDto;
 import com.visilog.api.entity.Appointment;
@@ -238,6 +239,27 @@ public class RoomBookingService {
         }
 
         return RoomBookingDto.from(booking, responsesFor(roomBookingId));
+    }
+
+    // Organiser rescheduling their own meeting -- updates times and records
+    // the reason so participants know why the meeting moved.
+    @Transactional
+    public RoomBookingDto reschedule(UUID organizationId, UUID bookingId, UUID callerId, RescheduleMeetingRequest req) {
+        RoomBooking b = roomBookingRepository.findById(bookingId)
+                .filter(bk -> bk.getOrganizationId().equals(organizationId))
+                .orElseThrow(() -> ApiException.notFound("Meeting not found."));
+        if (!b.getOrganiserId().equals(callerId)) {
+            throw ApiException.forbidden("Only the organiser can reschedule this meeting.");
+        }
+        if (!req.newEndTime().isAfter(req.newStartTime())) {
+            throw ApiException.badRequest("End time must be after the start time.");
+        }
+        b.setStartTime(req.newStartTime());
+        b.setEndTime(req.newEndTime());
+        b.setRescheduleReason(req.reason());
+        b.setRescheduledAt(Instant.now());
+        RoomBooking saved = roomBookingRepository.save(b);
+        return RoomBookingDto.from(saved, responsesFor(saved.getId()));
     }
 
     private List<RoomBookingResponseDto> responsesFor(UUID roomBookingId) {

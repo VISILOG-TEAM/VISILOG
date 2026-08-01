@@ -42,7 +42,6 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
   const [otherPurpose, setOtherPurpose] = useState('');
   const [hostId, setHostId] = useState<string | null>(null);
   const [consent, setConsent] = useState(true);
-  const [photoAdded, setPhotoAdded] = useState(false);
 
   const [errors, setErrors] = useState<RegisterVisitorErrors>({});
   const [submitting, setSubmitting] = useState(false);
@@ -107,30 +106,6 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
       />
 
       <Card>
-        {/* Photo placeholder -- tappable square that toggles a "photo added"
- state. A real build would launch expo-image-picker here. */}
-        <Pressable
-          onPress={() => setPhotoAdded((p) => !p)}
-          style={[
-            styles.photo,
-            { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
-            photoAdded && {
-              borderStyle: 'solid',
-              borderColor: colors.status.success.solid,
-              backgroundColor: colors.status.success.bg,
-            },
-          ]}
-        >
-          <Ionicons
-            name={photoAdded ? 'checkmark-circle' : 'camera-outline'}
-            size={26}
-            color={photoAdded ? colors.status.success.solid : colors.textMuted}
-          />
-          <Text variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
-            {photoAdded ? 'Photo captured' : 'Tap to add photo (optional)'}
-          </Text>
-        </Pressable>
-
         <View style={styles.nameRow}>
           <View style={{ flex: 1 }}>
             <Input
@@ -273,15 +248,6 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
 }
 
 const styles = StyleSheet.create({
-  photo: {
-    height: 88,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
   nameRow: { flexDirection: 'row' },
   badgePreview: {
     flexDirection: 'row',

@@ -3,6 +3,7 @@ package com.visilog.api.controller;
 import com.visilog.api.dto.BookRoomRequest;
 import com.visilog.api.dto.MarkAbsentRequest;
 import com.visilog.api.dto.RespondToMeetingRequest;
+import com.visilog.api.dto.RescheduleMeetingRequest;
 import com.visilog.api.dto.RoomBookingDto;
 import com.visilog.api.security.AuthPrincipal;
 import com.visilog.api.security.CurrentUser;
@@ -45,5 +46,11 @@ public class RoomBookingController {
             @Valid @RequestBody MarkAbsentRequest request) {
         return ResponseEntity.ok(
                 roomBookingService.markAbsent(me.organizationId(), me.employeeId(), id, employeeId, request));
+    }
+
+    @PatchMapping("/{id}/reschedule")
+    public ResponseEntity<RoomBookingDto> reschedule(
+            @CurrentUser AuthPrincipal me, @PathVariable UUID id, @Valid @RequestBody RescheduleMeetingRequest request) {
+        return ResponseEntity.ok(roomBookingService.reschedule(me.organizationId(), id, me.employeeId(), request));
     }
 }

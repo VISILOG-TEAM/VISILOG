@@ -57,4 +57,8 @@ public class RoomBooking {
     @ElementCollection
     @CollectionTable(name = "room_booking_external_guests", joinColumns = @JoinColumn(name = "room_booking_id"))
     private List<ExternalGuest> externalGuests = new ArrayList<>();
+
+    @Column(length = 1000)
+    private String rescheduleReason;
+    private Instant rescheduledAt;
 }

@@ -113,6 +113,7 @@ export interface Appointment {
   rescheduleReason?: string | null;
   rescheduledAt?: string | null;
   rejectReason?: string | null;
+  checkedIn: boolean;
 }
 
 export type CallType = 'Incoming' | 'Outgoing' | 'Missed';
@@ -177,6 +178,8 @@ export interface RoomBooking {
   externalGuests: ExternalGuest[];
   priority: MeetingPriority;
   responses: RoomBookingResponse[];
+  rescheduleReason?: string | null;
+  rescheduledAt?: string | null;
 }
 
 export type NotificationType =
