@@ -49,7 +49,9 @@ export default function ManagerClockInsScreen() {
     <Screen scroll={false} padded={false}>
       <View style={styles.head}>
         <Header title="Clock ins" subtitle="Attendance record for every role" />
-        <StatTile icon="people" tint="primary" label="Currently on the clock" value={onsiteCount} />
+        <View style={styles.statRow}>
+          <StatTile icon="people" tint="primary" label="Currently on the clock" value={onsiteCount} />
+        </View>
       </View>
 
       <FlatList
@@ -97,6 +99,12 @@ export default function ManagerClockInsScreen() {
 
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: spacing.sm, gap: spacing.sm },
+  // StatTile is built with `flex: 1` so several sit side-by-side in a
+  // row (see DashboardScreen). Dropped straight into a column here
+  // without that row wrapper, flex:1 had nothing to grow against --
+  // the card collapsed to zero height and its icon chip rendered
+  // outside its own bounds instead of inside a properly sized card.
+  statRow: { flexDirection: 'row' },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
   row: { flexDirection: 'row', alignItems: 'center', padding: spacing.sm },
 });

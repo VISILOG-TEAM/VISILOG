@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Modal, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as XLSX from 'xlsx';
 import Text from './Text';
 import Button from './Button';
 import { useTheme } from '../theme/ThemeContext';
@@ -48,12 +49,28 @@ export default function CsvImportModal<T>({
 
     setBusy(true);
     try {
-const asset = picked.assets[0];
+      const asset = picked.assets[0];
+      const isXlsx = /\.xlsx?$/i.test(asset.name ?? '');
 
-const text = asset.file
-  ? await asset.file.text()
-  : await FileSystem.readAsStringAsync(asset.uri, { encoding: 'utf8' });
-const rows = parseCsv(text);
+      let rows: string[][];
+      if (isXlsx) {
+        let workbook: XLSX.WorkBook;
+        if (asset.file) {
+          const buf = await asset.file.arrayBuffer();
+          workbook = XLSX.read(buf, { type: 'array' });
+        } else {
+          const b64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
+          workbook = XLSX.read(b64, { type: 'base64' });
+        }
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as string[][];
+      } else {
+        const text = asset.file
+          ? await asset.file.text()
+          : await FileSystem.readAsStringAsync(asset.uri, { encoding: 'utf8' });
+        rows = parseCsv(text);
+      }
+
       const records = csvRowsToRecords(rows);
       if (records.length === 0) {
         Alert.alert('Empty file', 'That file has no data rows to import.');

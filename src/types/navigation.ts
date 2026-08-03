@@ -19,9 +19,14 @@ export type RootStackParamList = {
   ForgotPassword: undefined;
   RegisterCompany: undefined;
 
-  // Signed in but unverified -- the whole stack is just this one
-  // screen (see RootNavigator).
+  // Signed in but unverified, or verified but not yet owner-approved --
+  // the whole stack is just this one screen (see RootNavigator).
   VerifyEmail: undefined;
+  PendingApproval: undefined;
+
+  // Manager-only: the list of accounts waiting on approval, with a
+  // code-entry field per row.
+  PendingApprovals: undefined;
 
   LegalAgreement:
     | {

@@ -60,6 +60,20 @@ public class AppUser {
     private String verificationCode;
     private Instant verificationCodeExpiresAt;
 
+    // Owner approval. False until the org's Manager enters the 6-digit
+    // code we emailed *them* (not this account) at signup; until then
+    // the JWT carries approved=false and JwtAuthFilter refuses
+    // everything except the same handful of endpoints unverified
+    // accounts can reach. Accounts predating this feature were
+    // backfilled as true (see V23), and the Manager account created by
+    // registerCompany is set true immediately -- there's no other
+    // owner to approve them.
+    @Column(nullable = false)
+    private boolean ownerApproved = false;
+
+    private String approvalCode;
+    private Instant approvalCodeExpiresAt;
+
     // Login lockout -- resets to 0 on any successful login. Once it
     // hits AuthService.MAX_LOGIN_ATTEMPTS, lockedUntil is set and
     // login() rejects attempts (even with the right password) until

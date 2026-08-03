@@ -1,11 +1,11 @@
 import React, { useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Screen, Header, Text, Card, Button, Input, Select, Badge } from '../components';
+import { Screen, Header, Text, Card, Button, Input, Select } from '../components';
 import { useTheme } from '../theme/ThemeContext';
-import { spacing, radius } from '../theme/spacing';
+import { spacing } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { visitPurposes, nextBadgeId } from '../data/mockData';
+import { visitPurposes } from '../data/mockData';
 import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
 
@@ -25,13 +25,13 @@ interface RegisterVisitorErrors {
 // RegisterVisitorScreen -- modal opened from the visitors tab + dashboard.
 // Implements the Check-In form from VisiLog spec + User Guide:
 // - First/Last name, phone, company, purpose (dropdown), host (dropdown)
-// - Badge number auto-generated and shown read-only
+// - Badge number auto-generated server-side (see the "Checked in" alert)
 // - Optional photo placeholder
 // - Optional consent / signature toggle
 // Submitting registers AND checks the visitor in (single click flow).
 export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScreenProps) {
   const { colors } = useTheme();
-  const { employees, visitors, registerAndCheckIn } = useData();
+  const { employees, registerAndCheckIn } = useData();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -50,10 +50,6 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
   // false and both fire. A ref updates synchronously, so it actually
   // blocks the second tap.
   const submittingRef = useRef(false);
-
-  // Preview of the badge ID that will be assigned. Recomputed every render
-  // so it stays accurate if the visitor list changes underneath.
-  const previewBadge = nextBadgeId(visitors);
 
   const onSubmit = async () => {
     if (submittingRef.current) return;
@@ -112,8 +108,8 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
               label="First name"
               value={firstName}
               onChangeText={setFirstName}
-              placeholder="e.g. Aseye"
               error={errors.firstName}
+              disableAutofill
             />
           </View>
           <View style={{ width: spacing.sm }} />
@@ -122,8 +118,8 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
               label="Last name"
               value={lastName}
               onChangeText={setLastName}
-              placeholder="e.g. Abugri"
               error={errors.lastName}
+              disableAutofill
             />
           </View>
         </View>
@@ -132,28 +128,28 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
           label="Phone number"
           value={phone}
           onChangeText={setPhone}
-          placeholder="+233 ..."
           icon="call-outline"
           keyboardType="phone-pad"
           error={errors.phone}
+          disableAutofill
         />
 
         <Input
           label="Email (optional)"
           value={email}
           onChangeText={setEmail}
-          placeholder="name@example.com"
           icon="mail-outline"
           autoCapitalize="none"
           keyboardType="email-address"
+          disableAutofill
         />
 
         <Input
           label="Company (optional)"
           value={company}
           onChangeText={setCompany}
-          placeholder="e.g. Adansi Logistics"
           icon="business-outline"
+          disableAutofill
         />
 
         <Select
@@ -169,9 +165,9 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
             label="Please specify"
             value={otherPurpose}
             onChangeText={setOtherPurpose}
-            placeholder="What's the purpose of the visit?"
             icon="create-outline"
             error={errors.otherPurpose}
+            disableAutofill
           />
         ) : null}
 
@@ -188,18 +184,6 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
             sublabel: e.department,
           }))}
         />
-
-        {/* Badge number (auto-generated, read-only preview) */}
-        <View style={[styles.badgePreview, { backgroundColor: colors.primarySurface }]}>
-          <Ionicons name="card-outline" size={18} color={colors.brand} />
-          <View style={{ flex: 1, marginLeft: spacing.sm }}>
-            <Text variant="caption" color={colors.textSecondary}>
-              Badge number (auto-generated)
-            </Text>
-            <Text variant="bodySemibold">{previewBadge}</Text>
-          </View>
-          <Badge label="Auto" status="info" size="sm" />
-        </View>
 
         {/* Consent / digital signature */}
         <Pressable onPress={() => setConsent((c) => !c)} style={styles.consent}>
@@ -249,13 +233,6 @@ export default function RegisterVisitorScreen({ navigation }: RegisterVisitorScr
 
 const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row' },
-  badgePreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: radius.md,
-    padding: spacing.sm,
-    marginBottom: spacing.md,
-  },
   consent: {
     flexDirection: 'row',
     alignItems: 'center',

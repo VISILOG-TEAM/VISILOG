@@ -27,6 +27,11 @@ interface InputProps {
   secureTextEntry?: boolean;
   autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
   autoComplete?: React.ComponentProps<typeof TextInput>['autoComplete'];
+  /** Set on fields capturing someone else's details (a visitor, an
+   *  outside guest) so Android/iOS don't offer to autofill them with
+   *  the signed-in user's own saved info -- wrong data, and the
+   *  autofill suggestion chip renders as a distracting highlight. */
+  disableAutofill?: boolean;
   multiline?: boolean;
   style?: StyleProp<ViewStyle>;
 }
@@ -45,6 +50,7 @@ export default function Input({
   secureTextEntry,
   autoCapitalize = 'sentences',
   autoComplete,
+  disableAutofill = false,
   multiline = false,
   style,
 }: InputProps) {
@@ -90,7 +96,9 @@ export default function Input({
           keyboardType={keyboardType}
           secureTextEntry={isPassword && !revealed}
           autoCapitalize={autoCapitalize}
-          autoComplete={autoComplete}
+          autoComplete={disableAutofill ? 'off' : autoComplete}
+          importantForAutofill={disableAutofill ? 'no' : undefined}
+          textContentType={disableAutofill ? 'none' : undefined}
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'center'}
           onFocus={() => setFocused(true)}

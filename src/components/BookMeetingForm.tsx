@@ -93,6 +93,29 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
     setExternalGuests((gs) => gs.filter((_, i) => i !== index));
   };
 
+  // Wipes everything back to a blank step-one form. This screen stays
+  // mounted between tab switches (React Navigation keeps tabs alive),
+  // so without this a booked meeting's title, guests, date and time
+  // would still be sitting there the next time someone opens "Book a
+  // meeting" -- looking like the app half-remembered their last
+  // booking instead of starting fresh.
+  const resetForm = () => {
+    setTitle('');
+    setLocationType('room');
+    setRoomId(null);
+    setOutsideLocation('');
+    setAttendeeIds([]);
+    setExternalGuests([]);
+    setGuestName('');
+    setGuestEmail('');
+    setGuestPhone('');
+    setPriority('normal');
+    setDate(formatDate(new Date()));
+    setStartTime('10:00');
+    setEndTime('11:00');
+    setStep(0);
+  };
+
   // Step 1 is the only one with anything mandatory: a meeting needs a
   // subject and somewhere to happen. Attendees are optional (a solo
   // room booking is legitimate) and the times always have a value.
@@ -141,7 +164,11 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
         externalGuests,
         priority,
       });
-      Alert.alert('Booked', `${title} is on the calendar.`, [{ text: 'Done', onPress: onDone }]);
+      const bookedTitle = title.trim();
+      resetForm();
+      Alert.alert('Booked', `${bookedTitle} is on the calendar.`, [
+        { text: 'Done', onPress: onDone },
+      ]);
     } catch (err) {
       Alert.alert(
         'Could not book meeting',
@@ -288,6 +315,7 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
           onChangeText={setGuestName}
           placeholder="e.g. Kwame Mensah (client)"
           icon="person-add-outline"
+          disableAutofill
         />
         <View style={styles.guestContactRow}>
           <View style={{ flex: 1 }}>
@@ -298,8 +326,8 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
               placeholder="them@example.com"
               icon="mail-outline"
               autoCapitalize="none"
-              autoComplete="off"
               keyboardType="email-address"
+              disableAutofill
             />
           </View>
           <View style={{ width: spacing.sm }} />
@@ -311,15 +339,25 @@ export default function BookMeetingForm({ onDone }: BookMeetingFormProps) {
               placeholder="Optional"
               icon="call-outline"
               keyboardType="phone-pad"
+              disableAutofill
             />
           </View>
         </View>
+        {/* Plain button for the first guest, "+ Add guest" for each one
+            after. The plus reads as "another" -- on an empty form it
+            suggested there was already a guest above it to add to. */}
         <Pressable
           onPress={onAddGuest}
           style={[styles.addGuestBtn, { borderColor: colors.primary }]}
         >
-          <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-          <Text variant="bodySemibold" color={colors.primary} style={{ marginLeft: 6 }}>
+          {externalGuests.length > 0 ? (
+            <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+          ) : null}
+          <Text
+            variant="bodySemibold"
+            color={colors.primary}
+            style={externalGuests.length > 0 ? { marginLeft: 6 } : undefined}
+          >
             Add guest
           </Text>
         </Pressable>

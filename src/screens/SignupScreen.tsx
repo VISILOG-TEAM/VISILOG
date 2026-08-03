@@ -94,7 +94,6 @@ export default function SignupScreen({ navigation }: SignupScreenProps) {
                 />
 
                 <Text style={styles.heading}>Create account</Text>
-                <Text style={styles.subheading}>Request access to the reception system.</Text>
 
                 <Field
                   icon="business-outline"
