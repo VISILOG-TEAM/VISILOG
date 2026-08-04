@@ -202,6 +202,7 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
       </View>
 
       <FlatList
+        style={styles.flatList}
         refreshControl={refreshControl}
         data={meetingRooms}
         keyExtractor={(r) => r.id}
@@ -267,6 +268,7 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
 
 const styles = StyleSheet.create({
   head: { padding: spacing.md, paddingBottom: 0 },
+  flatList: { flex: 1 },
   row: { flexDirection: 'row' },
   list: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.huge },
   roomRow: { flexDirection: 'row', alignItems: 'center' },

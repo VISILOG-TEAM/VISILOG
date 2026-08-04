@@ -10,6 +10,7 @@ import {
   Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { WebView } from 'react-native-webview';
 import Text from './Text';
 import Button from './Button';
@@ -34,6 +35,16 @@ interface SearchResult {
 // the map on VRA's own default tenant rather than opening on the
 // middle of the Atlantic (0, 0).
 const DEFAULT_CENTER = { lat: 5.6037, lng: -0.187 };
+
+// Resolves to null if `promise` hasn't settled within `ms` -- a GPS fix
+// has no built-in timeout, and this map opens in a modal the user is
+// staring at, so it can't just spin forever waiting for one.
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
 
 // Builds the self-contained page the WebView loads: Leaflet + OpenStreetMap
 // tiles pulled from a CDN, no API key needed (unlike the Google Maps JS
@@ -144,6 +155,40 @@ export default function MapLocationPicker({
       setPicked(null);
     }
   }, [visible]);
+
+  // Only when there's no existing/typed location to center on (adding a
+  // brand-new office, not editing a saved one) -- opens on the device's
+  // actual current position (e.g. Kumasi, Accra, wherever the manager
+  // actually is) instead of always defaulting to the same fixed point,
+  // same as onUseCurrentLocation elsewhere in Company Setup. Flies the
+  // already-rendered map there via the same channel search results use,
+  // rather than rebuilding the WebView (see the html useMemo above).
+  useEffect(() => {
+    if (!visible || initialLatitude != null || initialLongitude != null) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const position =
+          (await Location.getLastKnownPositionAsync({ maxAge: 5 * 60 * 1000 })) ??
+          (await withTimeout(
+            Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+            10000,
+          ));
+        if (cancelled || !position) return;
+        const { latitude, longitude } = position.coords;
+        setPicked({ latitude, longitude });
+        webviewRef.current?.injectJavaScript(`window.flyTo(${latitude}, ${longitude}); true;`);
+      } catch {
+        // Fall back to the default center -- no GPS fix is not worth
+        // interrupting the picker over, the pin is still draggable.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, initialLatitude, initialLongitude]);
 
   useEffect(() => {
     if (query.trim().length < 3) {

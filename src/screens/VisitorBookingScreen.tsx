@@ -69,6 +69,23 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
     return null;
   };
 
+  // This screen stays mounted between tab switches, so without this a
+  // submitted booking's details would still be sitting there the next
+  // time reception opened "Book" -- on whatever step was last shown --
+  // looking like the form needed editing rather than starting fresh.
+  const resetForm = () => {
+    setVisitorName('');
+    setVisitorPhone('');
+    setVisitorEmail('');
+    setVisitorCompany('');
+    setPurpose('Official Business');
+    setOtherPurpose('');
+    setHostId(null);
+    setDate(formatDate(new Date()));
+    setTime('10:00');
+    setStep(0);
+  };
+
   const onNextStep = () => {
     const problem = step === 0 ? visitorStepProblem() : step === 1 ? detailsStepProblem() : null;
     if (problem) {
@@ -105,9 +122,11 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
         hostId: hostId as string,
         scheduledAt: toInstant(date, time),
       });
+      const bookedName = visitorName;
+      resetForm();
       Alert.alert(
         'Appointment requested',
-        `${visitorName} is now in the pending queue. The host will be notified to approve the visit.`,
+        `${bookedName} is now in the pending queue. The host will be notified to approve the visit.`,
         [{ text: 'Done', onPress: () => navigation.navigate('Home') }],
       );
     } catch (err) {

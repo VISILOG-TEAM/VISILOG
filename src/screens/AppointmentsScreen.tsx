@@ -50,6 +50,19 @@ interface AppointmentsScreenProps {
   navigation: RootStackNavigation;
 }
 
+// Sorts by "which is up next": anything not yet due (aTime/bTime is a
+// still-upcoming instant) sorts ahead of anything already past, soonest
+// first within that group -- pure chronological-ascending put the
+// OLDEST item first regardless of whether it was future or long past,
+// which read as random once a list held a mix of both.  Past items are
+// ordered most-recent-first, same convention as any activity/history list.
+function byUpcomingFirst(aTime: number, bTime: number, now: number): number {
+  const aUpcoming = aTime >= now;
+  const bUpcoming = bTime >= now;
+  if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
+  return aUpcoming ? aTime - bTime : bTime - aTime;
+}
+
 type AppointmentsView = 'appointments' | 'rooms';
 
 // AppointmentsScreen
@@ -122,10 +135,13 @@ function AppointmentsList() {
   const checkingInRef = useRef(new Set<string>());
 
   const filtered = useMemo(() => {
-    // Soonest first -- whichever visit is coming up next belongs at the
-    // top, not whichever was scheduled most recently.
-    const sorted = [...appointments].sort(
-      (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+    // Whichever visit is coming up next belongs at the top; anything
+    // already past trails after, most-recent-past first. See
+    // byUpcomingFirst -- plain chronological-ascending put the OLDEST
+    // visit first regardless of whether it was still upcoming.
+    const now = Date.now();
+    const sorted = [...appointments].sort((a, b) =>
+      byUpcomingFirst(new Date(a.scheduledAt).getTime(), new Date(b.scheduledAt).getTime(), now),
     );
     if (filter === 'awaiting') return sorted.filter((a) => a.status === 'pending');
     if (filter === 'admitted') return sorted.filter((a) => a.status === 'admitted');
@@ -569,14 +585,24 @@ function MeetingsView() {
     [roomBookings, meetingRooms],
   );
 
-  const sortedMeetings = useMemo(
-    () =>
-      // Soonest first, same reasoning as the appointments list above.
-      [...roomBookings].sort(
-        (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
-      ),
-    [roomBookings],
-  );
+  const sortedMeetings = useMemo(() => {
+    // Same reasoning as the appointments list -- see byUpcomingFirst.
+    // Grouped by endTime (a meeting still in progress counts as
+    // "upcoming", not past, even though it already started), but
+    // ordered within each group by startTime -- byUpcomingFirst alone
+    // can't express "group by one field, order by another".
+    const now = Date.now();
+    return [...roomBookings].sort((a, b) => {
+      const aEnd = new Date(a.endTime).getTime();
+      const bEnd = new Date(b.endTime).getTime();
+      const aUpcoming = aEnd >= now;
+      const bUpcoming = bEnd >= now;
+      if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
+      const aStart = new Date(a.startTime).getTime();
+      const bStart = new Date(b.startTime).getTime();
+      return aUpcoming ? aStart - bStart : bStart - aStart;
+    });
+  }, [roomBookings]);
 
   return (
     <>

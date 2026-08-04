@@ -55,7 +55,7 @@ public class MailService {
                 + "  " + when + "\n"
                 + (placeLabel != null && !placeLabel.isBlank() ? "  " + placeLabel + "\n" : "")
                 + "\nTo see the details and check in when you arrive, download the VisiLog app and "
-                + "sign up with " + companyName + "'s company code: " + companyCode + "\n\n"
+                + "sign up with " + companyName + " -- use company code " + companyCode + " when you join.\n\n"
                 + "-- VisiLog";
         send(toEmail, subject, body, "meeting invite");
     }

@@ -48,6 +48,12 @@ export default function CsvImportModal<T>({
     if (picked.canceled || !picked.assets?.[0]) return;
 
     setBusy(true);
+    // Tagged by stage so a failure says *where* it broke (reading the
+    // file, parsing it, mapping a row, or the backend call) instead of
+    // one generic message for every possible cause -- this is what a
+    // "could not import" report with no further detail was impossible
+    // to diagnose from.
+    let stage = 'reading the file';
     try {
       const asset = picked.assets[0];
       const isXlsx = /\.xlsx?$/i.test(asset.name ?? '');
@@ -57,9 +63,11 @@ export default function CsvImportModal<T>({
         let workbook: XLSX.WorkBook;
         if (asset.file) {
           const buf = await asset.file.arrayBuffer();
+          stage = 'parsing the Excel file';
           workbook = XLSX.read(buf, { type: 'array' });
         } else {
           const b64 = await FileSystem.readAsStringAsync(asset.uri, { encoding: 'base64' });
+          stage = 'parsing the Excel file';
           workbook = XLSX.read(b64, { type: 'base64' });
         }
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -68,21 +76,25 @@ export default function CsvImportModal<T>({
         const text = asset.file
           ? await asset.file.text()
           : await FileSystem.readAsStringAsync(asset.uri, { encoding: 'utf8' });
+        stage = 'parsing the CSV file';
         rows = parseCsv(text);
       }
 
+      stage = 'reading the column headers';
       const records = csvRowsToRecords(rows);
       if (records.length === 0) {
         Alert.alert('Empty file', 'That file has no data rows to import.');
         return;
       }
+      stage = 'reading the rows';
       const mapped = records.map(mapRow);
+      stage = 'sending it to the server';
       const res = await onImport(mapped);
       setResult(res);
     } catch (err) {
-      const message =
-        err instanceof ApiError ? err.message : 'Check the file is a valid CSV or Excel file and try again.';
-      Alert.alert('Could not import', message);
+      console.error(`[CsvImportModal] failed while ${stage}:`, err);
+      const detail = err instanceof ApiError ? err.message : err instanceof Error ? err.message : String(err);
+      Alert.alert('Could not import', `Problem while ${stage}: ${detail}`);
     } finally {
       setBusy(false);
     }

@@ -69,6 +69,24 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
     return null;
   };
 
+  // This screen stays mounted between tab switches (React Navigation
+  // keeps tabs alive), so without this a submitted booking's details
+  // would still be sitting there -- on whatever step was last shown --
+  // the next time someone opened "Book", looking like the form had to
+  // be edited rather than started fresh.
+  const resetForm = () => {
+    setName(user!.name || '');
+    setPhone('');
+    setEmail(user!.email || '');
+    setCompany('');
+    setPurpose('Official Business');
+    setOtherPurpose('');
+    setHostId(null);
+    setDate(formatDate(new Date()));
+    setTime('10:00');
+    setStep(0);
+  };
+
   const onNext = () => {
     const problem =
       step === 0 ? detailsStepProblem() : step === 1 ? visitStepProblem() : null;
@@ -106,6 +124,7 @@ export default function VisitorBookScreen({ navigation }: VisitorBookScreenProps
         hostId: hostId as string,
         scheduledAt: toInstant(date, time),
       });
+      resetForm();
       Alert.alert(
         'Booked',
         "Your visit request has been sent. You'll get a notification with your pass code once your host approves it.",
