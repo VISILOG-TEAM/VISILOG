@@ -35,6 +35,10 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
   const [notifyAppts, setNotifyAppts] = useState(true);
   const [notifyCalls, setNotifyCalls] = useState(true);
 
+  // Employee ID / Display name / Password stay hidden until the
+  // profile header itself is tapped, rather than always showing.
+  const [profileExpanded, setProfileExpanded] = useState(false);
+
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(user?.name || '');
   const [savingName, setSavingName] = useState(false);
@@ -101,9 +105,13 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
       {/* Profile -- display name, password and (for staff) employee ID
           all live here now rather than a separate "Security" section,
           in the same label-over-value row format EmployeeDetailScreen
-          uses for a staff member's Contact/Work info. */}
+          uses for a staff member's Contact/Work info. Hidden behind a
+          tap on the header itself rather than always shown. */}
       <Card padded={false}>
-        <View style={[styles.profileRow, { padding: spacing.md }]}>
+        <Pressable
+          onPress={() => setProfileExpanded((e) => !e)}
+          style={[styles.profileRow, { padding: spacing.md }]}
+        >
           <Avatar name={user?.name || 'You'} size={56} />
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <Text variant="h3">{user?.name || 'Receptionist'}</Text>
@@ -114,113 +122,123 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
               <Badge label={user?.role || 'Receptionist'} status="info" size="sm" dot={false} />
             </View>
           </View>
-        </View>
-        <Divider />
+          <Ionicons
+            name={profileExpanded ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={colors.textMuted}
+          />
+        </Pressable>
 
-        {myEmployee ? (
+        {profileExpanded ? (
           <>
-            <Row icon="card-outline" label="Employee ID" value={myEmployee.employeeId} />
             <Divider />
+
+            {myEmployee ? (
+              <>
+                <Row icon="card-outline" label="Employee ID" value={myEmployee.employeeId} />
+                <Divider />
+              </>
+            ) : null}
+
+            {/* Only the display name is editable here: email is the
+                login identity, and role is fixed at signup from the
+                staff roster (see AuthService.signup), so neither
+                belongs behind a self-service edit. */}
+            {editingName ? (
+              <View style={{ padding: spacing.md }}>
+                <Input
+                  label="Display name"
+                  value={nameDraft}
+                  onChangeText={setNameDraft}
+                  placeholder="Your name"
+                  icon="person-outline"
+                />
+                <View style={{ flexDirection: 'row' }}>
+                  <Button
+                    label="Cancel"
+                    variant="ghost"
+                    onPress={() => {
+                      setEditingName(false);
+                      setNameDraft(user?.name || '');
+                    }}
+                    style={{ flex: 1, marginRight: spacing.xs }}
+                  />
+                  <Button
+                    label={savingName ? 'Saving...' : 'Save'}
+                    onPress={onSaveName}
+                    disabled={savingName}
+                    style={{ flex: 1, marginLeft: spacing.xs }}
+                  />
+                </View>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setNameDraft(user?.name || '');
+                  setEditingName(true);
+                }}
+                style={styles.editableRow}
+              >
+                <Row
+                  icon="create-outline"
+                  label="Display name"
+                  value={user?.name || ''}
+                  style={styles.rowFlex}
+                />
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+            )}
+            <Divider />
+
+            {editingPassword ? (
+              <View style={{ padding: spacing.md }}>
+                <Input
+                  label="Current password"
+                  value={currentPw}
+                  onChangeText={setCurrentPw}
+                  placeholder="Current password"
+                  icon="lock-closed-outline"
+                  secureTextEntry
+                />
+                <Input
+                  label="New password"
+                  value={newPw}
+                  onChangeText={setNewPw}
+                  placeholder="New password"
+                  icon="key-outline"
+                  secureTextEntry
+                  hint="Must be at least 8 characters."
+                />
+                <Input
+                  label="Confirm new password"
+                  value={confirmPw}
+                  onChangeText={setConfirmPw}
+                  placeholder="Repeat new password"
+                  icon="shield-checkmark-outline"
+                  secureTextEntry
+                />
+                <View style={{ flexDirection: 'row' }}>
+                  <Button
+                    label="Cancel"
+                    variant="ghost"
+                    onPress={() => setEditingPassword(false)}
+                    style={{ flex: 1, marginRight: spacing.xs }}
+                  />
+                  <Button
+                    label="Save"
+                    onPress={onSavePassword}
+                    style={{ flex: 1, marginLeft: spacing.xs }}
+                  />
+                </View>
+              </View>
+            ) : (
+              <Pressable onPress={() => setEditingPassword(true)} style={styles.editableRow}>
+                <Row icon="key-outline" label="Password" value="********" style={styles.rowFlex} />
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </Pressable>
+            )}
           </>
         ) : null}
-
-        {/* Only the display name is editable here: email is the login
-            identity, and role is fixed at signup from the staff roster
-            (see AuthService.signup), so neither belongs behind a
-            self-service edit. */}
-        {editingName ? (
-          <View style={{ padding: spacing.md }}>
-            <Input
-              label="Display name"
-              value={nameDraft}
-              onChangeText={setNameDraft}
-              placeholder="Your name"
-              icon="person-outline"
-            />
-            <View style={{ flexDirection: 'row' }}>
-              <Button
-                label="Cancel"
-                variant="ghost"
-                onPress={() => {
-                  setEditingName(false);
-                  setNameDraft(user?.name || '');
-                }}
-                style={{ flex: 1, marginRight: spacing.xs }}
-              />
-              <Button
-                label={savingName ? 'Saving...' : 'Save'}
-                onPress={onSaveName}
-                disabled={savingName}
-                style={{ flex: 1, marginLeft: spacing.xs }}
-              />
-            </View>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => {
-              setNameDraft(user?.name || '');
-              setEditingName(true);
-            }}
-            style={styles.editableRow}
-          >
-            <Row
-              icon="create-outline"
-              label="Display name"
-              value={user?.name || ''}
-              style={styles.rowFlex}
-            />
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-        )}
-        <Divider />
-
-        {editingPassword ? (
-          <View style={{ padding: spacing.md }}>
-            <Input
-              label="Current password"
-              value={currentPw}
-              onChangeText={setCurrentPw}
-              placeholder="Current password"
-              icon="lock-closed-outline"
-              secureTextEntry
-            />
-            <Input
-              label="New password"
-              value={newPw}
-              onChangeText={setNewPw}
-              placeholder="New password"
-              icon="key-outline"
-              secureTextEntry
-              hint="Must be at least 8 characters."
-            />
-            <Input
-              label="Confirm new password"
-              value={confirmPw}
-              onChangeText={setConfirmPw}
-              placeholder="Repeat new password"
-              icon="shield-checkmark-outline"
-              secureTextEntry
-            />
-            <View style={{ flexDirection: 'row' }}>
-              <Button
-                label="Cancel"
-                variant="ghost"
-                onPress={() => setEditingPassword(false)}
-                style={{ flex: 1, marginRight: spacing.xs }}
-              />
-              <Button
-                label="Save"
-                onPress={onSavePassword}
-                style={{ flex: 1, marginLeft: spacing.xs }}
-              />
-            </View>
-          </View>
-        ) : (
-          <Pressable onPress={() => setEditingPassword(true)} style={styles.editableRow}>
-            <Row icon="key-outline" label="Password" value="********" style={styles.rowFlex} />
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Pressable>
-        )}
       </Card>
 
       {/* Appearance */}
