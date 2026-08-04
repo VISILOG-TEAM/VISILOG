@@ -8,8 +8,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 // An in-app alert for a staff member — e.g. "you've been added to a
-// meeting". Fetched by the recipient's own app on load/focus; there's
-// no push/SMS delivery in this build. See NotificationService.
+// meeting". Fetched by the recipient's own app on load/focus -- this
+// row itself is never pushed to a device. Device push exists
+// separately, only for the 30-min-before reminder (see PushToken,
+// ReminderService), not for every notification type here.
 @Entity
 @Table(name = "notifications")
 @Getter

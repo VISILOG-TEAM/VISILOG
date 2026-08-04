@@ -7,6 +7,8 @@ import {
   Pressable,
   Alert,
   KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   type TextInputProps,
 } from 'react-native';
 import Text from './Text';
@@ -56,7 +58,15 @@ export default function RescheduleModal({ appointment, visible, onClose }: Resch
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.wrap} behavior="padding">
+      <KeyboardAvoidingView
+        style={styles.wrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          style={styles.scrollOuter}
+          contentContainerStyle={styles.scrollWrap}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Reschedule visit</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
@@ -89,6 +99,7 @@ export default function RescheduleModal({ appointment, visible, onClose }: Resch
             </Pressable>
           </View>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -130,6 +141,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
+  scrollOuter: { width: '100%' },
+  scrollWrap: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
   input: {
     borderWidth: 1,
     borderRadius: radius.md,

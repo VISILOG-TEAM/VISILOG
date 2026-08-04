@@ -94,6 +94,24 @@ public class NotificationService {
         notificationRepository.save(n);
     }
 
+    // Told to the organiser when someone they invited acknowledges
+    // ("seen it") their invite -- the reverse of notifyDecline, so the
+    // organiser learns who's seen the invite and when without checking
+    // each participant's response one by one.
+    @Transactional
+    public void notifyAcknowledge(RoomBooking booking, String acknowledgerName, Instant when) {
+        Notification n = new Notification();
+        n.setOrganizationId(booking.getOrganizationId());
+        n.setRecipientEmployeeId(booking.getOrganiserId());
+        n.setType(NotificationType.MEETING_ACKNOWLEDGED);
+        n.setTitle("Meeting invite seen");
+        n.setBody(acknowledgerName + " has seen your invite to \"" + booking.getTitle() + "\" - "
+                + WHEN_FORMAT.format(when));
+        n.setRelatedId(booking.getId());
+        n.setCreatedAt(Instant.now());
+        notificationRepository.save(n);
+    }
+
     // Only visitors who booked their own visit have an app account to
     // notify (bookedByEmail is null for a walk-in reception booked on
     // someone's behalf) -- silently a no-op otherwise.

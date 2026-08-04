@@ -2,6 +2,7 @@ package com.visilog.api.entity;
 
 import jakarta.persistence.*;
 import java.time.Instant;
+import java.time.LocalTime;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -56,6 +57,12 @@ public class Organization {
     // network rather than being enforced (see ClockRecordService, which
     // still only checks "connected to any WiFi").
     private String wifiNetworkName;
+
+    // Null (the default) means no time-of-day restriction at all -- see
+    // WorkingHoursService, which treats either one being null as "not
+    // configured" rather than half-applying a one-sided window.
+    private LocalTime openingTime;
+    private LocalTime closingTime;
 
     @Column(nullable = false)
     private Instant createdAt = Instant.now();

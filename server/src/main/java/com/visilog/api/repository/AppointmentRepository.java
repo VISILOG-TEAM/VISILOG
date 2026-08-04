@@ -20,4 +20,10 @@ public interface AppointmentRepository extends JpaRepository<Appointment, UUID> 
     // approximate "is this host busy with a visitor around this time".
     List<Appointment> findByOrganizationIdAndHostIdAndScheduledAtBetweenAndStatusNot(
             UUID organizationId, UUID hostId, Instant from, Instant to, AppointmentStatus excludedStatus);
+
+    // ReminderService's 30-min-before push job -- only confirmed
+    // (ADMITTED) visits get reminded, and reminderSent stops a repeat
+    // send on the next tick once one has gone out.
+    List<Appointment> findByStatusAndReminderSentFalseAndScheduledAtBetween(
+            AppointmentStatus status, Instant from, Instant to);
 }

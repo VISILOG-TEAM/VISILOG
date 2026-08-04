@@ -11,6 +11,8 @@ import {
   Select,
   Segmented,
   BookMeetingForm,
+  StepProgress,
+  StepNav,
 } from '../components';
 import { DatePicker, TimePicker } from '../components/QuickDateTime';
 import { useTheme } from '../theme/ThemeContext';
@@ -25,6 +27,8 @@ interface VisitorBookingScreenProps {
 }
 
 type BookingMode = 'visitor' | 'internal';
+
+const STEPS = ['Visitor', 'Details', 'When'];
 
 // VisitorBookingScreen -- the receptionist's "Book" tab. Defaults to
 // the online visitor pre-registration form (booking on behalf of a
@@ -50,18 +54,43 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
   const [time, setTime] = useState('10:00');
   const [submitting, setSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const [step, setStep] = useState(0);
+
+  const visitorStepProblem = (): string | null => {
+    if (!visitorName.trim() || !visitorPhone.trim()) return 'Name and phone are required.';
+    return null;
+  };
+
+  const detailsStepProblem = (): string | null => {
+    if (!hostId) return 'Pick who they’re visiting.';
+    if (purpose === 'Other' && !otherPurpose.trim()) {
+      return 'Please describe the purpose of the visit.';
+    }
+    return null;
+  };
+
+  const onNextStep = () => {
+    const problem = step === 0 ? visitorStepProblem() : step === 1 ? detailsStepProblem() : null;
+    if (problem) {
+      Alert.alert('Almost there', problem);
+      return;
+    }
+    if (step === STEPS.length - 1) {
+      onSubmit();
+      return;
+    }
+    setStep((s) => s + 1);
+  };
 
   const onSubmit = async () => {
     if (submittingRef.current) {
       Alert.alert('Already booking', 'This appointment is already being submitted.');
       return;
     }
-    if (!visitorName.trim() || !visitorPhone.trim() || !hostId) {
-      Alert.alert('Almost there', 'Name, phone and host are required.');
-      return;
-    }
-    if (purpose === 'Other' && !otherPurpose.trim()) {
-      Alert.alert('Almost there', 'Please describe the purpose of the visit.');
+    const problem = visitorStepProblem() || detailsStepProblem();
+    if (problem) {
+      Alert.alert('Almost there', problem);
+      setStep(visitorStepProblem() ? 0 : 1);
       return;
     }
     submittingRef.current = true;
@@ -73,7 +102,7 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
         visitorEmail: visitorEmail.trim(),
         visitorCompany: visitorCompany.trim(),
         purpose: purpose === 'Other' ? otherPurpose.trim() : purpose,
-        hostId,
+        hostId: hostId as string,
         scheduledAt: toInstant(date, time),
       });
       Alert.alert(
@@ -106,7 +135,10 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
 
       <Segmented
         value={mode}
-        onChange={setMode}
+        onChange={(m) => {
+          setMode(m);
+          setStep(0);
+        }}
         options={[
           { label: 'Visitor booking', value: 'visitor' },
           { label: 'Internal meeting', value: 'internal' },
@@ -119,96 +151,112 @@ export default function VisitorBookingScreen({ navigation }: VisitorBookingScree
       ) : (
         <>
           <Card>
-            <View style={[styles.notice, { backgroundColor: colors.primarySurface }]}>
-              <Ionicons name="information-circle" size={18} color={colors.primary} />
-              <Text variant="caption" color={colors.brand} style={{ marginLeft: 8, flex: 1 }}>
-                Pre-booking speeds up reception. You will receive a QR code & badge ID after
-                approval.
-              </Text>
-            </View>
+            <StepProgress steps={STEPS} current={step} />
 
-            <Input
-              label="Full name"
-              value={visitorName}
-              onChangeText={setVisitorName}
-              placeholder="e.g. Selasi Akoto"
-              icon="person-outline"
-            />
+            {step === 0 ? (
+              <>
+                <View style={[styles.notice, { backgroundColor: colors.primarySurface }]}>
+                  <Ionicons name="information-circle" size={18} color={colors.primary} />
+                  <Text variant="caption" color={colors.brand} style={{ marginLeft: 8, flex: 1 }}>
+                    Pre-booking speeds up reception. You will receive a QR code & badge ID after
+                    approval.
+                  </Text>
+                </View>
 
-            <Input
-              label="Phone number"
-              value={visitorPhone}
-              onChangeText={setVisitorPhone}
-              placeholder="+233 ..."
-              icon="call-outline"
-              keyboardType="phone-pad"
-            />
+                <Input
+                  label="Full name"
+                  value={visitorName}
+                  onChangeText={setVisitorName}
+                  placeholder="e.g. Selasi Akoto"
+                  icon="person-outline"
+                />
 
-            <Input
-              label="Email (optional)"
-              value={visitorEmail}
-              onChangeText={setVisitorEmail}
-              placeholder="name@example.com"
-              icon="mail-outline"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+                <Input
+                  label="Phone number"
+                  value={visitorPhone}
+                  onChangeText={setVisitorPhone}
+                  placeholder="+233 ..."
+                  icon="call-outline"
+                  keyboardType="phone-pad"
+                />
 
-            <Input
-              label="Company (optional)"
-              value={visitorCompany}
-              onChangeText={setVisitorCompany}
-              placeholder="Your organisation"
-              icon="business-outline"
-            />
+                <Input
+                  label="Email (optional)"
+                  value={visitorEmail}
+                  onChangeText={setVisitorEmail}
+                  placeholder="name@example.com"
+                  icon="mail-outline"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
 
-            <Select
-              label="Purpose"
-              value={purpose}
-              onChange={setPurpose}
-              icon="briefcase-outline"
-              options={visitPurposes.map((p) => ({ label: p, value: p }))}
-            />
-
-            {purpose === 'Other' ? (
-              <Input
-                label="Please specify"
-                value={otherPurpose}
-                onChangeText={setOtherPurpose}
-                placeholder="What's the purpose of the visit?"
-                icon="create-outline"
-              />
+                <Input
+                  label="Company (optional)"
+                  value={visitorCompany}
+                  onChangeText={setVisitorCompany}
+                  placeholder="Your organisation"
+                  icon="business-outline"
+                />
+              </>
             ) : null}
 
-            <Select
-              label="Who are you visiting?"
-              placeholder="Pick a host..."
-              value={hostId}
-              onChange={setHostId}
-              icon="people-outline"
-              options={employees.map((e) => ({
-                label: e.name,
-                value: e.id,
-                sublabel: e.department,
-              }))}
-            />
+            {step === 1 ? (
+              <>
+                <Select
+                  label="Purpose"
+                  value={purpose}
+                  onChange={setPurpose}
+                  icon="briefcase-outline"
+                  options={visitPurposes.map((p) => ({ label: p, value: p }))}
+                />
 
-            <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-              Date
-            </Text>
-            <DatePicker value={date} onChange={setDate} />
-            <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-              Time
-            </Text>
-            <TimePicker value={time} onChange={setTime} />
+                {purpose === 'Other' ? (
+                  <Input
+                    label="Please specify"
+                    value={otherPurpose}
+                    onChangeText={setOtherPurpose}
+                    placeholder="What's the purpose of the visit?"
+                    icon="create-outline"
+                  />
+                ) : null}
+
+                <Select
+                  label="Who are you visiting?"
+                  placeholder="Pick a host..."
+                  value={hostId}
+                  onChange={setHostId}
+                  icon="people-outline"
+                  options={employees.map((e) => ({
+                    label: e.name,
+                    value: e.id,
+                    sublabel: e.department,
+                  }))}
+                />
+              </>
+            ) : null}
+
+            {step === 2 ? (
+              <>
+                <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+                  Date
+                </Text>
+                <DatePicker value={date} onChange={setDate} />
+                <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+                  Time
+                </Text>
+                <TimePicker value={time} onChange={setTime} />
+              </>
+            ) : null}
           </Card>
 
-          <Button
-            label="Request appointment"
-            icon="checkmark-circle-outline"
-            onPress={onSubmit}
+          <StepNav
+            current={step}
+            total={STEPS.length}
+            onBack={() => setStep((s) => Math.max(0, s - 1))}
+            onNext={onNextStep}
+            finishLabel="Request appointment"
+            finishIcon="checkmark-circle-outline"
             loading={submitting}
-            style={{ marginTop: spacing.md }}
           />
         </>
       )}

@@ -53,12 +53,14 @@ public class RoomBookingService {
     private final OrganizationRepository organizationRepository;
     private final NotificationService notificationService;
     private final MailService mailService;
+    private final WorkingHoursService workingHoursService;
 
     public RoomBookingService(
             RoomBookingRepository roomBookingRepository, RoomBookingResponseRepository roomBookingResponseRepository,
             MeetingRoomRepository meetingRoomRepository, EmployeeRepository employeeRepository,
             AppointmentRepository appointmentRepository, OrganizationRepository organizationRepository,
-            NotificationService notificationService, MailService mailService) {
+            NotificationService notificationService, MailService mailService,
+            WorkingHoursService workingHoursService) {
         this.roomBookingRepository = roomBookingRepository;
         this.roomBookingResponseRepository = roomBookingResponseRepository;
         this.meetingRoomRepository = meetingRoomRepository;
@@ -67,6 +69,7 @@ public class RoomBookingService {
         this.organizationRepository = organizationRepository;
         this.notificationService = notificationService;
         this.mailService = mailService;
+        this.workingHoursService = workingHoursService;
     }
 
     // readOnly: RoomBookingDto.from reads the lazy participantIds
@@ -90,6 +93,7 @@ public class RoomBookingService {
         if (req.endTime() != null && req.startTime() != null && !req.endTime().isAfter(req.startTime())) {
             throw ApiException.badRequest("End time must be after the start time.");
         }
+        workingHoursService.requireWithinHours(organizationId, req.startTime(), "Booking a meeting");
 
         // Person-level clash check: neither the organiser nor anyone
         // they're inviting may already be in another meeting, or
@@ -207,10 +211,12 @@ public class RoomBookingService {
         response.setRespondedAt(Instant.now());
         roomBookingResponseRepository.save(response);
 
+        String responderName = employeeRepository.findByOrganizationIdAndId(organizationId, employeeId)
+                .map(Employee::getName).orElse("A colleague");
         if (status == RoomBookingResponseStatus.DECLINED) {
-            String declinerName = employeeRepository.findByOrganizationIdAndId(organizationId, employeeId)
-                    .map(Employee::getName).orElse("A colleague");
-            notificationService.notifyDecline(booking, declinerName, response.getDeclineReason());
+            notificationService.notifyDecline(booking, responderName, response.getDeclineReason());
+        } else {
+            notificationService.notifyAcknowledge(booking, responderName, response.getRespondedAt());
         }
 
         return RoomBookingDto.from(booking, responsesFor(roomBookingId));
@@ -254,6 +260,7 @@ public class RoomBookingService {
         if (!req.newEndTime().isAfter(req.newStartTime())) {
             throw ApiException.badRequest("End time must be after the start time.");
         }
+        workingHoursService.requireWithinHours(organizationId, req.newStartTime(), "Rescheduling a meeting");
         b.setStartTime(req.newStartTime());
         b.setEndTime(req.newEndTime());
         b.setRescheduleReason(req.reason());

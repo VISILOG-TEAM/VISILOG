@@ -341,6 +341,7 @@ const styles = StyleSheet.create({
   heading: {
     fontFamily: fonts.displayBold,
     fontSize: 26,
+    lineHeight: 32,
     color: '#FFFFFF',
     marginBottom: 4,
   },
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 13,
     color: 'rgba(255,255,255,0.85)',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
 
   // Form fields -- translucent so the glass shows through

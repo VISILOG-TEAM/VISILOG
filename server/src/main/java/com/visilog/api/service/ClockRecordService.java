@@ -31,10 +31,14 @@ public class ClockRecordService {
 
     private final ClockRecordRepository clockRecordRepository;
     private final EmployeeRepository employeeRepository;
+    private final WorkingHoursService workingHoursService;
 
-    public ClockRecordService(ClockRecordRepository clockRecordRepository, EmployeeRepository employeeRepository) {
+    public ClockRecordService(
+            ClockRecordRepository clockRecordRepository, EmployeeRepository employeeRepository,
+            WorkingHoursService workingHoursService) {
         this.clockRecordRepository = clockRecordRepository;
         this.employeeRepository = employeeRepository;
+        this.workingHoursService = workingHoursService;
     }
 
     public List<ClockRecordDto> list(UUID organizationId) {
@@ -55,12 +59,14 @@ public class ClockRecordService {
         if (hasClockedInToday(organizationId, req.employeeId())) {
             throw ApiException.conflict("You can only clock in once per day -- see you tomorrow.");
         }
+        workingHoursService.requireWithinHours(organizationId, Instant.now(), "Clocking in");
         checkDeviceBinding(organizationId, req.employeeId(), req.deviceId());
         return save(organizationId, req, ClockType.IN);
     }
 
     @Transactional
     public ClockRecordDto clockOut(UUID organizationId, ClockActionRequest req) {
+        workingHoursService.requireWithinHours(organizationId, Instant.now(), "Clocking out");
         return save(organizationId, req, ClockType.OUT);
     }
 

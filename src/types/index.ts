@@ -58,6 +58,11 @@ export interface Organization {
   logoUrl: string | null;
   theme: BrandTheme;
   wifiNetworkName: string | null;
+  // "HH:mm", or null if the org hasn't set working hours -- when set,
+  // the backend rejects clock-in/out and meeting/visit bookings outside
+  // this window (see server WorkingHoursService).
+  openingTime: string | null;
+  closingTime: string | null;
   // The org's current plan id -- lets every role (not just managers,
   // who alone can see full Billing) do client-side plan-feature checks
   // like SettingsScreen's priority-support badge.
@@ -185,6 +190,7 @@ export interface RoomBooking {
 export type NotificationType =
   | 'meeting_invite'
   | 'meeting_declined'
+  | 'meeting_acknowledged'
   | 'visit_admitted'
   | 'visit_rejected'
   | 'visit_checked_out'

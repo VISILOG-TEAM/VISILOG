@@ -50,7 +50,13 @@ export default function ManagerClockInsScreen() {
       <View style={styles.head}>
         <Header title="Clock ins" subtitle="Attendance record for every role" />
         <View style={styles.statRow}>
-          <StatTile icon="people" tint="primary" label="Currently on the clock" value={onsiteCount} />
+          <StatTile
+            icon="people"
+            tint="primary"
+            label="Currently on the clock"
+            value={onsiteCount}
+            layout="row"
+          />
         </View>
       </View>
 

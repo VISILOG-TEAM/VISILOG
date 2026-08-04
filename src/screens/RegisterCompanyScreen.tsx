@@ -206,7 +206,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.md,
   },
-  heading: { fontFamily: fonts.displayBold, fontSize: 24, color: '#FFFFFF' },
+  heading: {
+    fontFamily: fonts.displayBold,
+    fontSize: 24,
+    lineHeight: 30,
+    color: '#FFFFFF',
+    marginBottom: spacing.lg,
+  },
   subheading: {
     fontFamily: fonts.regular,
     fontSize: 13,

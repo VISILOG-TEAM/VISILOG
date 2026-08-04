@@ -39,6 +39,13 @@
         {
           "faceIDPermission": "VisiLog uses Face ID to confirm it's you before clocking in."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/logo.png",
+          "color": "#0E4E55"
+        }
       ]
     ]
   }

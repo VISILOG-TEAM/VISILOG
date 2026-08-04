@@ -61,4 +61,9 @@ public class RoomBooking {
     @Column(length = 1000)
     private String rescheduleReason;
     private Instant rescheduledAt;
+
+    // Flipped once ReminderService has sent the 30-min-before push for
+    // this meeting, so the fixed-rate job never sends it twice.
+    @Column(name = "reminder_sent", nullable = false)
+    private boolean reminderSent = false;
 }

@@ -9,22 +9,29 @@ import { fonts } from '../theme/typography';
 import type { IoniconName } from '../types';
 
 type StatTileTint = 'primary' | 'info' | 'success' | 'pending';
+type StatTileLayout = 'stacked' | 'row';
 
 interface StatTileProps {
   icon?: IoniconName;
   label: string;
   value: number | string;
   tint?: StatTileTint;
+  /** 'stacked' (default) is icon-above-label-above-value, sized for the
+   *  Dashboard's 2-per-row grid. 'row' puts the icon, label and value on
+   *  a single line -- for a lone, full-width tile (see
+   *  ManagerClockInsScreen) where stacking just wastes vertical space. */
+  layout?: StatTileLayout;
 }
 
-// One of the four big numbers on the Dashboard. A coloured icon chip on
-// the left and a big display number on the right. The `tint` prop selects
-// which status colour family the icon chip uses.
+// One of the four big numbers on the Dashboard. A coloured icon chip and
+// a big display number. The `tint` prop selects which status colour
+// family the icon chip uses.
 export default function StatTile({
   icon = 'people',
   label,
   value,
   tint = 'primary',
+  layout = 'stacked',
 }: StatTileProps) {
   const { colors } = useTheme();
   // 'primary' pulls the signed-in org's brand accent; the rest are fixed
@@ -36,6 +43,29 @@ export default function StatTile({
     pending: { bg: colors.status.pending.bg, fg: colors.status.pending.solid },
   };
   const t = TINTS[tint] || TINTS.primary;
+
+  if (layout === 'row') {
+    return (
+      <View
+        style={[
+          styles.rowCard,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+          shadows.sm,
+        ]}
+      >
+        <View style={[styles.icon, styles.rowIcon, { backgroundColor: t.bg }]}>
+          <Ionicons name={icon} size={18} color={t.fg} />
+        </View>
+        <Text variant="caption" color={colors.textSecondary} style={styles.rowLabel}>
+          {label}
+        </Text>
+        <Text style={[styles.value, styles.rowValue, { color: colors.textPrimary }]}>
+          {value}
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View
       style={[
@@ -62,6 +92,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.md,
   },
+  rowCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    padding: spacing.md,
+  },
   icon: {
     width: 32,
     height: 32,
@@ -70,11 +108,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
+  rowIcon: { marginBottom: 0, marginRight: spacing.sm },
   label: { marginTop: 2 },
+  rowLabel: { flex: 1, marginTop: 0 },
   value: {
     fontFamily: fonts.displayBold,
     fontSize: 26,
     marginTop: 2,
     letterSpacing: -0.5,
   },
+  rowValue: { marginTop: 0, marginLeft: spacing.sm },
 });

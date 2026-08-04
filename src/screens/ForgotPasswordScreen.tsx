@@ -252,6 +252,7 @@ const styles = StyleSheet.create({
   heading: {
     fontFamily: fonts.displayBold,
     fontSize: 24,
+    lineHeight: 30,
     color: '#FFFFFF',
     marginBottom: 4,
   },

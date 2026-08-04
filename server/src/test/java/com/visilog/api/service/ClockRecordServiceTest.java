@@ -24,6 +24,7 @@ class ClockRecordServiceTest {
 
     @Mock private ClockRecordRepository clockRecordRepository;
     @Mock private EmployeeRepository employeeRepository;
+    @Mock private WorkingHoursService workingHoursService;
 
     private ClockRecordService service;
     private final UUID orgId = UUID.randomUUID();
@@ -31,7 +32,7 @@ class ClockRecordServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ClockRecordService(clockRecordRepository, employeeRepository);
+        service = new ClockRecordService(clockRecordRepository, employeeRepository, workingHoursService);
     }
 
     private void stubNotClockedInToday() {

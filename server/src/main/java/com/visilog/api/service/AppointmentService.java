@@ -34,16 +34,18 @@ public class AppointmentService {
     private final RoomBookingRepository roomBookingRepository;
     private final EmployeeRepository employeeRepository;
     private final NotificationService notificationService;
+    private final WorkingHoursService workingHoursService;
 
     public AppointmentService(
             AppointmentRepository appointmentRepository, VisitorService visitorService,
             RoomBookingRepository roomBookingRepository, EmployeeRepository employeeRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService, WorkingHoursService workingHoursService) {
         this.appointmentRepository = appointmentRepository;
         this.visitorService = visitorService;
         this.roomBookingRepository = roomBookingRepository;
         this.employeeRepository = employeeRepository;
         this.notificationService = notificationService;
+        this.workingHoursService = workingHoursService;
     }
 
     // Reception sees every appointment in the org -- that's the front-desk
@@ -83,6 +85,7 @@ public class AppointmentService {
     @Transactional
     public AppointmentDto book(UUID organizationId, BookAppointmentRequest req, String bookedByEmail) {
         Instant scheduledAt = req.scheduledAt() != null ? req.scheduledAt() : Instant.now();
+        workingHoursService.requireWithinHours(organizationId, scheduledAt, "Booking a visit");
         checkHostAvailability(organizationId, req.hostId(), scheduledAt);
 
         Appointment a = new Appointment();
@@ -196,6 +199,7 @@ public class AppointmentService {
     @Transactional
     public AppointmentDto reschedule(UUID organizationId, UUID appointmentId, RescheduleRequest req) {
         Appointment a = findOrThrow(organizationId, appointmentId);
+        workingHoursService.requireWithinHours(organizationId, req.newScheduledAt(), "Rescheduling a visit");
         a.setScheduledAt(req.newScheduledAt());
         a.setRescheduleReason(req.reason());
         a.setRescheduledAt(Instant.now());

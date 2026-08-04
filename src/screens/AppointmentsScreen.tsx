@@ -8,6 +8,7 @@ import {
   TextInput,
   Pressable,
   KeyboardAvoidingView,
+  Platform,
   ScrollView,
   RefreshControl,
   Linking,
@@ -25,6 +26,8 @@ import {
   EmptyState,
   Avatar,
   RescheduleModal,
+  DatePicker,
+  TimePicker,
 } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
@@ -52,9 +55,10 @@ type AppointmentsView = 'appointments' | 'rooms';
 // AppointmentsScreen
 // Pre-scheduled visits with status tabs:
 // - Awaiting: pending approval from the host
-// - Upcoming: admitted visits still in the future (ready to check in)
-// - Admitted: all admitted visits
+// - Admitted: all admitted visits, arrived or not yet
 // - Rejected: denied entry
+// - Completed: admitted visits the visitor actually checked into --
+//   the visit happened, as opposed to merely being approved
 // A top-level slider also switches over to a Meeting Rooms view.
 export default function AppointmentsScreen({ navigation }: AppointmentsScreenProps) {
   const [view, setView] = useState<AppointmentsView>('appointments');
@@ -92,7 +96,7 @@ export default function AppointmentsScreen({ navigation }: AppointmentsScreenPro
   );
 }
 
-type AppointmentFilter = 'awaiting' | 'upcoming' | 'admitted' | 'rejected';
+type AppointmentFilter = 'awaiting' | 'admitted' | 'rejected' | 'completed';
 
 function AppointmentsList() {
   const { user } = useAuth();
@@ -117,21 +121,19 @@ function AppointmentsList() {
   const admittingRef = useRef(new Set<string>());
   const checkingInRef = useRef(new Set<string>());
 
-  const now = Date.now();
-
   const filtered = useMemo(() => {
+    // Soonest first -- whichever visit is coming up next belongs at the
+    // top, not whichever was scheduled most recently.
     const sorted = [...appointments].sort(
-      (a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
+      (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
     );
     if (filter === 'awaiting') return sorted.filter((a) => a.status === 'pending');
-    if (filter === 'upcoming')
-      return sorted.filter(
-        (a) => a.status === 'admitted' && new Date(a.scheduledAt).getTime() > now,
-      );
     if (filter === 'admitted') return sorted.filter((a) => a.status === 'admitted');
     if (filter === 'rejected') return sorted.filter((a) => a.status === 'rejected');
+    if (filter === 'completed')
+      return sorted.filter((a) => a.status === 'admitted' && a.checkedIn);
     return sorted;
-  }, [appointments, filter, now]);
+  }, [appointments, filter]);
 
   const onAdmit = (appt: Appointment) => {
     if (admittingRef.current.has(appt.id)) return;
@@ -214,9 +216,9 @@ function AppointmentsList() {
           onChange={setFilter}
           options={[
             { label: 'Awaiting', value: 'awaiting' },
-            { label: 'Upcoming', value: 'upcoming' },
             { label: 'Admitted', value: 'admitted' },
             { label: 'Rejected', value: 'rejected' },
+            { label: 'Completed', value: 'completed' },
           ]}
         />
       </View>
@@ -234,8 +236,8 @@ function AppointmentsList() {
             message={
               filter === 'awaiting'
                 ? "You're all caught up — no visits waiting for approval."
-                : filter === 'upcoming'
-                  ? 'No admitted visits coming up. Admit a pending visit first.'
+                : filter === 'completed'
+                  ? 'No visits have been checked in yet.'
                   : 'Try a different filter to see appointments in other states.'
             }
           />
@@ -569,8 +571,9 @@ function MeetingsView() {
 
   const sortedMeetings = useMemo(
     () =>
+      // Soonest first, same reasoning as the appointments list above.
       [...roomBookings].sort(
-        (a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime(),
+        (a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
       ),
     [roomBookings],
   );
@@ -780,15 +783,32 @@ function RescheduleMeetingModal({ visible, booking, onClose, onSave }: Reschedul
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={rejectStyles.wrap} behavior="padding">
+      <KeyboardAvoidingView
+        style={rejectStyles.wrap}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          style={rejectStyles.scrollOuter}
+          contentContainerStyle={rejectStyles.scrollWrap}
+          keyboardShouldPersistTaps="handled"
+        >
         <View style={[rejectStyles.card, { backgroundColor: colors.surface }]}>
           <Text variant="h3">Reschedule meeting</Text>
           <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
             {booking?.title}
           </Text>
-          <ModalField label="New date (YYYY-MM-DD)" value={date} onChangeText={setDate} colors={colors} />
-          <ModalField label="Start time (HH:MM)" value={startTime} onChangeText={setStartTime} colors={colors} />
-          <ModalField label="End time (HH:MM)" value={endTime} onChangeText={setEndTime} colors={colors} />
+          <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+            New date
+          </Text>
+          <DatePicker value={date} onChange={setDate} />
+          <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+            Start time
+          </Text>
+          <TimePicker value={startTime} onChange={setStartTime} />
+          <Text variant="label" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+            End time
+          </Text>
+          <TimePicker value={endTime} onChange={setEndTime} />
           <ModalField label="Reason (optional)" value={reason} onChangeText={setReason} colors={colors} multiline />
           <View style={rejectStyles.row}>
             <Pressable
@@ -810,6 +830,7 @@ function RescheduleMeetingModal({ visible, booking, onClose, onSave }: Reschedul
             </Pressable>
           </View>
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -875,17 +896,36 @@ function MarkAttendanceModal({ visible, booking, onClose, onToggle }: MarkAttend
                   <Text variant="bodySemibold" style={{ flex: 1 }}>
                     {employee?.name || 'Unknown'}
                   </Text>
-                  <Pressable
-                    onPress={() => onToggle(id, !absent)}
-                    style={[
-                      attendanceStyles.pill,
-                      { backgroundColor: absent ? colors.status.rejected.solid : colors.brand },
-                    ]}
-                  >
-                    <Text variant="caption" color={colors.textInverse}>
-                      {absent ? 'Absent' : 'Present'}
-                    </Text>
-                  </Pressable>
+                  <View style={attendanceStyles.pillGroup}>
+                    <Pressable
+                      onPress={() => onToggle(id, false)}
+                      style={[
+                        attendanceStyles.pill,
+                        {
+                          backgroundColor: !absent ? colors.brand : colors.surfaceAlt,
+                          marginRight: 6,
+                        },
+                      ]}
+                    >
+                      <Text variant="caption" color={!absent ? colors.textInverse : colors.textSecondary}>
+                        Present
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => onToggle(id, true)}
+                      style={[
+                        attendanceStyles.pill,
+                        { backgroundColor: absent ? colors.status.rejected.solid : colors.surfaceAlt },
+                      ]}
+                    >
+                      <Text
+                        variant="caption"
+                        color={absent ? colors.textInverse : colors.textSecondary}
+                      >
+                        Absent
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               );
             })}
@@ -934,6 +974,8 @@ const rejectStyles = StyleSheet.create({
     borderRadius: radius.lg,
     padding: spacing.lg,
   },
+  scrollOuter: { width: '100%' },
+  scrollWrap: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
   input: {
     borderWidth: 1,
     borderRadius: radius.md,
@@ -962,6 +1004,7 @@ const attendanceStyles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
   },
+  pillGroup: { flexDirection: 'row' },
   pill: {
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,

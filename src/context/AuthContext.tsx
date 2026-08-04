@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import { apiClient, ApiError } from '../api/client';
 import { setToken, clearToken, loadStoredToken } from '../api/tokenStore';
 import { saveRememberedLogin, clearRememberedLogin } from '../api/rememberedLogin';
+import { registerForPushNotificationsAsync } from '../data/pushNotifications';
 import { useTheme } from '../theme/ThemeContext';
 import type { AuthResult, Organization, Role, User } from '../types';
 
@@ -41,6 +42,8 @@ interface OrganizationPatch {
   logoUrl?: string | null;
   theme?: Organization['theme'];
   wifiNetworkName?: string | null;
+  openingTime?: string | null;
+  closingTime?: string | null;
 }
 
 interface MessageResult {
@@ -125,6 +128,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setOrgTheme(organization ? organization.theme : null);
   }, [organization, setOrgTheme]);
+
+  // Registers this device's push token once someone's signed in -- one
+  // place that covers every path that can set `user` (login, signup,
+  // registerCompany, and session restore) instead of duplicating a call
+  // at each. Silently does nothing if permission is denied, this isn't a
+  // physical device, no EAS project id is configured yet, or (Android +
+  // Expo Go) remote push isn't supported at all -- see
+  // registerForPushNotificationsAsync and PushNotificationService.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    registerForPushNotificationsAsync().then((token) => {
+      if (cancelled || !token) return;
+      apiClient.post('/api/v1/push-tokens', { token }).catch(() => {});
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     (async () => {

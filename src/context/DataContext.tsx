@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { apiClient } from '../api/client';
 import { getDeviceId } from '../api/deviceId';
+import { syncLocalReminders, type ReminderItem } from '../data/pushNotifications';
 import { useAuth } from './AuthContext';
 import type {
   Appointment,
@@ -356,6 +357,45 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     loadAll().catch(() => {});
   }, [user?.id]);
+
+  // Keeps on-device "30 minutes before" reminders in sync with this
+  // user's own upcoming appointments/meetings every time either list
+  // refreshes -- not just visitor's own visits (appointments is already
+  // scoped that way per-role, see loadAll), but also filtered down to
+  // "am I the host" / "am I organiser or an invited participant who
+  // hasn't declined" for Receptionist/Manager, whose appointments and
+  // roomBookings lists otherwise include the whole org's, not just
+  // theirs to be reminded about. See syncLocalReminders.
+  useEffect(() => {
+    if (!user) return;
+    const items: ReminderItem[] = [];
+    for (const a of appointments) {
+      const isMine = user.role === 'visitor' ? true : a.hostId === user.employeeId;
+      if (isMine && a.status === 'admitted') {
+        items.push({
+          id: `appointment-${a.id}`,
+          title: 'Upcoming visit',
+          body: `${a.visitorName} - starting soon`,
+          whenISO: a.scheduledAt,
+        });
+      }
+    }
+    if (user.employeeId) {
+      for (const b of roomBookings) {
+        const myResponse = b.responses.find((r) => r.employeeId === user.employeeId);
+        const isMine = b.organiserId === user.employeeId || b.participantIds.includes(user.employeeId);
+        if (isMine && myResponse?.status !== 'declined') {
+          items.push({
+            id: `meeting-${b.id}`,
+            title: 'Upcoming meeting',
+            body: `${b.title} - starting soon`,
+            whenISO: b.startTime,
+          });
+        }
+      }
+    }
+    syncLocalReminders(items).catch(() => {});
+  }, [appointments, roomBookings, user]);
 
   const refreshAll = async (): Promise<void> => {
     await loadAll();

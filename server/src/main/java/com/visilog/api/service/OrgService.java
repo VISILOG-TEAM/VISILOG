@@ -7,6 +7,9 @@ import com.visilog.api.entity.Organization;
 import com.visilog.api.exception.ApiException;
 import com.visilog.api.repository.OrgBillingRepository;
 import com.visilog.api.repository.OrganizationRepository;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 // OfficeLocationService/Controller (see V21 migration).
 @Service
 public class OrgService {
+
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final OrganizationRepository organizationRepository;
     private final OrgBillingRepository orgBillingRepository;
@@ -59,6 +64,12 @@ public class OrgService {
         if (req.wifiNetworkName() != null) {
             org.setWifiNetworkName(req.wifiNetworkName().isBlank() ? null : req.wifiNetworkName().trim());
         }
+        if (req.openingTime() != null) {
+            org.setOpeningTime(req.openingTime().isBlank() ? null : parseTime(req.openingTime(), "opening time"));
+        }
+        if (req.closingTime() != null) {
+            org.setClosingTime(req.closingTime().isBlank() ? null : parseTime(req.closingTime(), "closing time"));
+        }
         if (req.theme() != null) {
             var t = req.theme();
             org.setBrand(t.brand());
@@ -70,6 +81,14 @@ public class OrgService {
             org.setPrimarySurfaceStrong(t.primarySurfaceStrong());
         }
         return OrganizationDto.from(organizationRepository.save(org), currentPlanId(organizationId));
+    }
+
+    private LocalTime parseTime(String raw, String fieldLabel) {
+        try {
+            return LocalTime.parse(raw.trim(), TIME_FORMAT);
+        } catch (DateTimeParseException ex) {
+            throw ApiException.badRequest("Enter " + fieldLabel + " as HH:mm, e.g. 09:00.");
+        }
     }
 
     private Organization findOrThrow(UUID organizationId) {

@@ -9,6 +9,7 @@ import com.visilog.api.entity.BillingStatus;
 import com.visilog.api.entity.OrgBilling;
 import com.visilog.api.entity.Plan;
 import com.visilog.api.exception.ApiException;
+import com.visilog.api.repository.EmployeeRepository;
 import com.visilog.api.repository.InvoiceRepository;
 import com.visilog.api.repository.OrgBillingRepository;
 import com.visilog.api.repository.PlanRepository;
@@ -28,13 +29,14 @@ class BillingServiceTest {
     @Mock private OrgBillingRepository orgBillingRepository;
     @Mock private InvoiceRepository invoiceRepository;
     @Mock private PlanRepository planRepository;
+    @Mock private EmployeeRepository employeeRepository;
 
     private BillingService service;
     private final UUID orgId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
-        service = new BillingService(orgBillingRepository, invoiceRepository, planRepository);
+        service = new BillingService(orgBillingRepository, invoiceRepository, planRepository, employeeRepository);
     }
 
     @Test

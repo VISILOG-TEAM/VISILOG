@@ -28,4 +28,8 @@ public interface RoomBookingRepository extends JpaRepository<RoomBooking, UUID> 
     List<RoomBooking> findOverlappingForPerson(
             @Param("organizationId") UUID organizationId, @Param("employeeId") UUID employeeId,
             @Param("startTime") Instant startTime, @Param("endTime") Instant endTime);
+
+    // ReminderService's 30-min-before push job -- reminderSent stops a
+    // repeat send on the next tick once one has gone out.
+    List<RoomBooking> findByReminderSentFalseAndStartTimeBetween(Instant from, Instant to);
 }

@@ -1,9 +1,20 @@
-import React, { useState } from 'react';
-import { View, Image, StyleSheet, Alert, Pressable, Share } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Image, StyleSheet, Alert, Pressable, Share, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { Screen, Header, Text, Card, Button, Input } from '../components';
+import {
+  Screen,
+  Header,
+  Text,
+  Card,
+  Button,
+  Input,
+  MapLocationPicker,
+  ColorPicker,
+  themeFromHex,
+  TimePicker,
+} from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { fonts } from '../theme/typography';
@@ -27,6 +38,19 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
     promise,
     new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
   ]);
+}
+
+// Turns a reverse-geocode result into a short, human-readable line --
+// raw coordinates don't tell a manager whether the pin actually landed
+// on their office. `name` is often a landmark/building and duplicates
+// `street` for a plain address, so it's only kept when it adds
+// something; falls back to street, then locality/region.
+function formatAddress(a: Location.LocationGeocodedAddress): string {
+  const primary = a.name && a.name !== a.street ? a.name : a.street;
+  const parts = [primary, a.city || a.subregion, a.region].filter(
+    (p): p is string => !!p && p.trim().length > 0,
+  );
+  return Array.from(new Set(parts)).join(', ');
 }
 
 interface CompanySetupScreenProps {
@@ -108,6 +132,20 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
   const [savingBrand, setSavingBrand] = useState(false);
   const [pickingLogo, setPickingLogo] = useState(false);
 
+  // Working hours -- optional; leaving either blank means no restriction
+  // (see backend WorkingHoursService). Independent Save so setting these
+  // doesn't require re-touching name/logo/wifi.
+  const [openingTime, setOpeningTime] = useState(organization?.openingTime || '');
+  const [closingTime, setClosingTime] = useState(organization?.closingTime || '');
+  const [savingHours, setSavingHours] = useState(false);
+
+  // Custom color -- collapsed by default behind the preset grid; picking
+  // and applying a color here overwrites all 7 theme slots at once (see
+  // ColorPicker.themeFromHex), same as tapping a preset does.
+  const [customColorOpen, setCustomColorOpen] = useState(false);
+  const [customHex, setCustomHex] = useState(organization?.theme.primary || '#4F8EF7');
+  const [savingCustomColor, setSavingCustomColor] = useState(false);
+
   const onPickLogo = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
@@ -153,6 +191,40 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
   // longitude fields. They stay hidden until then on purpose: typing
   // coordinates is the fallback, not the way this is meant to be used.
   const [gpsFailed, setGpsFailed] = useState(false);
+  // Human-readable reverse-geocoded address for whatever lat/lng is
+  // currently set -- kept separate from latitude/longitude so a failed
+  // or slow lookup never blocks saving the coordinates themselves.
+  const [placeName, setPlaceName] = useState('');
+  const [resolvingPlace, setResolvingPlace] = useState(false);
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
+
+  // Re-resolves the address any time the coordinates change, whether
+  // that's a fresh GPS fix, switching to edit an existing location, or
+  // someone typing into the manual lat/lng fallback fields.
+  useEffect(() => {
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    if (Number.isNaN(lat) || Number.isNaN(lng)) {
+      setPlaceName('');
+      return;
+    }
+    let cancelled = false;
+    setResolvingPlace(true);
+    Location.reverseGeocodeAsync({ latitude: lat, longitude: lng })
+      .then((results) => {
+        if (cancelled) return;
+        setPlaceName(results[0] ? formatAddress(results[0]) : '');
+      })
+      .catch(() => {
+        if (!cancelled) setPlaceName('');
+      })
+      .finally(() => {
+        if (!cancelled) setResolvingPlace(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [latitude, longitude]);
 
   const onStartAddLocation = () => {
     setEditingId(null);
@@ -258,6 +330,27 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     setSavingBrand(true);
     const result = await updateOrganization({ theme: preset.theme });
     setSavingBrand(false);
+    if (!result.ok) Alert.alert('Could not save', result.error);
+  };
+
+  const onApplyCustomColor = async () => {
+    setSavingCustomColor(true);
+    const result = await updateOrganization({ theme: themeFromHex(customHex) });
+    setSavingCustomColor(false);
+    if (!result.ok) Alert.alert('Could not save', result.error);
+  };
+
+  const onSaveHours = async () => {
+    if ((openingTime && !closingTime) || (!openingTime && closingTime)) {
+      Alert.alert('Almost there', 'Set both an opening and a closing time, or leave both blank.');
+      return;
+    }
+    setSavingHours(true);
+    const result = await updateOrganization({
+      openingTime: openingTime || '',
+      closingTime: closingTime || '',
+    });
+    setSavingHours(false);
     if (!result.ok) Alert.alert('Could not save', result.error);
   };
 
@@ -428,6 +521,69 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
             </Pressable>
           ))}
         </View>
+
+        <Pressable
+          onPress={() => setCustomColorOpen((o) => !o)}
+          style={[styles.customColorToggle, { borderColor: colors.border }]}
+        >
+          <Ionicons
+            name={customColorOpen ? 'chevron-up' : 'color-palette-outline'}
+            size={16}
+            color={colors.brand}
+          />
+          <Text variant="bodySemibold" color={colors.brand} style={{ marginLeft: 6 }}>
+            {customColorOpen ? 'Hide custom color' : 'Pick a custom color'}
+          </Text>
+        </Pressable>
+
+        {customColorOpen && (
+          <View style={{ marginTop: spacing.sm }}>
+            <ColorPicker value={customHex} onChange={setCustomHex} />
+            <Button
+              label={savingCustomColor ? 'Applying...' : 'Apply this color'}
+              onPress={onApplyCustomColor}
+              disabled={savingCustomColor}
+              style={{ marginTop: spacing.sm }}
+            />
+          </View>
+        )}
+      </Card>
+
+      {/* Working hours -- optional; leaving both blank (the default)
+          means clock-in/out and meeting/visit bookings have no
+          time-of-day restriction (see backend WorkingHoursService). */}
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        Working hours
+      </Text>
+      <Card>
+        <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
+          Set an opening and closing time to limit when staff can clock in/out and when meetings
+          or visits can be booked. Leave both blank for no restriction.
+        </Text>
+        <Text variant="label" color={colors.textSecondary}>
+          Opening time
+        </Text>
+        <TimePicker value={openingTime} onChange={setOpeningTime} />
+        <Text variant="label" color={colors.textSecondary}>
+          Closing time
+        </Text>
+        <TimePicker value={closingTime} onChange={setClosingTime} />
+        {(openingTime || closingTime) && (
+          <Button
+            label="Clear working hours"
+            variant="secondary"
+            onPress={() => {
+              setOpeningTime('');
+              setClosingTime('');
+            }}
+            style={{ marginBottom: spacing.sm }}
+          />
+        )}
+        <Button
+          label={savingHours ? 'Saving...' : 'Save working hours'}
+          onPress={onSaveHours}
+          disabled={savingHours}
+        />
       </Card>
 
       {/* Office locations -- the first is free on any plan; a second+
@@ -499,6 +655,16 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
             variant="secondary"
             onPress={onUseCurrentLocation}
             disabled={locating}
+            style={{ marginBottom: spacing.xs }}
+          />
+          {/* Alternative to GPS: pick the exact spot on a map instead of
+              standing at the office, or to fine-tune a GPS fix that
+              landed a few metres off. */}
+          <Button
+            label="Choose on map"
+            icon="map"
+            variant="secondary"
+            onPress={() => setMapPickerOpen(true)}
             style={{ marginBottom: spacing.md }}
           />
           <View style={[styles.locationStatus, { backgroundColor: colors.surfaceAlt }]}>
@@ -509,17 +675,41 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
               size={18}
               color={latitude.trim() && longitude.trim() ? colors.primary : colors.textMuted}
             />
-            {/* Shows the actual coordinates once set, not just "Location
-                set". A bare confirmation is useless for the one thing an
-                admin needs to check -- whether the pin landed on their
-                office or on wherever the phone happened to think it was.
-                Trimmed to 5 decimal places, roughly a metre. */}
+            {/* Shows the actual place, not just raw coordinates -- a bare
+                lat/lng is useless for the one thing an admin needs to
+                check -- whether the pin landed on their office or on
+                wherever the phone happened to think it was. Falls back to
+                the trimmed coordinates (5 decimal places, roughly a
+                metre) while the address is still resolving or if reverse
+                geocoding comes back empty. */}
             <Text variant="bodyMd" color={colors.textSecondary} style={{ marginLeft: 8, flex: 1 }}>
               {latitude.trim() && longitude.trim()
-                ? `Location set: ${trimCoord(latitude)}, ${trimCoord(longitude)}`
+                ? resolvingPlace
+                  ? 'Finding address...'
+                  : placeName || `Location set: ${trimCoord(latitude)}, ${trimCoord(longitude)}`
                 : 'No location set yet'}
             </Text>
           </View>
+
+          {/* In case the resolved address (or the GPS fix itself) isn't
+              actually the right spot -- opens the pin in Google Maps so
+              an admin can visually confirm it, the same escape hatch
+              BookMeetingForm gives for an outside meeting location. */}
+          {latitude.trim() && longitude.trim() ? (
+            <Pressable
+              onPress={() =>
+                Linking.openURL(
+                  `https://maps.google.com/?q=${trimCoord(latitude)},${trimCoord(longitude)}`,
+                )
+              }
+              style={[styles.mapsLink, { borderColor: colors.primary }]}
+            >
+              <Ionicons name="map-outline" size={16} color={colors.primary} />
+              <Text variant="caption" color={colors.primary} style={{ marginLeft: 6 }}>
+                Verify on Google Maps
+              </Text>
+            </Pressable>
+          ) : null}
 
           {/* Only appears once GPS has actually failed -- see gpsFailed.
               These fields were deliberately removed as the primary way
@@ -602,6 +792,19 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
           onPress={() => navigation.navigate('LegalAgreement')}
         />
       </Card>
+
+      <MapLocationPicker
+        visible={mapPickerOpen}
+        initialLatitude={latitude.trim() ? parseFloat(latitude) : null}
+        initialLongitude={longitude.trim() ? parseFloat(longitude) : null}
+        onCancel={() => setMapPickerOpen(false)}
+        onConfirm={(lat, lng) => {
+          setLatitude(String(lat));
+          setLongitude(String(lng));
+          setGpsFailed(false);
+          setMapPickerOpen(false);
+        }}
+      />
     </Screen>
   );
 }
@@ -636,6 +839,14 @@ function LinkRow({
 
 const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
+  customColorToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+  },
   logoLabel: { marginBottom: 6 },
   logoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
   logoPreview: {
@@ -692,5 +903,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.sm,
     marginBottom: spacing.sm,
+  },
+  mapsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: radius.md,
+    borderStyle: 'dashed',
+    height: 36,
+    paddingHorizontal: spacing.sm,
+    marginTop: -spacing.xs,
+    marginBottom: spacing.md,
   },
 });

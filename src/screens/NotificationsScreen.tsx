@@ -29,6 +29,7 @@ import { usePullToRefresh } from '../components/usePullToRefresh';
 const NOTIFICATION_ICONS: Record<NotificationType, IoniconName> = {
   meeting_invite: 'calendar-outline',
   meeting_declined: 'close-circle-outline',
+  meeting_acknowledged: 'checkmark-circle-outline',
   visit_admitted: 'card-outline',
   visit_rejected: 'close-circle-outline',
   visit_checked_out: 'exit-outline',

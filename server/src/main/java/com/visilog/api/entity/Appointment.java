@@ -56,4 +56,9 @@ public class Appointment {
 
     @Column(nullable = false)
     private boolean checkedIn = false;
+
+    // Flipped once ReminderService has sent the 30-min-before push for
+    // this visit, so the fixed-rate job never sends it twice.
+    @Column(name = "reminder_sent", nullable = false)
+    private boolean reminderSent = false;
 }
