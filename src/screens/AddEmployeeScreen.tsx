@@ -81,7 +81,6 @@ export default function AddEmployeeScreen({ navigation }: AddEmployeeScreenProps
       <Header
         eyebrow="New directory entry"
         title="Add an employee"
-        subtitle="Single entry. Bulk CSV import coming soon."
         rightIcon="close"
         onRightPress={() => navigation.goBack()}
       />

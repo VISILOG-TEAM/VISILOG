@@ -1,15 +1,15 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { View, StyleSheet, Pressable, Linking, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Avatar, Button } from '../components';
 import { useTheme } from '../theme/ThemeContext';
 import { spacing, radius } from '../theme/spacing';
 import { useData } from '../context/DataContext';
-import { useAuth } from '../context/AuthContext';
 import { ApiError } from '../api/client';
 import type { RootStackScreenProps } from '../types/navigation';
 import type { IoniconName } from '../types';
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 // EmployeeDetailScreen -- single staff member's profile.
 export default function EmployeeDetailScreen({
@@ -18,18 +18,8 @@ export default function EmployeeDetailScreen({
 }: RootStackScreenProps<'EmployeeDetail'>) {
   const { colors } = useTheme();
   const { employeeId } = route.params;
-  const { employees, removeEmployee, resetEmployeeDevice, refreshEmployees } = useData();
-  const { user } = useAuth();
+  const { employees, removeEmployee } = useData();
   const employee = employees.find((e) => e.id === employeeId);
-
-  // deviceBound is set server-side the moment a staff member first
-  // clocks in -- refetch on focus so reopening this screen after that
-  // (or after a manager's own reset) shows the real, current state.
-  useFocusEffect(
-    useCallback(() => {
-      refreshEmployees().catch(() => {});
-    }, []),
-  );
 
   if (!employee) {
     return (
@@ -58,30 +48,6 @@ export default function EmployeeDetailScreen({
         },
       },
     ]);
-  };
-
-  const onResetDevice = () => {
-    Alert.alert(
-      'Reset clocked-in device?',
-      `${employee.name} will be able to clock in from a new phone. Only do this if they've genuinely switched devices.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reset',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await resetEmployeeDevice(employee.id);
-            } catch (err) {
-              Alert.alert(
-                'Could not reset device',
-                err instanceof ApiError ? err.message : 'Something went wrong.',
-              );
-            }
-          },
-        },
-      ],
-    );
   };
 
   return (
@@ -125,40 +91,17 @@ export default function EmployeeDetailScreen({
         <Row icon="call-outline" label="Personal phone" value={employee.phone} />
         <Divider />
         <Row icon="mail-outline" label="Email" value={employee.email} />
-        <Divider />
-        <Row icon="briefcase-outline" label="Department" value={employee.department} />
       </Card>
 
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Clock-in device
+        Work
       </Text>
       <Card>
-        <View style={styles.row}>
-          <View style={[styles.icon, { backgroundColor: colors.surfaceAlt }]}>
-            <Ionicons
-              name={employee.deviceBound ? 'phone-portrait' : 'phone-portrait-outline'}
-              size={18}
-              color={colors.brand}
-            />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text variant="caption" color={colors.textSecondary}>
-              Status
-            </Text>
-            <Text variant="bodySemibold">
-              {employee.deviceBound ? 'Locked to a phone' : 'Not yet locked'}
-            </Text>
-          </View>
-        </View>
-        {user?.role === 'manager' && employee.deviceBound && (
-          <Button
-            label="Reset device"
-            variant="secondary"
-            icon="refresh-outline"
-            onPress={onResetDevice}
-            style={{ marginTop: spacing.sm }}
-          />
-        )}
+        <Row icon="briefcase-outline" label="Department" value={employee.department} />
+        <Divider />
+        <Row icon="shield-outline" label="Role" value={capitalize(employee.role)} />
+        <Divider />
+        <Row icon="card-outline" label="Employee ID" value={employee.employeeId} />
       </Card>
 
       <Button

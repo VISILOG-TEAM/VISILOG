@@ -449,6 +449,24 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     }
   };
 
+  const onRemoveHours = () => {
+    Alert.alert(
+      'Clear working hours?',
+      'Staff will be able to clock in/out and book at any time.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            const result = await updateOrganization({ openingTime: '', closingTime: '' });
+            if (!result.ok) Alert.alert('Could not clear working hours', result.error);
+          },
+        },
+      ],
+    );
+  };
+
   const onSaveLocation = async () => {
     if (!locName.trim()) {
       Alert.alert('Almost there', 'Give this location a name (e.g. "Head Office").');
@@ -730,6 +748,12 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
                 Staff can only clock in/out and book within this window
               </Text>
             </View>
+            <Pressable onPress={onStartEditHours} style={{ padding: 6 }}>
+              <Ionicons name="create-outline" size={20} color={colors.textMuted} />
+            </Pressable>
+            <Pressable onPress={onRemoveHours} style={{ padding: 6 }}>
+              <Ionicons name="trash-outline" size={20} color={colors.status.rejected.solid} />
+            </Pressable>
           </View>
         ) : !hoursEditing ? (
           <View style={{ padding: spacing.md }}>
@@ -751,17 +775,6 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
               Closing time
             </Text>
             <TimePicker value={closingTime} onChange={setClosingTime} />
-            {(openingTime || closingTime) && (
-              <Button
-                label="Clear working hours"
-                variant="secondary"
-                onPress={() => {
-                  setOpeningTime('');
-                  setClosingTime('');
-                }}
-                style={{ marginBottom: spacing.sm }}
-              />
-            )}
             <View style={{ flexDirection: 'row' }}>
               <Button
                 label="Cancel"
@@ -779,13 +792,9 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
           </View>
         )}
       </Card>
-      {!hoursEditing && (
+      {!hoursEditing && !(organization?.openingTime && organization?.closingTime) && (
         <Button
-          label={
-            organization?.openingTime && organization?.closingTime
-              ? 'Change working hours'
-              : 'Set working hours'
-          }
+          label="Set working hours"
           icon="add-circle-outline"
           variant="secondary"
           onPress={onStartEditHours}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Switch, Alert, Pressable } from 'react-native';
+import { View, StyleSheet, Switch, Alert, Pressable, type StyleProp, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Button, Input, Avatar, Badge } from '../components';
 import { useTheme } from '../theme/ThemeContext';
@@ -19,7 +19,11 @@ interface SettingsScreenProps {
 export default function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { colors, dark, setOrgTheme, setDarkOverride } = useTheme();
   const { user, logout, updateProfile } = useAuth();
-  const { plans, billing } = useData();
+  const { plans, billing, employeeById } = useData();
+
+  // The roster entry backing this account, if it has one -- visitors
+  // don't, so the Employee ID row below only shows for staff.
+  const myEmployee = user?.employeeId ? employeeById(user.employeeId) : undefined;
 
   // Priority support is just a listed perk on the Pro/Enterprise plan's
   // features array (see V20 migration) -- no separate enforcement
@@ -94,9 +98,12 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
         rightActions={[{ icon: 'close', onPress: () => navigation.goBack(), danger: true }]}
       />
 
-      {/* Profile */}
-      <Card>
-        <View style={styles.profileRow}>
+      {/* Profile -- display name, password and (for staff) employee ID
+          all live here now rather than a separate "Security" section,
+          in the same label-over-value row format EmployeeDetailScreen
+          uses for a staff member's Contact/Work info. */}
+      <Card padded={false}>
+        <View style={[styles.profileRow, { padding: spacing.md }]}>
           <Avatar name={user?.name || 'You'} size={56} />
           <View style={{ flex: 1, marginLeft: spacing.sm }}>
             <Text variant="h3">{user?.name || 'Receptionist'}</Text>
@@ -108,13 +115,21 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             </View>
           </View>
         </View>
+        <Divider />
+
+        {myEmployee ? (
+          <>
+            <Row icon="card-outline" label="Employee ID" value={myEmployee.employeeId} />
+            <Divider />
+          </>
+        ) : null}
 
         {/* Only the display name is editable here: email is the login
             identity, and role is fixed at signup from the staff roster
             (see AuthService.signup), so neither belongs behind a
             self-service edit. */}
         {editingName ? (
-          <View style={{ marginTop: spacing.md }}>
+          <View style={{ padding: spacing.md }}>
             <Input
               label="Display name"
               value={nameDraft}
@@ -141,26 +156,26 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             </View>
           </View>
         ) : (
-          <Button
-            label="Change display name"
-            variant="secondary"
-            icon="create-outline"
+          <Pressable
             onPress={() => {
               setNameDraft(user?.name || '');
               setEditingName(true);
             }}
-            style={{ marginTop: spacing.md }}
-          />
+            style={styles.editableRow}
+          >
+            <Row
+              icon="create-outline"
+              label="Display name"
+              value={user?.name || ''}
+              style={styles.rowFlex}
+            />
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </Pressable>
         )}
-      </Card>
+        <Divider />
 
-      {/* Password */}
-      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Security
-      </Text>
-      <Card>
         {editingPassword ? (
-          <>
+          <View style={{ padding: spacing.md }}>
             <Input
               label="Current password"
               value={currentPw}
@@ -199,18 +214,10 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
                 style={{ flex: 1, marginLeft: spacing.xs }}
               />
             </View>
-          </>
+          </View>
         ) : (
-          <Pressable onPress={() => setEditingPassword(true)} style={styles.linkRow}>
-            <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
-              <Ionicons name="key-outline" size={18} color={colors.brand} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text variant="bodySemibold">Change password</Text>
-              <Text variant="caption" color={colors.textSecondary}>
-                Update the password used to sign in.
-              </Text>
-            </View>
+          <Pressable onPress={() => setEditingPassword(true)} style={styles.editableRow}>
+            <Row icon="key-outline" label="Password" value="********" style={styles.rowFlex} />
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </Pressable>
         )}
@@ -357,6 +364,37 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
   );
 }
 
+// Label-over-value display row, same format as EmployeeDetailScreen's
+// Contact/Work rows -- used here for both the read-only Employee ID
+// row and (wrapped in a Pressable with a trailing chevron) the
+// editable Display name/Password rows.
+function Row({
+  icon,
+  label,
+  value,
+  style,
+}: {
+  icon: IoniconName;
+  label: string;
+  value: string;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.row, style]}>
+      <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
+        <Ionicons name={icon} size={18} color={colors.brand} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text variant="caption" color={colors.textSecondary}>
+          {label}
+        </Text>
+        <Text variant="bodySemibold">{value}</Text>
+      </View>
+    </View>
+  );
+}
+
 function ToggleRow({
   label,
   sub,
@@ -435,6 +473,17 @@ const styles = StyleSheet.create({
   profileRow: { flexDirection: 'row', alignItems: 'center' },
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   toggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  rowFlex: { flex: 1, padding: 0 },
+  editableRow: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
