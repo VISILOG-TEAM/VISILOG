@@ -66,7 +66,7 @@ class AuthServiceTest {
 
         when(organizationRepository.findByCode("ACME1234")).thenReturn(Optional.of(org));
         when(passwordEncoder.encode(any())).thenReturn("hashed");
-        when(jwtService.issueToken(any(), any(), any(), any(), any(), anyBoolean(), anyBoolean())).thenReturn("fake-jwt");
+        when(jwtService.issueToken(any(), any(), any(), any(), any(), anyBoolean())).thenReturn("fake-jwt");
         when(appUserRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
     }
 

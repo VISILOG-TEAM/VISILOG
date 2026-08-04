@@ -7,7 +7,7 @@ package com.visilog.api.dto;
 // `closingTime` are "HH:mm" strings; a blank string clears that one
 // field independently (see WorkingHoursService for what "cleared" does).
 public record UpdateOrgRequest(
-        String name, String logoUrl, ThemeUpdate theme, String wifiNetworkName,
+        String name, String logoUrl, ThemeUpdate theme,
         String openingTime, String closingTime) {
 
     public record ThemeUpdate(

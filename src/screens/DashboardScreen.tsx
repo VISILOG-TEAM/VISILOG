@@ -148,11 +148,6 @@ export default function DashboardScreen({ navigation }: DashboardScreenProps) {
           onPress={() => navigation.navigate('NFCLookup')}
         />
         <QuickAction
-          icon="card-outline"
-          label="NFC cards"
-          onPress={() => navigation.navigate('NFCCards')}
-        />
-        <QuickAction
           icon="finger-print-outline"
           label="Attendance"
           onPress={() => navigation.navigate('Attendance')}

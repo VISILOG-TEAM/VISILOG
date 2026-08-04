@@ -61,9 +61,6 @@ public class OrgService {
         if (req.logoUrl() != null) {
             org.setLogoUrl(req.logoUrl().isBlank() ? null : req.logoUrl().trim());
         }
-        if (req.wifiNetworkName() != null) {
-            org.setWifiNetworkName(req.wifiNetworkName().isBlank() ? null : req.wifiNetworkName().trim());
-        }
         if (req.openingTime() != null) {
             org.setOpeningTime(req.openingTime().isBlank() ? null : parseTime(req.openingTime(), "opening time"));
         }

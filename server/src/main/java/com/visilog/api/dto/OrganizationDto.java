@@ -10,7 +10,6 @@ public record OrganizationDto(
         String name,
         String logoUrl,
         ThemeDto theme,
-        String wifiNetworkName,
         // "HH:mm", or null if the org hasn't set working hours -- see
         // WorkingHoursService. Both are always null or both set together.
         String openingTime,
@@ -36,7 +35,6 @@ public record OrganizationDto(
                 new ThemeDto(
                         org.getBrand(), org.getBrandDark(), org.getBrandTint(),
                         org.getPrimary(), org.getPrimaryPressed(), org.getPrimarySurface(), org.getPrimarySurfaceStrong()),
-                org.getWifiNetworkName(),
                 org.getOpeningTime() == null ? null : TIME_FORMAT.format(org.getOpeningTime()),
                 org.getClosingTime() == null ? null : TIME_FORMAT.format(org.getClosingTime()),
                 planId);

@@ -1,11 +1,9 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Pressable, StyleSheet } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { Screen, Header, Text, Card, Badge, StatTile, Avatar, ClockCard } from '../components';
 import ManagerTour from '../components/ManagerTour';
 import { useTheme } from '../theme/ThemeContext';
-import { spacing, radius } from '../theme/spacing';
+import { spacing } from '../theme/spacing';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtTime } from '../data/format';
@@ -20,7 +18,7 @@ interface ManagerHomeScreenProps {
 // too, and shows up on their own Clock-ins screen like everyone else.
 export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps) {
   const { colors, setOrgTheme } = useTheme();
-  const { user, logout, listPendingApprovals } = useAuth();
+  const { user, logout } = useAuth();
   const { stats, visitors, calls, employees, employeeById, unreadNotificationCount, refreshAll } =
     useData();
   const onLogout = () => {
@@ -36,18 +34,6 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
       setRefreshing(false);
     }
   };
-
-  // Sign-ups waiting on this Manager's approval (see PendingApprovalsScreen).
-  // Refetched on focus so approving a batch and coming back updates the
-  // count without a manual pull-to-refresh.
-  const [pendingApprovalCount, setPendingApprovalCount] = useState(0);
-  useFocusEffect(
-    useCallback(() => {
-      listPendingApprovals().then((result) => {
-        if (result.ok) setPendingApprovalCount(result.approvals.length);
-      });
-    }, [listPendingApprovals]),
-  );
 
   // Top hosts (employees with the most visitors).
   const hostCounts: Record<string, number> = {};
@@ -76,23 +62,6 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
       />
 
       <ClockCard />
-
-      {pendingApprovalCount > 0 ? (
-        <Pressable onPress={() => navigation.navigate('PendingApprovals')}>
-          <Card accent="pending" style={styles.approvalCard}>
-            <View style={[styles.approvalIcon, { backgroundColor: colors.status.pending.bg }]}>
-              <Ionicons name="hourglass-outline" size={20} color={colors.status.pending.fg} />
-            </View>
-            <View style={{ flex: 1, marginLeft: spacing.sm }}>
-              <Text variant="bodySemibold">Pending approvals</Text>
-              <Text variant="caption" color={colors.textSecondary}>
-                {pendingApprovalCount} sign-up{pendingApprovalCount === 1 ? '' : 's'} waiting on you
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </Card>
-        </Pressable>
-      ) : null}
 
       <View style={{ flexDirection: 'row', marginTop: spacing.md }}>
         <StatTile icon="people" tint="primary" label="Visitors today" value={stats.visitorsToday} />
@@ -167,18 +136,6 @@ export default function ManagerHomeScreen({ navigation }: ManagerHomeScreenProps
 const styles = StyleSheet.create({
   eyebrow: { marginTop: spacing.xl, marginBottom: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8 },
-  approvalCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  approvalIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

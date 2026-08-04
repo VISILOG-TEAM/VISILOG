@@ -11,7 +11,6 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import RegisterCompanyScreen from '../screens/RegisterCompanyScreen';
 import LegalAgreementScreen from '../screens/LegalAgreementScreen';
 import VerifyEmailScreen from '../screens/VerifyEmailScreen';
-import PendingApprovalScreen from '../screens/PendingApprovalScreen';
 
 // Per-role app shells (each is its own bottom-tab navigator)
 import TabNavigator from './TabNavigator';
@@ -30,14 +29,12 @@ import AddEmployeeScreen from '../screens/AddEmployeeScreen';
 import LogCallScreen from '../screens/LogCallScreen';
 import CallLogScreen from '../screens/CallLogScreen';
 import ReportsScreen from '../screens/ReportsScreen';
-import NFCCardsScreen from '../screens/NFCCardsScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import BillingScreen from '../screens/BillingScreen';
 import CompanySetupScreen from '../screens/CompanySetupScreen';
 import MeetingRoomsScreen from '../screens/MeetingRoomsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
-import PendingApprovalsScreen from '../screens/PendingApprovalsScreen';
 import type { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -77,15 +74,6 @@ export default function RootNavigator() {
         <Stack.Group>
           <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         </Stack.Group>
-      ) : !user.ownerApproved ? (
-        // ---------- Email confirmed, but the owner hasn't approved yet ----------
-        // The second half of the same gate: a Manager at this company
-        // still needs to enter the code emailed to *them*. Same
-        // "nowhere else to go" shape as the verify step above, and the
-        // same independent backend enforcement in JwtAuthFilter.
-        <Stack.Group>
-          <Stack.Screen name="PendingApproval" component={PendingApprovalScreen} />
-        </Stack.Group>
       ) : (
         // ---------- Signed-in, role-resolved stack ----------
         <Stack.Group>
@@ -115,7 +103,6 @@ export default function RootNavigator() {
           <Stack.Screen name="EmployeeDetail" component={EmployeeDetailScreen} />
           <Stack.Screen name="CallLog" component={CallLogScreen} />
           <Stack.Screen name="Reports" component={ReportsScreen} />
-          <Stack.Screen name="NFCCards" component={NFCCardsScreen} />
           <Stack.Screen name="NFCLookup" component={NFCLookupScreen} />
           <Stack.Screen name="Attendance" component={AttendanceScreen} />
           <Stack.Screen name="History" component={HistoryScreen} />
@@ -123,7 +110,6 @@ export default function RootNavigator() {
           <Stack.Screen name="CompanySetup" component={CompanySetupScreen} />
           <Stack.Screen name="MeetingRooms" component={MeetingRoomsScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
-          <Stack.Screen name="PendingApprovals" component={PendingApprovalsScreen} />
           <Stack.Screen name="LegalAgreement" component={LegalAgreementScreen} />
         </Stack.Group>
       )}

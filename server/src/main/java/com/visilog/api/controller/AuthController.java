@@ -1,13 +1,10 @@
 package com.visilog.api.controller;
 
-import com.visilog.api.dto.ApproveUserRequest;
 import com.visilog.api.dto.AuthResponse;
 import com.visilog.api.dto.ForgotPasswordRequest;
 import com.visilog.api.dto.GoogleAuthRequest;
 import com.visilog.api.dto.LoginRequest;
 import com.visilog.api.dto.MessageResponse;
-import com.visilog.api.dto.PendingApprovalDto;
-import com.visilog.api.dto.ResendApprovalRequest;
 import com.visilog.api.dto.ResetPasswordRequest;
 import com.visilog.api.dto.SignupRequest;
 import com.visilog.api.dto.UpdateProfileRequest;
@@ -18,9 +15,7 @@ import com.visilog.api.security.AuthPrincipal;
 import com.visilog.api.security.CurrentUser;
 import com.visilog.api.service.AuthService;
 import jakarta.validation.Valid;
-import java.util.List;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -75,38 +70,6 @@ public class AuthController {
     @PostMapping("/resend-verification")
     public ResponseEntity<MessageResponse> resendVerification(@CurrentUser AuthPrincipal principal) {
         return ResponseEntity.ok(authService.resendVerification(principal));
-    }
-
-    // Re-issues a token from the caller's current DB state. Reachable
-    // even while unverified/unapproved (see JwtAuthFilter's allow-list)
-    // -- it's how either waiting screen picks up a state change made
-    // from outside that session.
-    @PostMapping("/refresh-token")
-    public ResponseEntity<AuthResponse> refreshToken(@CurrentUser AuthPrincipal principal) {
-        return ResponseEntity.ok(authService.refreshToken(principal));
-    }
-
-    // Owner approval. Manager-only: a Manager approves *other* accounts
-    // in their own org, never their own (registerCompany already sets
-    // that account approved).
-    @GetMapping("/pending-approvals")
-    @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<List<PendingApprovalDto>> pendingApprovals(@CurrentUser AuthPrincipal principal) {
-        return ResponseEntity.ok(authService.listPendingApprovals(principal));
-    }
-
-    @PostMapping("/approve-user")
-    @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<MessageResponse> approveUser(
-            @CurrentUser AuthPrincipal principal, @Valid @RequestBody ApproveUserRequest request) {
-        return ResponseEntity.ok(authService.approveUser(principal, request));
-    }
-
-    @PostMapping("/resend-approval")
-    @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<MessageResponse> resendApproval(
-            @CurrentUser AuthPrincipal principal, @Valid @RequestBody ResendApprovalRequest request) {
-        return ResponseEntity.ok(authService.resendApproval(principal, request.userId()));
     }
 
     @GetMapping("/me")

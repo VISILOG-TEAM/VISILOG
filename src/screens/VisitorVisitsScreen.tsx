@@ -83,7 +83,7 @@ export default function VisitorVisitsScreen() {
                   Reason: {item.rejectReason}
                 </Text>
               ) : null}
-              {item.status === 'pending' && (
+              {item.status !== 'rejected' && (
                 <Button
                   label="Reschedule"
                   variant="secondary"

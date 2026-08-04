@@ -129,78 +129,6 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
 
   return (
     <Screen scroll={false} padded={false}>
-      <View style={styles.head}>
-        <Header
-          title="Meeting rooms"
-          subtitle="Bookable spaces across the office"
-          rightActions={[
-            { icon: 'document-attach-outline', onPress: () => setImportVisible(true) },
-            { icon: 'close', onPress: () => navigation.goBack() },
-          ]}
-        />
-        <Card>
-          <Input
-            label="Room name"
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g. Boardroom A"
-            icon="business-outline"
-          />
-          <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Input
-                label="Capacity"
-                value={capacity}
-                onChangeText={setCapacity}
-                placeholder="e.g. 12"
-                icon="people-outline"
-                keyboardType="number-pad"
-              />
-            </View>
-            <View style={{ width: spacing.sm }} />
-            <View style={{ flex: 1 }}>
-              <Input
-                label="Floor"
-                value={floor}
-                onChangeText={setFloor}
-                placeholder="e.g. 3rd Floor"
-                icon="layers-outline"
-              />
-            </View>
-          </View>
-          <Input
-            label="Description / directions (optional)"
-            value={description}
-            onChangeText={setDescription}
-            placeholder="e.g. Past the kitchen, second door on the left"
-            icon="map-outline"
-            multiline
-          />
-          <Pressable onPress={onPickPhoto} disabled={pickingPhoto} style={styles.photoRow}>
-            <View
-              style={[
-                styles.photoPreview,
-                { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
-              ]}
-            >
-              {photoUrl ? (
-                <Image source={{ uri: photoUrl }} style={styles.photoImage} resizeMode="cover" />
-              ) : (
-                <Ionicons name="camera-outline" size={20} color={colors.textMuted} />
-              )}
-            </View>
-            <Text variant="bodySemibold" color={colors.brand} style={{ marginLeft: spacing.sm }}>
-              {pickingPhoto
-                ? 'Opening photos...'
-                : photoUrl
-                  ? 'Change photo'
-                  : 'Add a room photo (optional)'}
-            </Text>
-          </Pressable>
-          <Button label={adding ? 'Adding...' : 'Add room'} onPress={onAdd} disabled={adding} />
-        </Card>
-      </View>
-
       <FlatList
         style={styles.flatList}
         refreshControl={refreshControl}
@@ -208,6 +136,84 @@ export default function MeetingRoomsScreen({ navigation }: MeetingRoomsScreenPro
         keyExtractor={(r) => r.id}
         contentContainerStyle={styles.list}
         ItemSeparatorComponent={() => <View style={{ height: spacing.sm }} />}
+        // The header (title + Add Room form) is part of the FlatList's
+        // own scrollable content instead of a fixed sibling above it --
+        // scrolling used to only move the room list, leaving items
+        // hidden behind the form instead of the whole screen scrolling
+        // together as one.
+        ListHeaderComponent={
+          <View style={styles.head}>
+            <Header
+              title="Meeting rooms"
+              subtitle="Bookable spaces across the office"
+              rightActions={[
+                { icon: 'document-attach-outline', onPress: () => setImportVisible(true) },
+                { icon: 'close', onPress: () => navigation.goBack() },
+              ]}
+            />
+            <Card>
+              <Input
+                label="Room name"
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g. Boardroom A"
+                icon="business-outline"
+              />
+              <View style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Input
+                    label="Capacity"
+                    value={capacity}
+                    onChangeText={setCapacity}
+                    placeholder="e.g. 12"
+                    icon="people-outline"
+                    keyboardType="number-pad"
+                  />
+                </View>
+                <View style={{ width: spacing.sm }} />
+                <View style={{ flex: 1 }}>
+                  <Input
+                    label="Floor"
+                    value={floor}
+                    onChangeText={setFloor}
+                    placeholder="e.g. 3rd Floor"
+                    icon="layers-outline"
+                  />
+                </View>
+              </View>
+              <Input
+                label="Description / directions (optional)"
+                value={description}
+                onChangeText={setDescription}
+                placeholder="e.g. Past the kitchen, second door on the left"
+                icon="map-outline"
+                multiline
+              />
+              <Pressable onPress={onPickPhoto} disabled={pickingPhoto} style={styles.photoRow}>
+                <View
+                  style={[
+                    styles.photoPreview,
+                    { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+                  ]}
+                >
+                  {photoUrl ? (
+                    <Image source={{ uri: photoUrl }} style={styles.photoImage} resizeMode="cover" />
+                  ) : (
+                    <Ionicons name="camera-outline" size={20} color={colors.textMuted} />
+                  )}
+                </View>
+                <Text variant="bodySemibold" color={colors.brand} style={{ marginLeft: spacing.sm }}>
+                  {pickingPhoto
+                    ? 'Opening photos...'
+                    : photoUrl
+                      ? 'Change photo'
+                      : 'Add a room photo (optional)'}
+                </Text>
+              </Pressable>
+              <Button label={adding ? 'Adding...' : 'Add room'} onPress={onAdd} disabled={adding} />
+            </Card>
+          </View>
+        }
         ListEmptyComponent={
           <EmptyState
             icon="business-outline"

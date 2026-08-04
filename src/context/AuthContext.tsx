@@ -20,15 +20,6 @@ interface UserDto {
   organizationId: string;
   organizationName: string;
   emailVerified: boolean;
-  ownerApproved: boolean;
-}
-
-export interface PendingApproval {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  createdAt: string;
 }
 
 interface AuthResponse {
@@ -41,7 +32,6 @@ interface OrganizationPatch {
   name?: string;
   logoUrl?: string | null;
   theme?: Organization['theme'];
-  wifiNetworkName?: string | null;
   openingTime?: string | null;
   closingTime?: string | null;
 }
@@ -83,10 +73,6 @@ interface AuthContextValue {
   ) => Promise<AuthResult>;
   verifyEmail: (code: string) => Promise<{ ok: boolean; error?: string }>;
   resendVerification: () => Promise<MessageResult>;
-  refreshSession: () => Promise<{ ok: boolean; error?: string }>;
-  listPendingApprovals: () => Promise<{ ok: boolean; approvals: PendingApproval[]; error?: string }>;
-  approveUser: (userId: string, code: string) => Promise<MessageResult>;
-  resendApproval: (userId: string) => Promise<MessageResult>;
   logout: () => Promise<void>;
   verifyPassword: (password: string) => Promise<{ ok: boolean; error?: string }>;
   updateOrganization: (patch: OrganizationPatch) => Promise<AuthResult>;
@@ -110,7 +96,6 @@ const mapUser = (userDto: UserDto): User => ({
   // from an older backend build that doesn't send the field at all,
   // which would otherwise strand everyone on the verify screen.
   emailVerified: userDto.emailVerified !== false,
-  ownerApproved: userDto.ownerApproved !== false,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -386,70 +371,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Re-issues a token from the account's current DB state without
-  // changing anything -- what the verify-email and pending-approval
-  // screens call to pick up a state change made from outside their own
-  // session (a Manager approving them from a different device). Works
-  // in both of those restricted states because the backend allow-lists
-  // this endpoint the same way it allow-lists /auth/me.
-  const refreshSession = async (): Promise<{ ok: boolean; error?: string }> => {
-    try {
-      const res = await apiClient.post<AuthResponse>('/api/v1/auth/refresh-token', {});
-      await applyAuthResponse(res);
-      return { ok: true };
-    } catch (err) {
-      return {
-        ok: false,
-        error: err instanceof ApiError ? err.message : 'Could not check your status.',
-      };
-    }
-  };
-
-  // Owner approval: Manager-only calls for the Pending Approvals screen.
-  const listPendingApprovals = async (): Promise<{
-    ok: boolean;
-    approvals: PendingApproval[];
-    error?: string;
-  }> => {
-    try {
-      const approvals = await apiClient.get<PendingApproval[]>('/api/v1/auth/pending-approvals');
-      return { ok: true, approvals };
-    } catch (err) {
-      return {
-        ok: false,
-        approvals: [],
-        error: err instanceof ApiError ? err.message : 'Could not load pending approvals.',
-      };
-    }
-  };
-
-  const approveUser = async (userId: string, code: string): Promise<MessageResult> => {
-    try {
-      const res = await apiClient.post<{ message: string }>('/api/v1/auth/approve-user', {
-        userId,
-        code: code.trim(),
-      });
-      return { ok: true, message: res.message };
-    } catch (err) {
-      return {
-        ok: false,
-        message: err instanceof ApiError ? err.message : 'Could not approve that account.',
-      };
-    }
-  };
-
-  const resendApproval = async (userId: string): Promise<MessageResult> => {
-    try {
-      const res = await apiClient.post<{ message: string }>('/api/v1/auth/resend-approval', { userId });
-      return { ok: true, message: res.message };
-    } catch (err) {
-      return {
-        ok: false,
-        message: err instanceof ApiError ? err.message : 'Could not resend that code.',
-      };
-    }
-  };
-
   // Step-up confirmation before a sensitive action on the *current*
   // session -- currently just clock-in (see ClockCard). Re-checks the
   // signed-in user's own password without touching the stored token.
@@ -517,10 +438,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         registerCompany,
         verifyEmail,
         resendVerification,
-        refreshSession,
-        listPendingApprovals,
-        approveUser,
-        resendApproval,
         logout,
         verifyPassword,
         forgotPassword,

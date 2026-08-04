@@ -88,13 +88,22 @@ export function parseCsv(text: string): string[][] {
 // Turns parsed rows (first row = header) into case-insensitive
 // header - value maps, one per data row -- so callers can look up
 // `record['email']` regardless of how the header was capitalized.
-export function csvRowsToRecords(rows: string[][]): Record<string, string>[] {
+//
+// `rows` is typed string[][] but an Excel sheet doesn't actually
+// guarantee that: XLSX.utils.sheet_to_json returns whatever type each
+// cell actually holds (numbers for a numeric-formatted capacity or
+// phone column, even Dates), not strings coerced from the display
+// text. Calling .trim() directly on one of those threw
+// "r[i].trim is not a function" and rejected the whole import --
+// String(...) first handles every cell type instead of just the ones
+// a hand-typed CSV happens to produce.
+export function csvRowsToRecords(rows: unknown[][]): Record<string, string>[] {
   if (rows.length === 0) return [];
-  const headers = rows[0].map((h) => h.trim().toLowerCase());
+  const headers = rows[0].map((h) => String(h ?? '').trim().toLowerCase());
   return rows.slice(1).map((r) => {
     const record: Record<string, string> = {};
     headers.forEach((h, i) => {
-      const value = (r[i] || '').trim();
+      const value = String(r[i] ?? '').trim();
       record[h] = value;
       // Also stored under a squashed key, so a caller can look up
       // 'employeeid' and match a column headed "Employee ID",

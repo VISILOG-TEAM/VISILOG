@@ -51,13 +51,6 @@ public class Organization {
     @Column(nullable = false)
     private String primarySurfaceStrong;
 
-    // Informational only, shown to employees as "connect to X to clock
-    // in" -- a phone can't verify a specific SSID without extra native
-    // permissions most devices won't grant, so this labels the intended
-    // network rather than being enforced (see ClockRecordService, which
-    // still only checks "connected to any WiFi").
-    private String wifiNetworkName;
-
     // Null (the default) means no time-of-day restriction at all -- see
     // WorkingHoursService, which treats either one being null as "not
     // configured" rather than half-applying a one-sided window.

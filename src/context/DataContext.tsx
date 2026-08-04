@@ -29,7 +29,6 @@ import type {
   MeetingResponseStatus,
   MeetingRoom,
   MeetingRoomInput,
-  NfcCard,
   NotificationType,
   OfficeLocation,
   OfficeLocationInput,
@@ -40,6 +39,8 @@ import type {
   RoomBookingResponse,
   Visitor,
   VisitorStatus,
+  WifiNetwork,
+  WifiNetworkInput,
 } from '../types';
 
 // DataContext talks to the real VisiLog backend (see server/). Every
@@ -166,11 +167,11 @@ interface DataContextValue {
   visitors: Visitor[];
   appointments: Appointment[];
   calls: Call[];
-  nfcCards: NfcCard[];
   roomBookings: RoomBooking[];
   employees: Employee[];
   meetingRooms: MeetingRoom[];
   officeLocations: OfficeLocation[];
+  wifiNetworks: WifiNetwork[];
   // lookup helpers
   employeeById: (id: string) => Employee | undefined;
   roomById: (id: string) => MeetingRoom | undefined;
@@ -198,6 +199,9 @@ interface DataContextValue {
   addOfficeLocation: (input: OfficeLocationInput) => Promise<OfficeLocation>;
   updateOfficeLocation: (id: string, input: OfficeLocationInput) => Promise<OfficeLocation>;
   removeOfficeLocation: (id: string) => Promise<void>;
+  addWifiNetwork: (input: WifiNetworkInput) => Promise<WifiNetwork>;
+  updateWifiNetwork: (id: string, input: WifiNetworkInput) => Promise<WifiNetwork>;
+  removeWifiNetwork: (id: string) => Promise<void>;
   bookVisit: (input: BookVisitInput) => Promise<Appointment>;
   findAppointmentByCode: (code: string) => Promise<Appointment | null>;
   // work attendance (clock in/out) + appointment rescheduling
@@ -257,12 +261,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [calls, setCalls] = useState<Call[]>([]);
-  // No backend model for standalone NFC cards in this pass -- the
-  // per-visit NFC code lives on the appointment itself (see nfcCode).
-  const [nfcCards] = useState<NfcCard[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [meetingRooms, setMeetingRooms] = useState<MeetingRoom[]>([]);
   const [officeLocations, setOfficeLocations] = useState<OfficeLocation[]>([]);
+  const [wifiNetworks, setWifiNetworks] = useState<WifiNetwork[]>([]);
   const [clockRecords, setClockRecords] = useState<ClockRecord[]>([]);
   const [roomBookings, setRoomBookings] = useState<RoomBooking[]>([]);
   const [billing, setBilling] = useState<Billing | null>(null);
@@ -320,6 +322,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ),
       loadOne<PlanDto[]>('/api/v1/plans', (p) => setPlans(p.map(mapPlan))),
       loadOne<OfficeLocation[]>('/api/v1/office-locations', (ol) => setOfficeLocations(ol)),
+      loadOne<WifiNetwork[]>('/api/v1/wifi-networks', (wn) => setWifiNetworks(wn)),
       ...(isManager
         ? [
             loadOne<BillingDto>('/api/v1/billing', (b) => setBilling(mapBilling(b))),
@@ -656,6 +659,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setOfficeLocations((ls) => ls.filter((l) => l.id !== id));
   };
 
+  // ---- WiFi networks (shown to staff as "connect to X to clock in") ----
+
+  const addWifiNetwork = async (input: WifiNetworkInput): Promise<WifiNetwork> => {
+    const network = await apiClient.post<WifiNetwork>('/api/v1/wifi-networks', input);
+    setWifiNetworks((ns) => [...ns, network]);
+    return network;
+  };
+
+  const updateWifiNetwork = async (id: string, input: WifiNetworkInput): Promise<WifiNetwork> => {
+    const network = await apiClient.patch<WifiNetwork>(`/api/v1/wifi-networks/${id}`, input);
+    setWifiNetworks((ns) => ns.map((n) => (n.id === id ? network : n)));
+    return network;
+  };
+
+  const removeWifiNetwork = async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/wifi-networks/${id}`);
+    setWifiNetworks((ns) => ns.filter((n) => n.id !== id));
+  };
+
   // ---- clock in/out (work attendance) ----
 
   const clockIn = async (employeeId: string, employeeName: string): Promise<ClockRecord> => {
@@ -875,11 +897,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         visitors,
         appointments,
         calls,
-        nfcCards,
         roomBookings,
         employees,
         meetingRooms,
         officeLocations,
+        wifiNetworks,
         // lookup helpers
         employeeById,
         roomById,
@@ -903,6 +925,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         addOfficeLocation,
         updateOfficeLocation,
         removeOfficeLocation,
+        addWifiNetwork,
+        updateWifiNetwork,
+        removeWifiNetwork,
         bookVisit,
         findAppointmentByCode,
         // work attendance (clock in/out) + appointment rescheduling

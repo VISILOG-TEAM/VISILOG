@@ -32,11 +32,6 @@ export interface User {
   // this address. RootNavigator holds such an account on the verify
   // screen, and the backend refuses its token everywhere else.
   emailVerified: boolean;
-  // False between signing up and a Manager at this company entering
-  // the code emailed to them to approve this account. Checked after
-  // emailVerified -- RootNavigator holds a verified-but-unapproved
-  // account on the pending-approval screen instead.
-  ownerApproved: boolean;
 }
 
 // A named GPS point + radius the clock-in/visitor-check-in geofence
@@ -51,13 +46,20 @@ export interface OfficeLocation {
   radiusMeters: number;
 }
 
+// A named WiFi network shown to staff as "connect to X to clock in" --
+// informational only (see DataContext.wifiNetworks); an org can list
+// more than one, e.g. separate networks per floor/building.
+export interface WifiNetwork {
+  id: string;
+  name: string;
+}
+
 export interface Organization {
   id: string;
   code: string;
   name: string;
   logoUrl: string | null;
   theme: BrandTheme;
-  wifiNetworkName: string | null;
   // "HH:mm", or null if the org hasn't set working hours -- when set,
   // the backend rejects clock-in/out and meeting/visit bookings outside
   // this window (see server WorkingHoursService).
@@ -295,6 +297,10 @@ export interface OfficeLocationInput {
   radiusMeters: number;
 }
 
+export interface WifiNetworkInput {
+  name: string;
+}
+
 export interface MeetingRoomInput {
   name: string;
   capacity?: number | string | null;
@@ -312,23 +318,6 @@ export interface BookRoomInput {
   participantIds?: string[];
   externalGuests?: ExternalGuest[];
   priority?: MeetingPriority;
-}
-
-// No backend model exists for standalone NFC cards yet (the per-visit
-// NFC code lives on Appointment.nfcCode) -- DataContext seeds this as an
-// always-empty array, but NFCCardsScreen is written against this shape
-// so it's ready once/if a real NfcCard endpoint exists.
-export type NfcCardStatus = 'active' | 'revoked';
-export type NfcHolderType = 'employee' | 'visitor';
-
-export interface NfcCard {
-  id: string;
-  holderId: string;
-  holderType: NfcHolderType;
-  tokenHash: string;
-  issuedAt: string;
-  expiresAt: string;
-  status: NfcCardStatus;
 }
 
 export interface AuthResult {

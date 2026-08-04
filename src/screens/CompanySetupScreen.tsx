@@ -22,7 +22,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { ApiError } from '../api/client';
 import type { RootStackNavigation } from '../types/navigation';
-import type { BrandTheme, IoniconName, OfficeLocation } from '../types';
+import type { BrandTheme, IoniconName, OfficeLocation, WifiNetwork } from '../types';
 
 // A raw GPS reading carries about 14 decimal places, which is both
 // unreadable and false precision. 5 places is roughly a metre.
@@ -123,20 +123,38 @@ const THEME_PRESETS: { id: string; label: string; theme: BrandTheme }[] = [
 export default function CompanySetupScreen({ navigation }: CompanySetupScreenProps) {
   const { colors } = useTheme();
   const { organization, updateOrganization } = useAuth();
-  const { officeLocations, addOfficeLocation, updateOfficeLocation, removeOfficeLocation } =
-    useData();
+  const {
+    officeLocations,
+    addOfficeLocation,
+    updateOfficeLocation,
+    removeOfficeLocation,
+    wifiNetworks,
+    addWifiNetwork,
+    updateWifiNetwork,
+    removeWifiNetwork,
+  } = useData();
 
   const [name, setName] = useState(organization?.name || '');
   const [logoUrl, setLogoUrl] = useState(organization?.logoUrl || '');
-  const [wifiNetworkName, setWifiNetworkName] = useState(organization?.wifiNetworkName || '');
   const [savingBrand, setSavingBrand] = useState(false);
   const [pickingLogo, setPickingLogo] = useState(false);
 
+  // WiFi networks -- an org can list more than one (see
+  // DataContext.wifiNetworks); same add/edit/delete list pattern as
+  // office locations below, rather than a single editable field with
+  // no way to tell "saved" from "not yet saved" apart. `editingWifiId`
+  // is null while adding a new one, or an existing network's id while
+  // editing it.
+  const [wifiFormOpen, setWifiFormOpen] = useState(false);
+  const [editingWifiId, setEditingWifiId] = useState<string | null>(null);
+  const [wifiName, setWifiName] = useState('');
+  const [savingWifi, setSavingWifi] = useState(false);
+
   // Working hours -- optional; leaving either blank means no restriction
-  // (see backend WorkingHoursService). Independent Save so setting these
-  // doesn't require re-touching name/logo/wifi.
+  // (see backend WorkingHoursService). Same view/edit toggle as WiFi.
   const [openingTime, setOpeningTime] = useState(organization?.openingTime || '');
   const [closingTime, setClosingTime] = useState(organization?.closingTime || '');
+  const [hoursEditing, setHoursEditing] = useState(false);
   const [savingHours, setSavingHours] = useState(false);
 
   // Custom color -- collapsed by default behind the preset grid; picking
@@ -320,10 +338,68 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     const result = await updateOrganization({
       name: name.trim(),
       logoUrl: logoUrl.trim() || null,
-      wifiNetworkName: wifiNetworkName.trim() || null,
     });
     setSavingBrand(false);
-    if (!result.ok) Alert.alert('Could not save', result.error);
+    // A save that succeeds here changes nothing else on screen -- the
+    // fields already showed these values before tapping Save -- so
+    // without an explicit confirmation there was no visible difference
+    // between "saved" and "silently did nothing", which is exactly what
+    // "doesn't register" looks like even when the save worked.
+    if (result.ok) Alert.alert('Saved', 'Company details updated.');
+    else Alert.alert('Could not save', result.error);
+  };
+
+  const onStartAddWifi = () => {
+    setEditingWifiId(null);
+    setWifiName('');
+    setWifiFormOpen(true);
+  };
+
+  const onStartEditWifi = (network: WifiNetwork) => {
+    setEditingWifiId(network.id);
+    setWifiName(network.name);
+    setWifiFormOpen(true);
+  };
+
+  const onSaveWifi = async () => {
+    if (!wifiName.trim()) {
+      Alert.alert('Almost there', 'Give this network a name (e.g. "Office-WiFi").');
+      return;
+    }
+    setSavingWifi(true);
+    try {
+      if (editingWifiId) {
+        await updateWifiNetwork(editingWifiId, { name: wifiName.trim() });
+      } else {
+        await addWifiNetwork({ name: wifiName.trim() });
+      }
+      setWifiFormOpen(false);
+      Alert.alert('Saved', 'Staff will see this network name before clocking in.');
+    } catch (err) {
+      Alert.alert(
+        'Could not save',
+        err instanceof ApiError ? err.message : 'Something went wrong.',
+      );
+    } finally {
+      setSavingWifi(false);
+    }
+  };
+
+  const onRemoveWifi = (network: WifiNetwork) => {
+    Alert.alert('Remove this network?', `"${network.name}" will no longer be shown to staff.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: () =>
+          removeWifiNetwork(network.id).catch((err) =>
+            Alert.alert(
+              'Could not remove network',
+              err instanceof ApiError ? err.message : 'Something went wrong.',
+            ),
+          ),
+      },
+    ]);
   };
 
   const onPickPreset = async (preset: (typeof THEME_PRESETS)[number]) => {
@@ -340,6 +416,12 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
     if (!result.ok) Alert.alert('Could not save', result.error);
   };
 
+  const onStartEditHours = () => {
+    setOpeningTime(organization?.openingTime || '');
+    setClosingTime(organization?.closingTime || '');
+    setHoursEditing(true);
+  };
+
   const onSaveHours = async () => {
     if ((openingTime && !closingTime) || (!openingTime && closingTime)) {
       Alert.alert('Almost there', 'Set both an opening and a closing time, or leave both blank.');
@@ -351,7 +433,20 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
       closingTime: closingTime || '',
     });
     setSavingHours(false);
-    if (!result.ok) Alert.alert('Could not save', result.error);
+    // Same reasoning as onSaveBrand -- a successful save left the
+    // fields looking exactly like they did before tapping Save, with no
+    // way to tell it had actually taken effect.
+    if (result.ok) {
+      setHoursEditing(false);
+      Alert.alert(
+        'Saved',
+        openingTime && closingTime
+          ? `Working hours set to ${openingTime} - ${closingTime}.`
+          : 'Working hours restriction cleared.',
+      );
+    } else {
+      Alert.alert('Could not save', result.error);
+    }
   };
 
   const onSaveLocation = async () => {
@@ -483,26 +578,92 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
           icon="link-outline"
           autoCapitalize="none"
         />
-        <Input
-          label="WiFi network name"
-          value={wifiNetworkName}
-          onChangeText={setWifiNetworkName}
-          placeholder="e.g. Office-WiFi"
-          icon="wifi-outline"
-        />
-        <Text
-          variant="caption"
-          color={colors.textMuted}
-          style={{ marginTop: -6, marginBottom: spacing.sm }}
-        >
-          Shown to staff as a reminder of which network to join before clocking in.
-        </Text>
         <Button
           label={savingBrand ? 'Saving...' : 'Save'}
           onPress={onSaveBrand}
           disabled={savingBrand}
         />
       </Card>
+
+      {/* WiFi networks -- shown to staff as a reminder of which network(s)
+          to join before clocking in. Same add/edit/delete list pattern
+          as office locations below. */}
+      <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
+        WiFi network
+      </Text>
+      <Card padded={false}>
+        {wifiNetworks.length === 0 ? (
+          <View style={{ padding: spacing.md }}>
+            <Text variant="caption" color={colors.textSecondary}>
+              No WiFi network set yet.
+            </Text>
+          </View>
+        ) : (
+          wifiNetworks.map((network, i) => (
+            <View key={network.id}>
+              <View style={styles.linkRow}>
+                <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
+                  <Ionicons name="wifi-outline" size={18} color={colors.brand} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="bodySemibold">{network.name}</Text>
+                  <Text variant="caption" color={colors.textSecondary}>
+                    Shown to staff before clocking in
+                  </Text>
+                </View>
+                <Pressable onPress={() => onStartEditWifi(network)} style={{ padding: 6 }}>
+                  <Ionicons name="create-outline" size={20} color={colors.textMuted} />
+                </Pressable>
+                <Pressable onPress={() => onRemoveWifi(network)} style={{ padding: 6 }}>
+                  <Ionicons name="trash-outline" size={20} color={colors.status.rejected.solid} />
+                </Pressable>
+              </View>
+              {i < wifiNetworks.length - 1 && (
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              )}
+            </View>
+          ))
+        )}
+      </Card>
+
+      {!wifiFormOpen && (
+        <Button
+          label={wifiNetworks.length ? 'Add new wifi network name' : 'Add wifi network name'}
+          icon="add-circle-outline"
+          variant="secondary"
+          onPress={onStartAddWifi}
+          style={{ marginTop: spacing.sm }}
+        />
+      )}
+
+      {wifiFormOpen && (
+        <Card style={{ marginTop: spacing.sm }}>
+          <Text variant="bodySemibold" style={{ marginBottom: spacing.sm }}>
+            {editingWifiId ? 'Edit network' : 'New network'}
+          </Text>
+          <Input
+            label="WiFi network name"
+            value={wifiName}
+            onChangeText={setWifiName}
+            placeholder="e.g. Office-WiFi"
+            icon="wifi-outline"
+          />
+          <View style={{ flexDirection: 'row' }}>
+            <Button
+              label="Cancel"
+              variant="ghost"
+              onPress={() => setWifiFormOpen(false)}
+              style={{ flex: 1, marginRight: spacing.xs }}
+            />
+            <Button
+              label={savingWifi ? 'Saving...' : 'Save'}
+              onPress={onSaveWifi}
+              disabled={savingWifi}
+              style={{ flex: 1, marginLeft: spacing.xs }}
+            />
+          </View>
+        </Card>
+      )}
 
       <Card style={{ marginTop: spacing.sm }}>
         <Text variant="bodySemibold" style={{ marginBottom: spacing.sm }}>
@@ -555,36 +716,82 @@ export default function CompanySetupScreen({ navigation }: CompanySetupScreenPro
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
         Working hours
       </Text>
-      <Card>
-        <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
-          Set an opening and closing time to limit when staff can clock in/out and when meetings
-          or visits can be booked. Leave both blank for no restriction.
-        </Text>
-        <Text variant="label" color={colors.textSecondary}>
-          Opening time
-        </Text>
-        <TimePicker value={openingTime} onChange={setOpeningTime} />
-        <Text variant="label" color={colors.textSecondary}>
-          Closing time
-        </Text>
-        <TimePicker value={closingTime} onChange={setClosingTime} />
-        {(openingTime || closingTime) && (
-          <Button
-            label="Clear working hours"
-            variant="secondary"
-            onPress={() => {
-              setOpeningTime('');
-              setClosingTime('');
-            }}
-            style={{ marginBottom: spacing.sm }}
-          />
+      <Card padded={false}>
+        {organization?.openingTime && organization?.closingTime && !hoursEditing ? (
+          <View style={styles.linkRow}>
+            <View style={[styles.linkIcon, { backgroundColor: colors.surfaceAlt }]}>
+              <Ionicons name="time-outline" size={18} color={colors.brand} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="bodySemibold">
+                {organization.openingTime} - {organization.closingTime}
+              </Text>
+              <Text variant="caption" color={colors.textSecondary}>
+                Staff can only clock in/out and book within this window
+              </Text>
+            </View>
+          </View>
+        ) : !hoursEditing ? (
+          <View style={{ padding: spacing.md }}>
+            <Text variant="caption" color={colors.textSecondary}>
+              No working hours set -- no restriction on clock-in/out or bookings.
+            </Text>
+          </View>
+        ) : (
+          <View style={{ padding: spacing.md }}>
+            <Text variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.sm }}>
+              Set an opening and closing time to limit when staff can clock in/out and when meetings
+              or visits can be booked. Leave both blank for no restriction.
+            </Text>
+            <Text variant="label" color={colors.textSecondary}>
+              Opening time
+            </Text>
+            <TimePicker value={openingTime} onChange={setOpeningTime} />
+            <Text variant="label" color={colors.textSecondary}>
+              Closing time
+            </Text>
+            <TimePicker value={closingTime} onChange={setClosingTime} />
+            {(openingTime || closingTime) && (
+              <Button
+                label="Clear working hours"
+                variant="secondary"
+                onPress={() => {
+                  setOpeningTime('');
+                  setClosingTime('');
+                }}
+                style={{ marginBottom: spacing.sm }}
+              />
+            )}
+            <View style={{ flexDirection: 'row' }}>
+              <Button
+                label="Cancel"
+                variant="secondary"
+                onPress={() => setHoursEditing(false)}
+                style={{ flex: 1, marginRight: spacing.xs }}
+              />
+              <Button
+                label={savingHours ? 'Saving...' : 'Save'}
+                onPress={onSaveHours}
+                disabled={savingHours}
+                style={{ flex: 1, marginLeft: spacing.xs }}
+              />
+            </View>
+          </View>
         )}
-        <Button
-          label={savingHours ? 'Saving...' : 'Save working hours'}
-          onPress={onSaveHours}
-          disabled={savingHours}
-        />
       </Card>
+      {!hoursEditing && (
+        <Button
+          label={
+            organization?.openingTime && organization?.closingTime
+              ? 'Change working hours'
+              : 'Set working hours'
+          }
+          icon="add-circle-outline"
+          variant="secondary"
+          onPress={onStartEditHours}
+          style={{ marginTop: spacing.sm }}
+        />
+      )}
 
       {/* Office locations -- the first is free on any plan; a second+
           requires the enterprise plan (see onSaveLocation, which just

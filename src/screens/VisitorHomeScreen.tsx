@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { fmtDate, fmtTime } from '../data/format';
 import type { RootStackNavigation } from '../types/navigation';
-import type { IoniconName } from '../types';
+import type { Appointment, IoniconName } from '../types';
 
 interface VisitorHomeScreenProps {
   navigation: RootStackNavigation;
@@ -17,10 +17,12 @@ interface VisitorHomeScreenProps {
 
 // VisitorHomeScreen -- the visitor's tab-bar landing page. The booking
 // form itself now lives on its own "Book" tab (VisitorBookScreen); this
-// screen is a dashboard: profile + notifications up top, a full-bleed
-// virtual pass card in the org's own brand colors (or a prompt to
-// book, if there isn't one yet), the submitted details, a visit-status
-// timeline, and the company map/tour section.
+// screen is a dashboard: profile + notifications up top, a swipeable
+// row of virtual pass cards -- one per non-rejected visit, not just the
+// latest -- in the org's own brand colors (or a prompt to book, if
+// there isn't one yet), then the submitted details and status timeline
+// for whichever card is currently in view, and the company map/tour
+// section.
 export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps) {
   const { colors } = useTheme();
   const { user, organization } = useAuth();
@@ -30,6 +32,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
   const currentPlan = plans.find((p) => p.id === organization?.planId);
   const hasTourMap = !!currentPlan?.features.includes('Interactive tour map');
   const [refreshing, setRefreshing] = useState(false);
+  const [activeCardIndex, setActiveCardIndex] = useState(0);
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -39,11 +42,35 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
     }
   };
 
-  const myBooking = appointments
-    .filter((a) => a.bookedByEmail === user!.email)
-    .sort((a, b) => new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime())[0];
+  // Every one of this visitor's own bookings that could still matter --
+  // a rejected one has no pass to present, so it doesn't get a card.
+  // Soonest-up-next first, same convention as the appointments list
+  // (see AppointmentsScreen.byUpcomingFirst): a visit still ahead of you
+  // belongs before one that already happened.
+  const myBookings = appointments
+    .filter((a) => a.bookedByEmail === user!.email && a.status !== 'rejected')
+    .sort((a, b) => {
+      const now = Date.now();
+      const aTime = new Date(a.scheduledAt).getTime();
+      const bTime = new Date(b.scheduledAt).getTime();
+      const aUpcoming = aTime >= now;
+      const bUpcoming = bTime >= now;
+      if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
+      return aUpcoming ? aTime - bTime : bTime - aTime;
+    });
 
-  const host = myBooking ? employees.find((e) => e.id === myBooking.hostId) : null;
+  const activeBooking = myBookings[activeCardIndex] ?? myBookings[0] ?? null;
+
+  // Tapping the card advances to the next one (wrapping back to the
+  // first after the last) -- a horizontal ScrollView here used to let
+  // the next card's edge peek into view and didn't reliably respond to
+  // a swipe (it was competing with the page's own vertical scroll for
+  // the gesture); showing exactly one card and advancing on tap has no
+  // gesture to lose to anything else.
+  const onCardTap = () => {
+    if (myBookings.length < 2) return;
+    setActiveCardIndex((i) => (i + 1) % myBookings.length);
+  };
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
@@ -68,82 +95,60 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
       </View>
 
       <Text style={[styles.welcome, { color: colors.textPrimary }]}>
-        {myBooking
+        {myBookings.length > 0
           ? `Welcome back, ${user!.name?.split(' ')[0] || 'there'}`
           : 'Ready to book your first appointment?'}
       </Text>
       <Text variant="body" color={colors.textSecondary} style={{ marginBottom: spacing.md }}>
-        {myBooking
-          ? "Here's your latest visit pass."
-          : 'Head to the Book tab to schedule a visit and get your NFC pass.'}
+        {myBookings.length === 0
+          ? 'Head to the Book tab to schedule a visit and get your NFC pass.'
+          : myBookings.length === 1
+            ? "Here's your visit pass."
+            : `Here are your ${myBookings.length} visit passes -- tap the card to switch.`}
       </Text>
 
       <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
-        Your virtual card
+        Your virtual card{myBookings.length > 1 ? 's' : ''}
       </Text>
-      {myBooking ? (
+      {myBookings.length > 0 && activeBooking ? (
         <>
-          {/* Full-bleed pass card in the org's own brand colors */}
-          <View style={[styles.passCard, { backgroundColor: colors.brand }]}>
-            <View style={styles.passHead}>
-              <View style={[styles.chip, { backgroundColor: colors.primary }]}>
-                <Ionicons name="hardware-chip" size={20} color={colors.brandDark} />
-              </View>
-              <Ionicons
-                name="wifi"
-                size={22}
-                color="rgba(255,255,255,0.6)"
-                style={{ transform: [{ rotate: '90deg' }] }}
-              />
+          <Pressable onPress={onCardTap} disabled={myBookings.length < 2}>
+            <PassCard
+              booking={activeBooking}
+              visitorName={user?.name || 'Visitor'}
+              hostName={employees.find((e) => e.id === activeBooking.hostId)?.name}
+              tapHint={myBookings.length > 1}
+            />
+          </Pressable>
+
+          {myBookings.length > 1 ? (
+            <View style={styles.dotsRow}>
+              {myBookings.map((b, i) => (
+                <Pressable key={b.id} onPress={() => setActiveCardIndex(i)} hitSlop={6}>
+                  <View
+                    style={[
+                      styles.dot,
+                      { backgroundColor: i === activeCardIndex ? colors.primary : colors.border },
+                    ]}
+                  />
+                </Pressable>
+              ))}
             </View>
+          ) : null}
 
-            <Text style={styles.passEyebrow}>
-              {myBooking.nfcCode
-                ? `VISITOR PASS - #${myBooking.nfcCode}`
-                : 'VISITOR PASS - PENDING APPROVAL'}
-            </Text>
-            <Text style={styles.passName} numberOfLines={1}>
-              {user?.name || 'Visitor'}
-            </Text>
-
-            <View style={styles.passMetaRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.passMetaLabel}>Host</Text>
-                <Text style={styles.passMetaValue} numberOfLines={1}>
-                  {host?.name || '--'}
-                </Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.passMetaLabel}>Scheduled</Text>
-                <Text style={styles.passMetaValue} numberOfLines={1}>
-                  {fmtDate(myBooking.scheduledAt)} - {fmtTime(myBooking.scheduledAt)}
-                </Text>
-              </View>
-            </View>
-
-            <View style={[styles.passDivider, { backgroundColor: 'rgba(255,255,255,0.18)' }]} />
-
-            <View style={styles.passStatusRow}>
-              <View style={[styles.passDot, { backgroundColor: colors.primary }]} />
-              <Text style={[styles.passStatusText, { color: colors.primary }]}>
-                Present this card at reception to check in
-              </Text>
-            </View>
-          </View>
-
-          {/* Details you submitted */}
+          {/* Details you submitted -- for whichever card is in view */}
           <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
             Details you submitted
           </Text>
           <Card>
-            <DetailRow label="Company" value={myBooking.visitorCompany || '--'} />
+            <DetailRow label="Company" value={activeBooking!.visitorCompany || '--'} />
             <View style={[styles.hairline, { backgroundColor: colors.border }]} />
-            <DetailRow label="Purpose" value={myBooking.purpose || '--'} />
+            <DetailRow label="Purpose" value={activeBooking!.purpose || '--'} />
             <View style={[styles.hairline, { backgroundColor: colors.border }]} />
-            <DetailRow label="Contact" value={myBooking.visitorPhone || '--'} />
+            <DetailRow label="Contact" value={activeBooking!.visitorPhone || '--'} />
           </Card>
 
-          {/* Visit status timeline */}
+          {/* Visit status timeline -- for whichever card is in view */}
           <Text variant="eyebrow" color={colors.textMuted} style={styles.eyebrow}>
             Visit status
           </Text>
@@ -152,10 +157,10 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
               done
               icon="checkmark"
               label="Details submitted"
-              sub={`${fmtDate(myBooking.scheduledAt)} - ${fmtTime(myBooking.scheduledAt)}`}
+              sub={`${fmtDate(activeBooking!.scheduledAt)} - ${fmtTime(activeBooking!.scheduledAt)}`}
               isLast={false}
             />
-            {myBooking.status === 'rejected' ? (
+            {activeBooking!.status === 'rejected' ? (
               <TimelineStep
                 done
                 negative
@@ -164,7 +169,7 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
                 sub="This visit was not approved."
                 isLast
               />
-            ) : myBooking.status === 'admitted' ? (
+            ) : activeBooking!.status === 'admitted' ? (
               <TimelineStep
                 done
                 icon="checkmark"
@@ -199,6 +204,75 @@ export default function VisitorHomeScreen({ navigation }: VisitorHomeScreenProps
 
       {hasTourMap && <CompanyMapSection />}
     </Screen>
+  );
+}
+
+function PassCard({
+  booking,
+  visitorName,
+  hostName,
+  tapHint,
+}: {
+  booking: Appointment;
+  visitorName: string;
+  hostName?: string;
+  /** Shows a small "tap for next" affordance -- only meaningful when there's more than one card. */
+  tapHint?: boolean;
+}) {
+  const { colors } = useTheme();
+  return (
+    // Full-bleed pass card in the org's own brand colors
+    <View style={[styles.passCard, { backgroundColor: colors.brand }]}>
+      <View style={styles.passHead}>
+        <View style={[styles.chip, { backgroundColor: colors.primary }]}>
+          <Ionicons name="hardware-chip" size={20} color={colors.brandDark} />
+        </View>
+        {tapHint ? (
+          <View style={styles.tapHint}>
+            <Text style={styles.tapHintText}>Tap for next</Text>
+            <Ionicons name="chevron-forward" size={14} color="rgba(255,255,255,0.6)" />
+          </View>
+        ) : (
+          <Ionicons
+            name="wifi"
+            size={22}
+            color="rgba(255,255,255,0.6)"
+            style={{ transform: [{ rotate: '90deg' }] }}
+          />
+        )}
+      </View>
+
+      <Text style={styles.passEyebrow}>
+        {booking.nfcCode ? `VISITOR PASS - #${booking.nfcCode}` : 'VISITOR PASS - PENDING APPROVAL'}
+      </Text>
+      <Text style={styles.passName} numberOfLines={1}>
+        {visitorName}
+      </Text>
+
+      <View style={styles.passMetaRow}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.passMetaLabel}>Host</Text>
+          <Text style={styles.passMetaValue} numberOfLines={1}>
+            {hostName || '--'}
+          </Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.passMetaLabel}>Scheduled</Text>
+          <Text style={styles.passMetaValue} numberOfLines={1}>
+            {fmtDate(booking.scheduledAt)} - {fmtTime(booking.scheduledAt)}
+          </Text>
+        </View>
+      </View>
+
+      <View style={[styles.passDivider, { backgroundColor: 'rgba(255,255,255,0.18)' }]} />
+
+      <View style={styles.passStatusRow}>
+        <View style={[styles.passDot, { backgroundColor: colors.primary }]} />
+        <Text style={[styles.passStatusText, { color: colors.primary }]}>
+          Present this card at reception to check in
+        </Text>
+      </View>
+    </View>
   );
 }
 
@@ -281,6 +355,18 @@ const styles = StyleSheet.create({
   welcome: { fontFamily: fonts.displayBold, fontSize: 22 },
   eyebrow: { marginTop: spacing.md, marginBottom: spacing.sm },
 
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 3,
+  },
+
   // Pass card
   passCard: {
     borderRadius: radius.xl,
@@ -291,6 +377,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.lg,
+  },
+  tapHint: { flexDirection: 'row', alignItems: 'center' },
+  tapHintText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.6)',
+    marginRight: 2,
   },
   chip: {
     width: 40,

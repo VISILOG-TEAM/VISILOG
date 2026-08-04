@@ -86,23 +86,6 @@ public class MailService {
         send(toEmail, subject, body, "email verification");
     }
 
-    public void sendOwnerApprovalEmail(
-            String toEmail, String managerName, String newUserName, String newUserEmail, String code) {
-        String subject = newUserName + " wants to join your company on VisiLog";
-        String body =
-                "Hi " + (managerName == null || managerName.isBlank() ? "there" : managerName) + ",\n\n"
-                + newUserName + " (" + newUserEmail + ") just signed up to join your company on VisiLog "
-                + "and is waiting on your approval.\n\n"
-                + "Here's the code to approve them:\n\n"
-                + "  " + code + "\n\n"
-                + "Open Pending Approvals in the app and enter this code. It expires in 30 minutes -- "
-                + "if it runs out, you can resend it from the same screen.\n\n"
-                + "If you don't recognize this person, you can ignore this email and their account "
-                + "will stay locked out.\n\n"
-                + "-- VisiLog";
-        send(toEmail, subject, body, "owner approval");
-    }
-
     public void sendWelcomeEmail(String toEmail, String name, String companyName) {
         String subject = "Welcome to VisiLog";
         String body =

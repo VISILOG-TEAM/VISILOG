@@ -58,7 +58,11 @@ export default function CsvImportModal<T>({
       const asset = picked.assets[0];
       const isXlsx = /\.xlsx?$/i.test(asset.name ?? '');
 
-      let rows: string[][];
+      // Not actually string[][] for the xlsx branch -- a numeric-
+      // formatted cell (capacity, phone number) comes back as a real
+      // JS number, not the string a hand-typed CSV would produce. See
+      // csvRowsToRecords, which is what actually has to handle that.
+      let rows: unknown[][];
       if (isXlsx) {
         let workbook: XLSX.WorkBook;
         if (asset.file) {
@@ -71,7 +75,7 @@ export default function CsvImportModal<T>({
           workbook = XLSX.read(b64, { type: 'base64' });
         }
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as string[][];
+        rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as unknown[][];
       } else {
         const text = asset.file
           ? await asset.file.text()
